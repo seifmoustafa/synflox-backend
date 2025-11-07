@@ -13,11 +13,7 @@ namespace Domain.Entities.Licensing
         [StringLength(200)]
         public required string Name { get; set; }
 
-        /// <summary>
-        /// Indicates whether the company subscription is active.
-        /// When false, the subscription is suspended regardless of expiry date.
-        /// </summary>
-        public bool IsActive { get; set; } = true;
+
 
         /// <summary>
         /// The date when the subscription expires.

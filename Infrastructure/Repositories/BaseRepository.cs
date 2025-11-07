@@ -27,35 +27,19 @@ namespace Infrastructure.Repositories
 
         public async Task<IEnumerable<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            // Optimize: Filter soft-deleted entities
-            var query = _dbSet.AsQueryable();
-            if (typeof(TEntity).GetProperty("IsDeleted") != null)
-            {
-                var parameter = Expression.Parameter(typeof(TEntity), "e");
-                var isDeletedProperty = Expression.Property(parameter, "IsDeleted");
-                var falseConstant = Expression.Constant(false);
-                var isDeletedEqual = Expression.Equal(isDeletedProperty, falseConstant);
-                var lambda = Expression.Lambda<Func<TEntity, bool>>(isDeletedEqual, parameter);
-                query = query.Where(lambda);
-            }
-            return await query.AsNoTracking().ToListAsync(cancellationToken);
+            // Filter soft-deleted entities - BaseEntity always has IsDeleted
+            return await _dbSet
+                .Where(e => !e.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<TEntity>> GetAllAsync(string[]? includes, CancellationToken cancellationToken = default)
         {
-            // Optimize: Apply filters before includes
-            var query = _dbSet.AsQueryable();
-            
-            // Filter soft-deleted entities
-            if (typeof(TEntity).GetProperty("IsDeleted") != null)
-            {
-                var parameter = Expression.Parameter(typeof(TEntity), "e");
-                var isDeletedProperty = Expression.Property(parameter, "IsDeleted");
-                var falseConstant = Expression.Constant(false);
-                var isDeletedEqual = Expression.Equal(isDeletedProperty, falseConstant);
-                var lambda = Expression.Lambda<Func<TEntity, bool>>(isDeletedEqual, parameter);
-                query = query.Where(lambda);
-            }
+            // Apply filters before includes
+            var query = _dbSet
+                .Where(e => !e.IsDeleted)
+                .AsQueryable();
             
             // Apply includes
             if (includes != null)
@@ -67,15 +51,22 @@ namespace Infrastructure.Repositories
 
         public async Task<TEntity?> GetByIdAsync(TKey id, string[]? includes, CancellationToken cancellationToken = default)
         {
-            var query = _dbSet as IQueryable<TEntity>;
+            var query = _dbSet
+                .Where(e => !e.IsDeleted && EF.Property<TKey>(e, "Id").Equals(id))
+                .AsQueryable();
+            
             if (includes != null)
                 foreach (var include in includes)
                     query = query.Include(include);
-            return await query.FirstOrDefaultAsync(e => EF.Property<TKey>(e, "Id").Equals(id), cancellationToken);
+            
+            return await query.FirstOrDefaultAsync(cancellationToken);
         }
         public async Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
+            return await _dbSet
+                .Where(e => !e.IsDeleted)
+                .Where(predicate)
+                .ToListAsync(cancellationToken);
         }
 
 
@@ -107,10 +98,18 @@ namespace Infrastructure.Repositories
 
         public async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            var entity = await GetByIdAsync(id, [], cancellationToken);
+            // Soft delete: Set IsDeleted flag instead of removing from database
+            var entity = await _dbSet
+                .FirstOrDefaultAsync(e => EF.Property<TKey>(e, "Id").Equals(id) && !e.IsDeleted, cancellationToken);
+            
             if (entity != null)
             {
-                _dbSet.Remove(entity);
+                entity.IsDeleted = true;
+                if (entity is AuditEntity<TKey> auditEntity)
+                {
+                    auditEntity.DeletedTimestamp = DateTime.UtcNow;
+                }
+                _dbSet.Update(entity);
                 // Caller must call SaveChangesAsync
             }
         }
@@ -143,7 +142,9 @@ namespace Infrastructure.Repositories
 
         public async Task DeleteRangeAsync(IEnumerable<TKey> ids, CancellationToken cancellationToken = default)
         {
-            var entities = await _dbSet.Where(e => ids.Contains(EF.Property<TKey>(e, "Id"))).ToListAsync(cancellationToken);
+            var entities = await _dbSet
+                .Where(e => !e.IsDeleted && ids.Contains(EF.Property<TKey>(e, "Id")))
+                .ToListAsync(cancellationToken);
             if (entities.Any())
             {
                 _dbSet.RemoveRange(entities);
@@ -154,7 +155,9 @@ namespace Infrastructure.Repositories
 
         public Task<int> Count(CancellationToken cancellationToken = default)
         {
-            return _dbSet.CountAsync(cancellationToken);
+            return _dbSet
+                .Where(e => !e.IsDeleted)
+                .CountAsync(cancellationToken);
         }
 
 
@@ -164,19 +167,10 @@ namespace Infrastructure.Repositories
             int pageSize = 10, string? search = null, CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object?>>[] searchColumns)
         {
-            // Optimize: Apply filters before includes to reduce data loaded
-            var query = _dbSet.AsQueryable();
-
-            // Apply soft delete filter first (if entity has IsDeleted property)
-            if (typeof(TEntity).GetProperty("IsDeleted") != null)
-            {
-                var parameter = Expression.Parameter(typeof(TEntity), "e");
-                var isDeletedProperty = Expression.Property(parameter, "IsDeleted");
-                var falseConstant = Expression.Constant(false);
-                var isDeletedEqual = Expression.Equal(isDeletedProperty, falseConstant);
-                var lambda = Expression.Lambda<Func<TEntity, bool>>(isDeletedEqual, parameter);
-                query = query.Where(lambda);
-            }
+            // Apply filters before includes to reduce data loaded
+            var query = _dbSet
+                .Where(e => !e.IsDeleted)
+                .AsQueryable();
 
             // Apply search filter early to reduce dataset
             if (!string.IsNullOrWhiteSpace(search))
@@ -211,19 +205,10 @@ namespace Infrastructure.Repositories
             CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object?>>[] searchColumns)
         {
-            // Optimize: Apply filters before includes
-            var query = _dbSet.AsQueryable();
-
-            // Apply soft delete filter first
-            if (typeof(TEntity).GetProperty("IsDeleted") != null)
-            {
-                var parameter = Expression.Parameter(typeof(TEntity), "e");
-                var isDeletedProperty = Expression.Property(parameter, "IsDeleted");
-                var falseConstant = Expression.Constant(false);
-                var isDeletedEqual = Expression.Equal(isDeletedProperty, falseConstant);
-                var lambda = Expression.Lambda<Func<TEntity, bool>>(isDeletedEqual, parameter);
-                query = query.Where(lambda);
-            }
+            // Apply filters before includes
+            var query = _dbSet
+                .Where(e => !e.IsDeleted)
+                .AsQueryable();
 
             // Apply predicate early
             if (predicate != null)

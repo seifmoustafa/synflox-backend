@@ -165,6 +165,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<Application.Services_Interfaces.ISearchService, SearchService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         
         // Download service with shared dictionary
         var downloadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<string, DownloadSession>();

@@ -168,4 +168,7 @@
   <data name="Licensing.CompanyNameExists" xml:space="preserve">
     <value>اسم الشركة موجود بالفعل</value>
   </data>
+  <data name="Dashboard.EndpointsRetrieved" xml:space="preserve">
+    <value>تم استرجاع نقاط النهاية بنجاح</value>
+  </data>
 </root>

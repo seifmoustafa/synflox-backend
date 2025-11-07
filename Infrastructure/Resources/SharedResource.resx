@@ -168,4 +168,7 @@
   <data name="Licensing.CompanyNameExists" xml:space="preserve">
     <value>Company name already exists</value>
   </data>
+  <data name="Dashboard.EndpointsRetrieved" xml:space="preserve">
+    <value>Endpoints retrieved successfully</value>
+  </data>
 </root>
