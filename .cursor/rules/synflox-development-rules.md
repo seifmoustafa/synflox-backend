@@ -288,7 +288,7 @@ catch (Exception ex)
 ## Localization Rules
 
 ### Key Naming:
-- Format: `{Feature}.{Action}` (e.g., `Licensing.CompanyCreated`)
+- Format: `{Feature}.{Action}` (e.g., `Licensing.CompanyCreated`, `Company.CompanyCreated`)
 - Use descriptive names
 - Keep consistent across EN and AR
 
@@ -296,6 +296,40 @@ catch (Exception ex)
 - Always use `_localizer["Key"]` instead of hardcoded strings
 - Add keys to both `SharedResource.resx` (EN) and `SharedResource.ar.resx` (AR)
 - Ensure proper Arabic translations
+
+### Frontend Language Selection (2025 Best Practices):
+
+The backend supports **3 ways** for frontend to specify language (in priority order):
+
+1. **Accept-Language Header** (Recommended - Most RESTful) ⭐: `Accept-Language: ar`
+   - Standard HTTP header (RFC 7231) for content negotiation
+   - RESTful API best practice
+   - Example: `GET /api/companies` with header `Accept-Language: ar`
+   - Frontend: `axios.defaults.headers.common['Accept-Language'] = 'ar'`
+
+2. **Custom Header** (Recommended for SPAs): `X-Language: ar` or `X-Language: en`
+   - Explicit control, clean URLs
+   - Example: Header `X-Language: ar`
+   - Frontend: `axios.defaults.headers.common['X-Language'] = 'ar'`
+
+3. **Query Parameter** (Fallback - Not Recommended): `?lang=ar` or `?lang=en`
+   - Supported for compatibility but not ideal
+   - Clutters URLs, especially for POST/PUT/DELETE
+   - Example: `GET /api/companies?lang=ar`
+
+**Default:** English (`en`) if no language specified
+
+**Frontend Implementation (Recommended):**
+- Store user's language preference in localStorage
+- Set `Accept-Language` header in axios defaults or interceptor
+- Header automatically included in all requests
+- Backend automatically detects and uses the correct language
+
+**Why Headers > Query Parameters:**
+- ✅ RESTful (standard HTTP for content negotiation)
+- ✅ Semantically correct (language is metadata)
+- ✅ Clean URLs (no clutter)
+- ✅ Standard practice (GitHub, Stripe, AWS APIs use headers)
 
 ## Database Rules
 
@@ -416,6 +450,6 @@ Before considering a feature complete:
 
 ---
 
-**Last Updated:** 2024  
+**Last Updated:** 2025
 **Project:** SYNFLOX Central Licensing System
 

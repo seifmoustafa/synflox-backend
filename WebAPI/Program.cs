@@ -76,16 +76,22 @@ builder.Services.AddCorsConfigurationOptions();
 
 var app = builder.Build();
 
-var defaultCulture = CultureInfo.CurrentCulture.Name;
 var supportedCultures = new[] { "en", "ar" };
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(defaultCulture)
+    .SetDefaultCulture("en") // Default to English
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
-// Give priority to the Accept-Language header so the client can override
-// the server's culture. If the header is missing, the system culture is used.
-localizationOptions.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
+// Custom culture provider with priority order (2025 RESTful best practices):
+// 1. Accept-Language header (standard HTTP, RFC 7231) - MOST RESTFUL ⭐
+// 2. Custom header X-Language (explicit control) - RECOMMENDED for frontend apps
+// 3. Query parameter ?lang=ar (fallback for compatibility)
+// 
+// Headers are preferred over query parameters as they're semantically correct
+// and don't clutter URLs, especially for POST/PUT/DELETE requests.
+localizationOptions.RequestCultureProviders.Clear();
+localizationOptions.RequestCultureProviders.Insert(0, new WebAPI.Middlewares.CustomRequestCultureProvider());
+localizationOptions.RequestCultureProviders.Insert(1, new AcceptLanguageHeaderRequestCultureProvider());
 
 // Configure the HTTP request pipeline.
 #region Middleware pipeline

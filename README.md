@@ -802,4 +802,4 @@ For issues, questions, or contributions, please refer to the project repository.
 
 **SYNFLOX** - Central Licensing System for Enterprise Products  
 **Version**: 1.0  
-**Last Updated**: 2024
+**Last Updated**: 2025
