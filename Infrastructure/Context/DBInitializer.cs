@@ -99,8 +99,8 @@ namespace Infrastructure.Context
                     {
                         Id = Guid.NewGuid(),
                         Name = "nav.Admins",
-                        Href = "/admin/admins",
-                        Icon = "user-shield",
+                        Href = "/admins",
+                        Icon = "UserShield",
                         Order = 1,
                         ParentMenuItemsId = systemParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
@@ -110,8 +110,8 @@ namespace Infrastructure.Context
                     {
                         Id = Guid.NewGuid(),
                         Name = "nav.AdminTypes",
-                        Href = "/admin/types",
-                        Icon = "user-tag",
+                        Href = "/admin-types",
+                        Icon = "UserTag",
                         Order = 2,
                         ParentMenuItemsId = systemParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
