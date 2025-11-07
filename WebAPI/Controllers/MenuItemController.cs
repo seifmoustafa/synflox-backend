@@ -33,10 +33,16 @@ public class MenuItemsController : ControllerBase
     /// </summary>
     [HttpGet]
     [Authorize]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true, Duration = 0)]
     public async Task<IActionResult> GetMenuItemss()
     {
         try
         {
+            // Disable caching for this endpoint - response varies by user type
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+            
             var result = await _MenuItemsService.GetMenuItemssAsync();
             return Ok(new ApiResponse<MenuItemssResponseDto>(200, _localizer["MenuItems.Success"], result));
         }

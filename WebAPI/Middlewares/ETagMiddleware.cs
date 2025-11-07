@@ -50,6 +50,14 @@ public class ETagMiddleware : IMiddleware
     {
         var cacheKey = context.Request.Path + context.Request.QueryString;
 
+        // Skip ETag caching for menu items endpoint - response varies by AdminTypeName
+        if (context.Request.Path.StartsWithSegments("/api/menuitems", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/api/menuitem", StringComparison.OrdinalIgnoreCase))
+        {
+            await next(context);
+            return;
+        }
+
         if (!HttpMethods.IsGet(context.Request.Method))
         {
             await next(context);
@@ -108,6 +116,16 @@ public class ETagMiddleware : IMiddleware
         context.Response.Body = ms;
 
         await next(context);
+
+        // Skip caching if response has no-cache headers
+        var cacheControl = context.Response.Headers[HeaderNames.CacheControl].ToString();
+        if (cacheControl.Contains("no-cache") || cacheControl.Contains("no-store"))
+        {
+            var bodyBytes = ms.ToArray();
+            await originalBody.WriteAsync(bodyBytes, 0, bodyBytes.Length);
+            context.Response.Body = originalBody;
+            return;
+        }
 
         if (IsCacheable(context))
         {
