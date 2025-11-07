@@ -171,4 +171,10 @@
   <data name="Dashboard.EndpointsRetrieved" xml:space="preserve">
     <value>Endpoints retrieved successfully</value>
   </data>
+  <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
+    <value>Statistics retrieved successfully</value>
+  </data>
+  <data name="Dashboard.OverviewRetrieved" xml:space="preserve">
+    <value>Dashboard overview retrieved successfully</value>
+  </data>
 </root>

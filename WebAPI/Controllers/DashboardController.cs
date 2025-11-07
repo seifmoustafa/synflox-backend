@@ -40,5 +40,41 @@ public class DashboardController : ControllerBase
             return StatusCode(500, new ApiResponse<string>(500, ex.Message));
         }
     }
+
+    /// <summary>
+    /// Gets system-wide statistics for the dashboard
+    /// </summary>
+    /// <returns>System statistics including counts and license status breakdown</returns>
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetSystemStatistics()
+    {
+        try
+        {
+            var result = await _dashboardService.GetSystemStatisticsAsync();
+            return Ok(new ApiResponse<SystemStatisticsDto>(200, _localizer["Dashboard.StatisticsRetrieved"], result));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Gets complete dashboard overview (statistics + endpoints)
+    /// </summary>
+    /// <returns>Complete dashboard data</returns>
+    [HttpGet("overview")]
+    public async Task<IActionResult> GetDashboardOverview()
+    {
+        try
+        {
+            var result = await _dashboardService.GetDashboardOverviewAsync();
+            return Ok(new ApiResponse<DashboardOverviewDto>(200, _localizer["Dashboard.OverviewRetrieved"], result));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
+        }
+    }
 }
 

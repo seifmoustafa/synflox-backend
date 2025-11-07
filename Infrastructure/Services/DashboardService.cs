@@ -1,7 +1,12 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using Application.DTOs.Dashboard;
 using Application.Services;
+using Domain.Entities.Authentication;
+using Domain.Entities.Licensing;
+using Domain.Enums;
+using Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -17,13 +22,22 @@ public class DashboardService : IDashboardService
 {
     private readonly IActionDescriptorCollectionProvider _actionDescriptorCollectionProvider;
     private readonly EndpointDataSource _endpointDataSource;
+    private readonly ICompanyRepository _companyRepository;
+    private readonly IAdminRepository _adminRepository;
+    private readonly IBaseRepository<Guid, AdminType> _adminTypeRepository;
 
     public DashboardService(
         IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
-        EndpointDataSource endpointDataSource)
+        EndpointDataSource endpointDataSource,
+        ICompanyRepository companyRepository,
+        IAdminRepository adminRepository,
+        IBaseRepository<Guid, AdminType> adminTypeRepository)
     {
         _actionDescriptorCollectionProvider = actionDescriptorCollectionProvider;
         _endpointDataSource = endpointDataSource;
+        _companyRepository = companyRepository;
+        _adminRepository = adminRepository;
+        _adminTypeRepository = adminTypeRepository;
     }
 
     public Task<DashboardResponseDto> GetAllEndpointsAsync()
@@ -225,6 +239,118 @@ public class DashboardService : IDashboardService
         }
 
         return endpointInfo;
+    }
+
+    public async Task<SystemStatisticsDto> GetSystemStatisticsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var thirtyDaysFromNow = now.AddDays(30);
+        var sevenDaysAgo = now.AddDays(-7);
+
+        // Get all companies for status calculation
+        var allCompanies = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = allCompanies.Item1.Cast<Company>().ToList();
+
+        // Calculate license status breakdown
+        var activeCount = 0;
+        var expiredCount = 0;
+        var suspendedCount = 0;
+        var expiringSoonCount = 0;
+        var recentlyCreatedCompanies = 0;
+
+        foreach (var company in companies)
+        {
+            var status = CalculateLicenseStatus(company);
+            switch (status)
+            {
+                case LicenseStatus.Active:
+                    activeCount++;
+                    break;
+                case LicenseStatus.Expired:
+                    expiredCount++;
+                    break;
+                case LicenseStatus.Suspended:
+                    suspendedCount++;
+                    break;
+            }
+
+            // Check if expiring soon (within 30 days)
+            if (company.ExpiryDate.HasValue && 
+                company.ExpiryDate.Value >= now && 
+                company.ExpiryDate.Value <= thirtyDaysFromNow)
+            {
+                expiringSoonCount++;
+            }
+
+            // Check if recently created (last 7 days)
+            if (company.CreatedTimestamp >= sevenDaysAgo)
+            {
+                recentlyCreatedCompanies++;
+            }
+        }
+
+        // Get admin statistics
+        var allAdmins = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
+        var admins = allAdmins.Item1.Cast<Admin>().ToList();
+        
+        var activeAdmins = admins.Count(a => a.IsActive);
+        var inactiveAdmins = admins.Count(a => !a.IsActive);
+        var recentlyCreatedAdmins = admins.Count(a => a.CreatedTimestamp >= sevenDaysAgo);
+
+        // Get admin types count
+        var adminTypesCount = await _adminTypeRepository.Count();
+
+        return new SystemStatisticsDto
+        {
+            TotalCompanies = companies.Count,
+            TotalAdmins = admins.Count,
+            TotalAdminTypes = adminTypesCount,
+            LicenseStatusStats = new LicenseStatusStatsDto
+            {
+                Active = activeCount,
+                Expired = expiredCount,
+                Suspended = suspendedCount
+            },
+            ActiveAdmins = activeAdmins,
+            InactiveAdmins = inactiveAdmins,
+            CompaniesExpiringSoon = expiringSoonCount,
+            RecentlyCreatedCompanies = recentlyCreatedCompanies,
+            RecentlyCreatedAdmins = recentlyCreatedAdmins
+        };
+    }
+
+    public async Task<DashboardOverviewDto> GetDashboardOverviewAsync()
+    {
+        var statisticsTask = GetSystemStatisticsAsync();
+        var endpointsTask = GetAllEndpointsAsync();
+
+        await Task.WhenAll(statisticsTask, endpointsTask);
+
+        return new DashboardOverviewDto
+        {
+            Statistics = await statisticsTask,
+            Endpoints = await endpointsTask
+        };
+    }
+
+    private LicenseStatus CalculateLicenseStatus(Company company)
+    {
+        var now = DateTime.UtcNow;
+
+        // Expired takes precedence - if expiry date has passed, it's expired
+        if (company.ExpiryDate.HasValue && company.ExpiryDate.Value < now)
+        {
+            return LicenseStatus.Expired;
+        }
+
+        // If not active, it's suspended
+        if (!company.IsActive)
+        {
+            return LicenseStatus.Suspended;
+        }
+
+        // Otherwise, it's active
+        return LicenseStatus.Active;
     }
 }
 

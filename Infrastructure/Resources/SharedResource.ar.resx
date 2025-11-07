@@ -171,4 +171,10 @@
   <data name="Dashboard.EndpointsRetrieved" xml:space="preserve">
     <value>تم استرجاع نقاط النهاية بنجاح</value>
   </data>
+  <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
+    <value>تم استرجاع الإحصائيات بنجاح</value>
+  </data>
+  <data name="Dashboard.OverviewRetrieved" xml:space="preserve">
+    <value>تم استرجاع نظرة عامة على لوحة التحكم بنجاح</value>
+  </data>
 </root>
