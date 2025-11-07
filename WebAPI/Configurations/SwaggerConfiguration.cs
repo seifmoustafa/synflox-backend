@@ -11,9 +11,9 @@ namespace WebAPI.Configurations
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = ".Net Login Project Clean Architecture Api",
+                    Title = "SYNFLOX Api",
                     Version = "v1",
-                    Description = "API for .Net Login Project Clean Architecture App"
+                    Description = "API for SYNFLOX App"
                 });
 
                 options.EnableAnnotations();
