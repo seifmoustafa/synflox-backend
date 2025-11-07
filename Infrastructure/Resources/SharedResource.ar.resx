@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="PhoneTaken" xml:space="preserve">
+    <value>رقم الهاتف مستخدم بالفعل</value>
+  </data>
+  <data name="EmailTaken" xml:space="preserve">
+    <value>البريد الإلكتروني مستخدم بالفعل</value>
+  </data>
+  <data name="UsernameTaken" xml:space="preserve">
+    <value>اسم المستخدم مستخدم بالفعل</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>بيانات الاعتماد غير صحيحة</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>المستخدم غير موجود</value>
+  </data>
+  <data name="InvalidCurrentPassword" xml:space="preserve">
+    <value>كلمة المرور الحالية غير صحيحة</value>
+  </data>
+  <data name="InvalidAdminCredentials" xml:space="preserve">
+    <value>اسم المستخدم أو كلمة المرور غير صحيحة</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>غير مصرح</value>
+  </data>
+  <data name="UnexpectedError" xml:space="preserve">
+    <value>حدث خطأ غير متوقع</value>
+  </data>
+  <data name="ExternalLoginInvalid" xml:space="preserve">
+    <value>بيانات تسجيل الدخول الخارجية غير صالحة</value>
+  </data>
+  <data name="ExternalProviderUnsupported" xml:space="preserve">
+    <value>موفر تسجيل الدخول غير مدعوم</value>
+  </data>
+  <data name="TargetNotAdmin" xml:space="preserve">
+    <value>المستخدم المستهدف ليس مسؤولاً</value>
+  </data>
+  <data name="SmtpCredentialsMissing" xml:space="preserve">
+    <value>بيانات SMTP غير موجودة. تأكد من ضبط EmailSettings__User و EmailSettings__Pass.</value>
+  </data>
+  <data name="JwtSettingsMissing" xml:space="preserve">
+    <value>إعدادات Jwt مفقودة</value>
+  </data>
+  <data name="DbConnectionMissing" xml:space="preserve">
+    <value>سلسلة اتصال قاعدة البيانات مفقودة</value>
+  </data>
+  <data name="OtpSubject" xml:space="preserve">
+    <value>رمز التحقق</value>
+  </data>
+  <data name="OtpBody" xml:space="preserve">
+    <value>رمز التحقق الخاص بك هو {0}</value>
+  </data>
+  <data name="OtpThrottled" xml:space="preserve">
+    <value>تم إرسال العديد من الطلبات. حاول مرة أخرى بعد {0} ثانية.</value>
+  </data>
+  <data name="UserAlreadyVerified" xml:space="preserve">
+    <value>المستخدم تم التحقق منه بالفعل</value>
+  </data>
+  <data name="PhoneNumberMissing" xml:space="preserve">
+    <value>رقم الهاتف غير متوفر</value>
+  </data>
+  <data name="SmsSendFailed" xml:space="preserve">
+    <value>فشل إرسال الرسالة النصية</value>
+  </data>
+  <data name="AccountDeactivated" xml:space="preserve">
+    <value>الحساب غير مفعل</value>
+  </data>
+  <data name="UserNotVerified" xml:space="preserve">
+    <value>المستخدم غير مُوثَّق</value>
+  </data>
+  <data name="FileExtensionNotAllowed" xml:space="preserve">
+    <value>امتداد الملف '{0}' غير مسموح.</value>
+  </data>
+  <data name="FileTooLarge" xml:space="preserve">
+    <value>حجم الملف يتجاوز الحد الأقصى {0} ميغابايت.</value>
+  </data>
+  <data name="InvalidOtp" xml:space="preserve">
+    <value>رمز غير صالح أو منتهي الصلاحية</value>
+  </data>
+</root>

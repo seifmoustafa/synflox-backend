@@ -1,0 +1,67 @@
+using System;
+using System.Net;
+using System.Net.Mail;
+using System.Threading.Tasks;
+using Application.Services;
+using Infrastructure.Configurations;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Infrastructure.Services;
+
+/// <summary>
+/// Sends email using the configured SMTP server. Connections use STARTTLS.
+/// </summary>
+public class SmtpEmailSender : IEmailSender
+{
+    private readonly EmailSettings _settings;
+    private readonly ILocalizationService _localizer;
+
+    public SmtpEmailSender(IOptions<EmailSettings> options, ILocalizationService localizer)
+    {
+        _settings = options.Value;
+        _localizer = localizer;
+    }
+
+    public async Task SendEmailAsync(string to, string subject, string body)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.User) || string.IsNullOrWhiteSpace(_settings.Pass))
+        {
+            throw new InvalidOperationException(_localizer["SmtpCredentialsMissing"]);
+        }
+        using var client = new SmtpClient(_settings.Host, _settings.Port)
+        {
+            Credentials = new NetworkCredential(_settings.User, _settings.Pass),
+            EnableSsl = true
+        };
+        client.DeliveryMethod = SmtpDeliveryMethod.Network;
+        client.UseDefaultCredentials = false;
+        var message = new MailMessage
+        {
+            From = new MailAddress(_settings.FromEmail, _settings.FromName),
+            Subject = subject,
+            Body = body
+        };
+        message.To.Add(to);
+        await client.SendMailAsync(message);
+    }
+}
+
+/// <summary>
+/// Development sender that simply writes emails to the log output.
+/// </summary>
+public class DevEmailSender : IEmailSender
+{
+    private readonly ILogger<DevEmailSender> _logger;
+
+    public DevEmailSender(ILogger<DevEmailSender> logger)
+    {
+        _logger = logger;
+    }
+
+    public Task SendEmailAsync(string to, string subject, string body)
+    {
+        _logger.LogInformation("Email to {to}: {subject}\n{body}", to, subject, body);
+        return Task.CompletedTask;
+    }
+}

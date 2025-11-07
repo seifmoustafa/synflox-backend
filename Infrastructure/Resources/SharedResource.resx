@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="PhoneTaken" xml:space="preserve">
+    <value>Phone number already taken</value>
+  </data>
+  <data name="EmailTaken" xml:space="preserve">
+    <value>Email already taken</value>
+  </data>
+  <data name="UsernameTaken" xml:space="preserve">
+    <value>Username already taken</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>Invalid credentials</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>User not found</value>
+  </data>
+  <data name="InvalidCurrentPassword" xml:space="preserve">
+    <value>Invalid current password</value>
+  </data>
+  <data name="InvalidAdminCredentials" xml:space="preserve">
+    <value>Invalid Username or Password</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>UnAuthorized</value>
+  </data>
+  <data name="UnexpectedError" xml:space="preserve">
+    <value>An unexpected error occurred.</value>
+  </data>
+  <data name="ExternalLoginInvalid" xml:space="preserve">
+    <value>Invalid external login data</value>
+  </data>
+  <data name="ExternalProviderUnsupported" xml:space="preserve">
+    <value>Unsupported social login provider</value>
+  </data>
+  <data name="TargetNotAdmin" xml:space="preserve">
+    <value>Target user is not an admin</value>
+  </data>
+  <data name="SmtpCredentialsMissing" xml:space="preserve">
+    <value>SMTP credentials are missing. Ensure EmailSettings__User and EmailSettings__Pass are configured.</value>
+  </data>
+  <data name="JwtSettingsMissing" xml:space="preserve">
+    <value>JwtSettings section is missing</value>
+  </data>
+  <data name="DbConnectionMissing" xml:space="preserve">
+    <value>Database connection string is missing</value>
+  </data>
+  <data name="OtpSubject" xml:space="preserve">
+    <value>OTP Code</value>
+  </data>
+  <data name="OtpBody" xml:space="preserve">
+    <value>Your verification code is {0}</value>
+  </data>
+  <data name="OtpThrottled" xml:space="preserve">
+    <value>Too many OTP requests. Please try again in {0} seconds.</value>
+  </data>
+  <data name="UserAlreadyVerified" xml:space="preserve">
+    <value>User already verified</value>
+  </data>
+  <data name="PhoneNumberMissing" xml:space="preserve">
+    <value>Phone number not provided</value>
+  </data>
+  <data name="SmsSendFailed" xml:space="preserve">
+    <value>Failed to send SMS</value>
+  </data>
+  <data name="AccountDeactivated" xml:space="preserve">
+    <value>Account is deactivated</value>
+  </data>
+  <data name="UserNotVerified" xml:space="preserve">
+    <value>User not verified</value>
+  </data>
+  <data name="FileExtensionNotAllowed" xml:space="preserve">
+    <value>File extension '{0}' is not allowed.</value>
+  </data>
+  <data name="FileTooLarge" xml:space="preserve">
+    <value>File exceeds the maximum size of {0} MB.</value>
+  </data>
+  <data name="InvalidOtp" xml:space="preserve">
+    <value>Invalid or expired code</value>
+  </data>
+</root>
