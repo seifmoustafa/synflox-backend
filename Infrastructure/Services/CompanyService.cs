@@ -19,17 +19,20 @@ public class CompanyService : ICompanyService
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
 
     public CompanyService(
         ICompanyRepository repository,
         IMapper mapper,
         ILocalizationService localizer,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService)
     {
         _repository = repository;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
     }
 
     public async Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto)
@@ -45,7 +48,9 @@ public class CompanyService : ICompanyService
         var created = await _repository.AddAsync(company);
         await _unitOfWork.SaveChangesAsync();
 
-        return _mapper.Map<CompanyDto>(created);
+        var result = _mapper.Map<CompanyDto>(created);
+        SetLicenseKeyIfSuperAdmin(result, created);
+        return result;
     }
 
     public async Task<(IEnumerable<CompanyDto> Companies, PaginationMetadata Meta)> GetAllCompaniesAsync(
@@ -62,14 +67,24 @@ public class CompanyService : ICompanyService
         };
 
         var (entities, meta) = await _repository.GetAllAsync(
-            null,
-            page,
-            pageSize,
-            search,
-            default,
-            searchColumns);
+            includes: null,
+            pageNumber: page,
+            pageSize: pageSize,
+            search: search,
+            cancellationToken: default,
+            searchColumns: searchColumns);
 
-        var dtos = _mapper.Map<IEnumerable<CompanyDto>>(entities);
+        var companyList = entities.ToList();
+        var dtos = new List<CompanyDto>();
+        
+        // Map each company and conditionally set LicenseKey based on user role
+        foreach (var company in companyList)
+        {
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            dtos.Add(dto);
+        }
+        
         return (dtos, meta);
     }
 
@@ -77,7 +92,9 @@ public class CompanyService : ICompanyService
     {
         var company = await _repository.GetByIdAsync(id, null);
         if (company == null) return null;
-        return _mapper.Map<CompanyDto>(company);
+        var dto = _mapper.Map<CompanyDto>(company);
+        SetLicenseKeyIfSuperAdmin(dto, company);
+        return dto;
     }
 
     public async Task<CompanyDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto)
@@ -102,7 +119,9 @@ public class CompanyService : ICompanyService
         await _repository.UpdateAsync(company);
         await _unitOfWork.SaveChangesAsync();
 
-        return _mapper.Map<CompanyDto>(company);
+        var result = _mapper.Map<CompanyDto>(company);
+        SetLicenseKeyIfSuperAdmin(result, company);
+        return result;
     }
 
     public async Task<bool> DeleteCompanyAsync(Guid id)
@@ -116,6 +135,17 @@ public class CompanyService : ICompanyService
         await _repository.DeleteAsync(id);
         await _unitOfWork.SaveChangesAsync();
         return true;
+    }
+
+    /// <summary>
+    /// Sets LicenseKey in the DTO only if the current user is SuperAdmin.
+    /// </summary>
+    private void SetLicenseKeyIfSuperAdmin(CompanyDto dto, Company company)
+    {
+        if (_currentUserService.AdminTypeName == "SuperAdmin")
+        {
+            dto.LicenseKey = company.LicenseKey;
+        }
     }
 }
 

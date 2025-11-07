@@ -28,6 +28,7 @@ namespace Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly LicenseKeySettings _licenseKeySettings;
         private readonly IIdEncryptionService _idEncryption;
+        private readonly ICurrentUserService _currentUserService;
 
         public LicensingService(
             ICompanyRepository repository,
@@ -36,7 +37,8 @@ namespace Infrastructure.Services
             ILocalizationService localizer,
             IUnitOfWork unitOfWork,
             IOptions<LicenseKeySettings> licenseKeySettings,
-            IIdEncryptionService idEncryption)
+            IIdEncryptionService idEncryption,
+            ICurrentUserService currentUserService)
         {
             _repository = repository;
             _companyService = companyService;
@@ -45,6 +47,7 @@ namespace Infrastructure.Services
             _unitOfWork = unitOfWork;
             _licenseKeySettings = licenseKeySettings.Value;
             _idEncryption = idEncryption;
+            _currentUserService = currentUserService;
         }
 
         public async Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate)
@@ -70,7 +73,9 @@ namespace Infrastructure.Services
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<CompanyDto>(company);
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            return dto;
         }
 
         public async Task<CompanyDto> SuspendCompanyAsync(Guid id)
@@ -90,7 +95,9 @@ namespace Infrastructure.Services
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<CompanyDto>(company);
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            return dto;
         }
 
         public async Task<CompanyDto> ResumeCompanyAsync(Guid id)
@@ -110,7 +117,9 @@ namespace Infrastructure.Services
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<CompanyDto>(company);
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            return dto;
         }
 
         public async Task<CompanyDto> ExtendCompanyAsync(Guid id, DateTime newExpiryDate)
@@ -130,7 +139,9 @@ namespace Infrastructure.Services
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<CompanyDto>(company);
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            return dto;
         }
 
         public async Task<CompanyStatusResponse> CheckCompanyStatusAsync(Guid id)
@@ -364,6 +375,17 @@ namespace Infrastructure.Services
             catch
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Sets LicenseKey in the DTO only if the current user is SuperAdmin.
+        /// </summary>
+        private void SetLicenseKeyIfSuperAdmin(CompanyDto dto, Company company)
+        {
+            if (_currentUserService.AdminTypeName == "SuperAdmin")
+            {
+                dto.LicenseKey = company.LicenseKey;
             }
         }
 

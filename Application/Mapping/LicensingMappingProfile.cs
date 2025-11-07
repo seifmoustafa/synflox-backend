@@ -10,7 +10,8 @@ public class LicensingMappingProfile : Profile
     {
         CreateMap<Company, CompanyDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.LicenseKey, opt => opt.Ignore()); // Set manually based on user role
 
         CreateMap<CreateCompanyDto, Company>()
             .ForMember(d => d.Id, opt => opt.Ignore())
