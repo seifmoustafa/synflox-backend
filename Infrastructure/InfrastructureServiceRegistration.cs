@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Hosting;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,20 +114,42 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
-        // Configure distributed cache (Redis) if connection string provided, otherwise use memory cache
+        // Configure distributed cache (Redis) if connection string provided and Redis is available
+        // Otherwise, fallback to in-memory distributed cache
         var cacheConnectionString = configuration.GetConnectionString("RedisConnection");
-        if (!string.IsNullOrEmpty(cacheConnectionString))
+        var useRedis = configuration.GetValue<bool>("CacheSettings:UseRedis", false);
+        
+        if (!string.IsNullOrEmpty(cacheConnectionString) && useRedis)
         {
-            services.AddStackExchangeRedisCache(options =>
+            try
             {
-                options.Configuration = cacheConnectionString;
-                var instanceName = configuration["CacheSettings:InstanceName"] ?? "TemplateApp";
-                options.InstanceName = instanceName;
-            });
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = cacheConnectionString;
+                    var instanceName = configuration["CacheSettings:InstanceName"] ?? "SYNFLOX";
+                    options.InstanceName = instanceName;
+                    // Increase timeout to prevent quick failures
+                    options.ConfigurationOptions = new StackExchange.Redis.ConfigurationOptions
+                    {
+                        ConnectTimeout = 2000, // 2 seconds
+                        SyncTimeout = 2000,
+                        AbortOnConnectFail = false, // Don't fail if Redis is unavailable
+                    };
+                });
+            }
+            catch
+            {
+                // If Redis configuration fails, fallback to in-memory distributed cache
+                services.AddDistributedMemoryCache();
+                services.AddMemoryCache();
+            }
         }
         else
         {
-            // Fallback to in-memory cache if Redis not configured
+            // Use in-memory distributed cache (default for development)
+            // This provides IDistributedCache implementation using memory
+            services.AddDistributedMemoryCache();
+            // Also register IMemoryCache for other services that might need it
             services.AddMemoryCache();
         }
         
