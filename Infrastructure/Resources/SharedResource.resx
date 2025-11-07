@@ -177,4 +177,31 @@
   <data name="Dashboard.OverviewRetrieved" xml:space="preserve">
     <value>Dashboard overview retrieved successfully</value>
   </data>
+  <data name="MenuItems.Success" xml:space="preserve">
+    <value>Menu items retrieved successfully</value>
+  </data>
+  <data name="MenuItems.Created" xml:space="preserve">
+    <value>Menu item created successfully</value>
+  </data>
+  <data name="MenuItems.Updated" xml:space="preserve">
+    <value>Menu item updated successfully</value>
+  </data>
+  <data name="MenuItems.Deleted" xml:space="preserve">
+    <value>Menu item deleted successfully</value>
+  </data>
+  <data name="MenuItems.NotFound" xml:space="preserve">
+    <value>Menu item not found</value>
+  </data>
+  <data name="MenuItems.ParentNotFound" xml:space="preserve">
+    <value>Parent menu item not found</value>
+  </data>
+  <data name="MenuItems.InvalidParentId" xml:space="preserve">
+    <value>Invalid parent menu item ID</value>
+  </data>
+  <data name="MenuItems.CircularReference" xml:space="preserve">
+    <value>Cannot set parent menu item: would create a circular reference</value>
+  </data>
+  <data name="MenuItems.HasChildren" xml:space="preserve">
+    <value>Cannot delete menu item: it has child menu items</value>
+  </data>
 </root>

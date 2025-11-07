@@ -6,4 +6,5 @@ public interface IIdEncryptionService
 {
     Guid Encrypt(Guid id);
     Guid Decrypt(Guid encryptedId);
+    Guid Decrypt(string encryptedId);
 }

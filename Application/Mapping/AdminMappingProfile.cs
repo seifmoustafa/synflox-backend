@@ -12,6 +12,8 @@ public class AdminMappingProfile : Profile
         CreateMap<Admin, AdminDto>()
             .ForMember(d => d.Id,
                 opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.AdminTypeId,
+                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.AdminTypeId))
             .ForMember(d => d.AdminTypeName,
                 opt => opt.MapFrom(s => s.AdminType.AdminTypeName));
 

@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Application.Services;
 using Domain.Entities.Authentication;
+using Domain.Entities.Navigation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -55,12 +57,90 @@ namespace Infrastructure.Context
                     Username = "superadmin",
                     Password = services.GetRequiredService<IPasswordHasher>().HashPassword("password"),
                     Notes = "Super System Admin",
-                    AdminTypeId = superAdminUserType.Id
+                    AdminTypeId = superAdminUserType.Id,
                 };
                 await dbContext.Admins.AddAsync(user);
                 await dbContext.SaveChangesAsync();
             }
-            //TODO: SEED Other tables
+
+            // Seed Menu Items
+            if (dbContext.MenuItems.Count() == 0)
+            {
+                var MenuItems = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.System",
+                        Href = null, // Parent item, no direct route
+                        Icon = "settings",
+                        Order = 1,
+                        ParentMenuItemsId = null,
+                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.Subscribers",
+                        Href = null, // Parent item, no direct route
+                        Icon = "users",
+                        Order = 2,
+                        ParentMenuItemsId = null,
+                        IsActive = true,
+                    },
+                };
+
+                // Add child menu items for System
+                var systemParent = MenuItems.First(m => m.Name == "nav.System");
+                var systemChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.Admins",
+                        Href = "/admin/admins",
+                        Icon = "user-shield",
+                        Order = 1,
+                        ParentMenuItemsId = systemParent.Id,
+                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.AdminTypes",
+                        Href = "/admin/types",
+                        Icon = "user-tag",
+                        Order = 2,
+                        ParentMenuItemsId = systemParent.Id,
+                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                        IsActive = true,
+                    },
+                };
+
+                // Add child menu items for Subscribers
+                var subscribersParent = MenuItems.First(m => m.Name == "nav.Subscribers");
+                var subscribersChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.Companies",
+                        Href = "/companies",
+                        Icon = "building",
+                        Order = 1,
+                        ParentMenuItemsId = subscribersParent.Id,
+                        IsActive = true,
+                    },
+                };
+
+                // Add all menu items to context
+                await dbContext.MenuItems.AddRangeAsync(MenuItems);
+                await dbContext.MenuItems.AddRangeAsync(systemChildren);
+                await dbContext.MenuItems.AddRangeAsync(subscribersChildren);
+                await dbContext.SaveChangesAsync();
+            }
         }
     }
 }

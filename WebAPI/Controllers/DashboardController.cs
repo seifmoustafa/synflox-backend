@@ -11,7 +11,7 @@ namespace WebAPI.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Policy = "SuperAdminOnly")]
+[Authorize(Policy = "AdminOrSuperAdmin")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;

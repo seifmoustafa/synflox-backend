@@ -46,5 +46,20 @@ namespace Infrastructure.Services
             var decrypted = decryptor.TransformFinalBlock(bytes, 0, bytes.Length);
             return new Guid(decrypted);
         }
+
+        public Guid Decrypt(string encryptedId)
+        {
+            if (string.IsNullOrWhiteSpace(encryptedId))
+            {
+                throw new ArgumentException("Encrypted ID cannot be null or empty.", nameof(encryptedId));
+            }
+
+            if (!Guid.TryParse(encryptedId, out var encryptedGuid))
+            {
+                throw new ArgumentException("Invalid encrypted ID format.", nameof(encryptedId));
+            }
+
+            return Decrypt(encryptedGuid);
+        }
     }
 }

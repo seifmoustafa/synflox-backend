@@ -110,6 +110,7 @@ public static class InfrastructureServiceRegistration
         // register AutoMapper using profiles defined in the Application layer
         services.AddAutoMapper(typeof(Application.Mapping.AdminMappingProfile).Assembly);
         services.AddAutoMapper(typeof(Application.Mapping.LicensingMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.MenuItemsMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -161,6 +162,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<ILicensingService, LicensingService>();
+        services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IFileService, FileService>();
@@ -201,6 +203,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IAdminTypeRepository, AdminTypeRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<IMenuItemsRepository, MenuItemsRepository>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

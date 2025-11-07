@@ -177,4 +177,31 @@
   <data name="Dashboard.OverviewRetrieved" xml:space="preserve">
     <value>تم استرجاع نظرة عامة على لوحة التحكم بنجاح</value>
   </data>
+  <data name="MenuItems.Success" xml:space="preserve">
+    <value>تم استرجاع عناصر القائمة بنجاح</value>
+  </data>
+  <data name="MenuItems.Created" xml:space="preserve">
+    <value>تم إنشاء عنصر القائمة بنجاح</value>
+  </data>
+  <data name="MenuItems.Updated" xml:space="preserve">
+    <value>تم تحديث عنصر القائمة بنجاح</value>
+  </data>
+  <data name="MenuItems.Deleted" xml:space="preserve">
+    <value>تم حذف عنصر القائمة بنجاح</value>
+  </data>
+  <data name="MenuItems.NotFound" xml:space="preserve">
+    <value>عنصر القائمة غير موجود</value>
+  </data>
+  <data name="MenuItems.ParentNotFound" xml:space="preserve">
+    <value>عنصر القائمة الأب غير موجود</value>
+  </data>
+  <data name="MenuItems.InvalidParentId" xml:space="preserve">
+    <value>معرف عنصر القائمة الأب غير صالح</value>
+  </data>
+  <data name="MenuItems.CircularReference" xml:space="preserve">
+    <value>لا يمكن تعيين عنصر القائمة الأب: سيؤدي إلى إنشاء مرجع دائري</value>
+  </data>
+  <data name="MenuItems.HasChildren" xml:space="preserve">
+    <value>لا يمكن حذف عنصر القائمة: لديه عناصر قائمة فرعية</value>
+  </data>
 </root>

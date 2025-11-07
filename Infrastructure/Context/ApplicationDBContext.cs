@@ -7,6 +7,7 @@ using Domain.Entities;
 using Domain.Entities.Authentication;
 using Domain.Entities.Common;
 using Domain.Entities.Licensing;
+using Domain.Entities.Navigation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -29,6 +30,10 @@ namespace Infrastructure.Context
 
         #region Licensing
         public DbSet<Company> Companies { get; set; }
+        #endregion
+
+        #region Navigation
+        public DbSet<Domain.Entities.Navigation.MenuItems> MenuItems { get; set; }
         #endregion
 
         #region References

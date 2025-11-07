@@ -10,7 +10,7 @@ namespace WebAPI.Controllers;
 
 [ApiController]
 [Route("api/companies")]
-[Authorize(Policy = "SuperAdminOnly")]
+[Authorize(Policy = "AdminOrSuperAdmin")]
 public class CompanyController : ControllerBase
 {
     private readonly ICompanyService _companyService;
@@ -28,6 +28,7 @@ public class CompanyController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyDto request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -65,6 +66,7 @@ public class CompanyController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyDto request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -87,6 +89,7 @@ public class CompanyController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> DeleteCompany(Guid id)
     {
         try
