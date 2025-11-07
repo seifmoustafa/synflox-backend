@@ -1,4 +1,6 @@
-﻿namespace WebAPI.Configurations
+﻿using System.Linq;
+
+namespace WebAPI.Configurations
 {
     public static class CorsConfiguration
     {
@@ -16,7 +18,7 @@
                 "http://localhost:5001",
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:5173",
-                "https://synflox-frontend.vercel.app"
+                "https://synflox-frontend.vercel.app",
             };
 
             services.AddCors(options =>
