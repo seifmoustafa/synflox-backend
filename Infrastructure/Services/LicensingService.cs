@@ -22,6 +22,7 @@ namespace Infrastructure.Services
     public class LicensingService : ILicensingService
     {
         private readonly ICompanyRepository _repository;
+        private readonly ICompanyService _companyService;
         private readonly IMapper _mapper;
         private readonly ILocalizationService _localizer;
         private readonly IUnitOfWork _unitOfWork;
@@ -30,6 +31,7 @@ namespace Infrastructure.Services
 
         public LicensingService(
             ICompanyRepository repository,
+            ICompanyService companyService,
             IMapper mapper,
             ILocalizationService localizer,
             IUnitOfWork unitOfWork,
@@ -37,97 +39,12 @@ namespace Infrastructure.Services
             IIdEncryptionService idEncryption)
         {
             _repository = repository;
+            _companyService = companyService;
             _mapper = mapper;
             _localizer = localizer;
             _unitOfWork = unitOfWork;
             _licenseKeySettings = licenseKeySettings.Value;
             _idEncryption = idEncryption;
-        }
-
-        public async Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto)
-        {
-            // Check if company name already exists
-            var existing = await _repository.GetByNameAsync(dto.Name);
-            if (existing != null)
-            {
-                throw new BadRequestException(_localizer["Licensing.CompanyNameExists"]);
-            }
-
-            var company = _mapper.Map<Company>(dto);
-            var created = await _repository.AddAsync(company);
-            await _unitOfWork.SaveChangesAsync();
-
-            return _mapper.Map<CompanyDto>(created);
-        }
-
-        public async Task<(IEnumerable<CompanyDto> Companies, PaginationMetadata Meta)> GetAllCompaniesAsync(
-            int page = 1,
-            int pageSize = 10,
-            string? search = null)
-        {
-            Expression<Func<Company, object?>>[] searchColumns = 
-            {
-                c => c.Name,
-                c => c.ContactEmail,
-                c => c.ContactPhone,
-                c => c.Address
-            };
-
-            var (entities, meta) = await _repository.GetAllAsync(
-                null,
-                page,
-                pageSize,
-                search,
-                default,
-                searchColumns);
-
-            var dtos = _mapper.Map<IEnumerable<CompanyDto>>(entities);
-            return (dtos, meta);
-        }
-
-        public async Task<CompanyDto?> GetCompanyByIdAsync(Guid id)
-        {
-            var company = await _repository.GetByIdAsync(id, null);
-            if (company == null) return null;
-            return _mapper.Map<CompanyDto>(company);
-        }
-
-        public async Task<CompanyDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto)
-        {
-            var company = await _repository.GetByIdAsync(id, null);
-            if (company == null)
-            {
-                throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
-            }
-
-            // Check name uniqueness if name is being updated
-            if (!string.IsNullOrEmpty(dto.Name) && dto.Name != company.Name)
-            {
-                var existing = await _repository.GetByNameAsync(dto.Name);
-                if (existing != null && existing.Id != id)
-                {
-                    throw new BadRequestException(_localizer["Licensing.CompanyNameExists"]);
-                }
-            }
-
-            _mapper.Map(dto, company);
-            await _repository.UpdateAsync(company);
-            await _unitOfWork.SaveChangesAsync();
-
-            return _mapper.Map<CompanyDto>(company);
-        }
-
-        public async Task<bool> DeleteCompanyAsync(Guid id)
-        {
-            var company = await _repository.GetByIdAsync(id, null);
-            if (company == null)
-            {
-                throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
-            }
-
-            await _repository.DeleteAsync(id);
-            await _unitOfWork.SaveChangesAsync();
-            return true;
         }
 
         public async Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate)
@@ -218,6 +135,7 @@ namespace Infrastructure.Services
 
         public async Task<CompanyStatusResponse> CheckCompanyStatusAsync(Guid id)
         {
+            // Get company entity for status calculation (need entity, not DTO)
             var company = await _repository.GetByIdAsync(id, null);
             if (company == null)
             {

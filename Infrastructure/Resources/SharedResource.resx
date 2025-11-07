@@ -90,6 +90,21 @@
   <data name="InvalidOtp" xml:space="preserve">
     <value>Invalid or expired code</value>
   </data>
+  <data name="Company.CompanyCreated" xml:space="preserve">
+    <value>Company created successfully</value>
+  </data>
+  <data name="Company.CompanyUpdated" xml:space="preserve">
+    <value>Company updated successfully</value>
+  </data>
+  <data name="Company.CompanyDeleted" xml:space="preserve">
+    <value>Company deleted successfully</value>
+  </data>
+  <data name="Company.CompanyNotFound" xml:space="preserve">
+    <value>Company not found</value>
+  </data>
+  <data name="Company.CompanyNameExists" xml:space="preserve">
+    <value>Company name already exists</value>
+  </data>
   <data name="Licensing.CompanyCreated" xml:space="preserve">
     <value>Company created successfully</value>
   </data>

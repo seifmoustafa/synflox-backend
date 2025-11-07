@@ -8,37 +8,11 @@ namespace Application.Services;
 
 /// <summary>
 /// Service interface for managing company licensing and subscriptions.
+/// This service handles only licensing operations (activate, suspend, extend, status, license keys).
+/// For company CRUD operations, use ICompanyService.
 /// </summary>
 public interface ILicensingService
 {
-    /// <summary>
-    /// Creates a new company.
-    /// </summary>
-    Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto);
-
-    /// <summary>
-    /// Gets all companies with pagination.
-    /// </summary>
-    Task<(IEnumerable<CompanyDto> Companies, PaginationMetadata Meta)> GetAllCompaniesAsync(
-        int page = 1, 
-        int pageSize = 10, 
-        string? search = null);
-
-    /// <summary>
-    /// Gets a company by ID.
-    /// </summary>
-    Task<CompanyDto?> GetCompanyByIdAsync(Guid id);
-
-    /// <summary>
-    /// Updates a company.
-    /// </summary>
-    Task<CompanyDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto);
-
-    /// <summary>
-    /// Deletes a company (soft delete).
-    /// </summary>
-    Task<bool> DeleteCompanyAsync(Guid id);
-
     /// <summary>
     /// Activates a company subscription with the specified expiry date.
     /// </summary>

@@ -90,6 +90,21 @@
   <data name="InvalidOtp" xml:space="preserve">
     <value>رمز غير صالح أو منتهي الصلاحية</value>
   </data>
+  <data name="Company.CompanyCreated" xml:space="preserve">
+    <value>تم إنشاء الشركة بنجاح</value>
+  </data>
+  <data name="Company.CompanyUpdated" xml:space="preserve">
+    <value>تم تحديث الشركة بنجاح</value>
+  </data>
+  <data name="Company.CompanyDeleted" xml:space="preserve">
+    <value>تم حذف الشركة بنجاح</value>
+  </data>
+  <data name="Company.CompanyNotFound" xml:space="preserve">
+    <value>الشركة غير موجودة</value>
+  </data>
+  <data name="Company.CompanyNameExists" xml:space="preserve">
+    <value>اسم الشركة موجود بالفعل</value>
+  </data>
   <data name="Licensing.CompanyCreated" xml:space="preserve">
     <value>تم إنشاء الشركة بنجاح</value>
   </data>
