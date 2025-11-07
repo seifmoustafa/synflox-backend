@@ -339,6 +339,27 @@ public class ETagMiddleware : IMiddleware
             }
         }
         
+        // Dashboard invalidation: When companies, admins, or licensing changes, invalidate dashboard
+        // Dashboard statistics depend on company and admin data
+        if (cachedBase.Equals("api/dashboard", StringComparison.OrdinalIgnoreCase))
+        {
+            // Invalidate dashboard when companies are modified
+            if (requestBase.Equals("api/companies", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            // Invalidate dashboard when licensing operations occur (affects statistics)
+            if (requestBase.Equals("api/licensing", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            // Invalidate dashboard when admins are modified
+            if (requestBase.Equals("api/admins", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            // Invalidate dashboard when admin types are modified
+            if (requestBase.Equals("api/admin-types", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        
         return false;
     }
 
