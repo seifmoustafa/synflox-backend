@@ -64,6 +64,75 @@ SYNFLOX/
     └── appsettings.json
 ```
 
+## SOLID Principles
+
+### Single Responsibility Principle (SRP)
+**CRITICAL**: Each class should have only ONE reason to change.
+
+#### ❌ WRONG - Violates SRP:
+```csharp
+// BAD: LicensingService handles both company management AND licensing
+public interface ILicensingService
+{
+    // Company Management (WRONG - should be in ICompanyService)
+    Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto);
+    Task<CompanyDto> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto);
+    
+    // Licensing Operations (CORRECT)
+    Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate);
+    Task<CompanyDto> SuspendCompanyAsync(Guid id);
+}
+```
+
+#### ✅ CORRECT - Follows SRP:
+```csharp
+// GOOD: Separate services for separate responsibilities
+public interface ICompanyService
+{
+    // Company Management ONLY
+    Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto);
+    Task<CompanyDto> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto);
+    Task<CompanyDto?> GetCompanyByIdAsync(Guid id);
+    Task<bool> DeleteCompanyAsync(Guid id);
+}
+
+public interface ILicensingService
+{
+    // Licensing Operations ONLY
+    Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate);
+    Task<CompanyDto> SuspendCompanyAsync(Guid id);
+    Task<CompanyStatusResponse> CheckCompanyStatusAsync(Guid id);
+    Task<string> GenerateLicenseKeyAsync(Guid companyId);
+    
+    // Can use ICompanyService to get company data
+}
+```
+
+### Separation of Concerns:
+- **Entity Management** (CRUD) → Separate Service/Controller
+- **Business Operations** (Activate, Suspend, etc.) → Separate Service/Controller
+- **Cross-cutting concerns** (License Keys, Status) → Can depend on entity service
+
+### Example Structure:
+```
+CompanyController + ICompanyService
+├── POST /api/companies - Create
+├── GET /api/companies - List
+├── GET /api/companies/{id} - Get
+├── PUT /api/companies/{id} - Update
+└── DELETE /api/companies/{id} - Delete
+
+LicensingController + ILicensingService
+├── PUT /api/licensing/{id}/activate - Activate
+├── PUT /api/licensing/{id}/suspend - Suspend
+├── PUT /api/licensing/{id}/resume - Resume
+├── PUT /api/licensing/{id}/extend - Extend
+├── GET /api/licensing/{id}/status - Status
+└── POST /api/licensing/{id}/license-key/generate - Generate Key
+```
+
+**Rule**: If a service handles both entity CRUD AND business operations, split it into two services.
+
 ## Rules for Creating New Features
 
 ### 1. Feature Implementation Checklist
@@ -291,6 +360,7 @@ catch (Exception ex)
 ## What NOT to Do
 
 ### ❌ DO NOT:
+- **Violate SRP**: Mix entity management (CRUD) with business operations in same service/controller
 - Create User entities or OTP features (removed from system)
 - Register email/SMS services (removed, not needed)
 - Add email/OTP configurations to appsettings.json
@@ -303,6 +373,7 @@ catch (Exception ex)
 - Create entities that don't extend AuditEntity
 - Forget to filter by `!IsDeleted` in queries
 - Forget to use `_unitOfWork.SaveChangesAsync()`
+- Put entity CRUD and business operations in the same service interface
 
 ## Example: Complete Feature Implementation
 
