@@ -16,20 +16,14 @@ namespace Infrastructure.Repositories
         {
         }
 
-        public async Task<RefreshToken?> GetByTokenAndUserId(Guid userId, string token)
-        {
-            return await _dbSet.FirstOrDefaultAsync(d => d.UserId == userId && d.Token == token && d.IsActive);
-        }
-
         public async Task<RefreshToken?> GetByTokenAndAdminId(Guid adminId, string token)
         {
             return await _dbSet.FirstOrDefaultAsync(d => d.AdminId == adminId && d.Token == token && d.IsActive);
-
         }
 
-        public async Task<RefreshToken?> GetByUserId(Guid userId)
+        public async Task<RefreshToken?> GetByAdminId(Guid adminId)
         {
-            return await _dbSet.FirstOrDefaultAsync(d => d.UserId == userId && d.IsActive);
+            return await _dbSet.FirstOrDefaultAsync(d => d.AdminId == adminId && d.IsActive);
         }
     }
 

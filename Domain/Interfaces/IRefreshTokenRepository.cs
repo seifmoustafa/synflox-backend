@@ -9,8 +9,7 @@ namespace Domain.Interfaces
 {
     public interface IRefreshTokenRepository : IBaseRepository<int, RefreshToken>
     {
-        Task<RefreshToken?> GetByTokenAndUserId(Guid userId, string token);
         Task<RefreshToken?> GetByTokenAndAdminId(Guid adminId, string token);
-        Task<RefreshToken?> GetByUserId(Guid userId);
+        Task<RefreshToken?> GetByAdminId(Guid adminId);
     }
 }

@@ -90,4 +90,67 @@
   <data name="InvalidOtp" xml:space="preserve">
     <value>رمز غير صالح أو منتهي الصلاحية</value>
   </data>
+  <data name="Licensing.CompanyCreated" xml:space="preserve">
+    <value>تم إنشاء الشركة بنجاح</value>
+  </data>
+  <data name="Licensing.CompanyUpdated" xml:space="preserve">
+    <value>تم تحديث الشركة بنجاح</value>
+  </data>
+  <data name="Licensing.CompanyDeleted" xml:space="preserve">
+    <value>تم حذف الشركة بنجاح</value>
+  </data>
+  <data name="Licensing.CompanyActivated" xml:space="preserve">
+    <value>تم تفعيل اشتراك الشركة بنجاح</value>
+  </data>
+  <data name="Licensing.CompanySuspended" xml:space="preserve">
+    <value>تم تعليق اشتراك الشركة بنجاح</value>
+  </data>
+  <data name="Licensing.CompanyResumed" xml:space="preserve">
+    <value>تم استئناف اشتراك الشركة بنجاح</value>
+  </data>
+  <data name="Licensing.SubscriptionExtended" xml:space="preserve">
+    <value>تم تمديد الاشتراك بنجاح</value>
+  </data>
+  <data name="Licensing.SubscriptionExpired" xml:space="preserve">
+    <value>انتهت صلاحية الاشتراك</value>
+  </data>
+  <data name="Licensing.SubscriptionActive" xml:space="preserve">
+    <value>الاشتراك نشط</value>
+  </data>
+  <data name="Licensing.SubscriptionSuspended" xml:space="preserve">
+    <value>الاشتراك معلق</value>
+  </data>
+  <data name="Licensing.LicenseKeyGenerated" xml:space="preserve">
+    <value>تم إنشاء مفتاح الترخيص بنجاح</value>
+  </data>
+  <data name="Licensing.LicenseKeyRegenerated" xml:space="preserve">
+    <value>تم إعادة إنشاء مفتاح الترخيص بنجاح</value>
+  </data>
+  <data name="Licensing.LicenseKeyValid" xml:space="preserve">
+    <value>مفتاح الترخيص صالح</value>
+  </data>
+  <data name="Licensing.LicenseKeyInvalid" xml:space="preserve">
+    <value>مفتاح الترخيص غير صالح أو منتهي الصلاحية</value>
+  </data>
+  <data name="Licensing.LicenseKeyExpired" xml:space="preserve">
+    <value>انتهت صلاحية مفتاح الترخيص</value>
+  </data>
+  <data name="Licensing.SystemClockTampered" xml:space="preserve">
+    <value>تم اكتشاف تلاعب بساعة النظام. فشل التحقق من الترخيص.</value>
+  </data>
+  <data name="Licensing.CompanyNotFound" xml:space="preserve">
+    <value>الشركة غير موجودة</value>
+  </data>
+  <data name="Licensing.InvalidExpiryDate" xml:space="preserve">
+    <value>يجب أن يكون تاريخ انتهاء الصلاحية في المستقبل</value>
+  </data>
+  <data name="Licensing.CompanyAlreadyActive" xml:space="preserve">
+    <value>اشتراك الشركة نشط بالفعل</value>
+  </data>
+  <data name="Licensing.CompanyAlreadySuspended" xml:space="preserve">
+    <value>اشتراك الشركة معلق بالفعل</value>
+  </data>
+  <data name="Licensing.CompanyNameExists" xml:space="preserve">
+    <value>اسم الشركة موجود بالفعل</value>
+  </data>
 </root>

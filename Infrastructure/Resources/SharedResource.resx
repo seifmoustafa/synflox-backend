@@ -90,4 +90,67 @@
   <data name="InvalidOtp" xml:space="preserve">
     <value>Invalid or expired code</value>
   </data>
+  <data name="Licensing.CompanyCreated" xml:space="preserve">
+    <value>Company created successfully</value>
+  </data>
+  <data name="Licensing.CompanyUpdated" xml:space="preserve">
+    <value>Company updated successfully</value>
+  </data>
+  <data name="Licensing.CompanyDeleted" xml:space="preserve">
+    <value>Company deleted successfully</value>
+  </data>
+  <data name="Licensing.CompanyActivated" xml:space="preserve">
+    <value>Company subscription activated successfully</value>
+  </data>
+  <data name="Licensing.CompanySuspended" xml:space="preserve">
+    <value>Company subscription suspended successfully</value>
+  </data>
+  <data name="Licensing.CompanyResumed" xml:space="preserve">
+    <value>Company subscription resumed successfully</value>
+  </data>
+  <data name="Licensing.SubscriptionExtended" xml:space="preserve">
+    <value>Subscription extended successfully</value>
+  </data>
+  <data name="Licensing.SubscriptionExpired" xml:space="preserve">
+    <value>Subscription has expired</value>
+  </data>
+  <data name="Licensing.SubscriptionActive" xml:space="preserve">
+    <value>Subscription is active</value>
+  </data>
+  <data name="Licensing.SubscriptionSuspended" xml:space="preserve">
+    <value>Subscription is suspended</value>
+  </data>
+  <data name="Licensing.LicenseKeyGenerated" xml:space="preserve">
+    <value>License key generated successfully</value>
+  </data>
+  <data name="Licensing.LicenseKeyRegenerated" xml:space="preserve">
+    <value>License key regenerated successfully</value>
+  </data>
+  <data name="Licensing.LicenseKeyValid" xml:space="preserve">
+    <value>License key is valid</value>
+  </data>
+  <data name="Licensing.LicenseKeyInvalid" xml:space="preserve">
+    <value>License key is invalid or expired</value>
+  </data>
+  <data name="Licensing.LicenseKeyExpired" xml:space="preserve">
+    <value>License key has expired</value>
+  </data>
+  <data name="Licensing.SystemClockTampered" xml:space="preserve">
+    <value>System clock tampering detected. License validation failed.</value>
+  </data>
+  <data name="Licensing.CompanyNotFound" xml:space="preserve">
+    <value>Company not found</value>
+  </data>
+  <data name="Licensing.InvalidExpiryDate" xml:space="preserve">
+    <value>Expiry date must be in the future</value>
+  </data>
+  <data name="Licensing.CompanyAlreadyActive" xml:space="preserve">
+    <value>Company subscription is already active</value>
+  </data>
+  <data name="Licensing.CompanyAlreadySuspended" xml:space="preserve">
+    <value>Company subscription is already suspended</value>
+  </data>
+  <data name="Licensing.CompanyNameExists" xml:space="preserve">
+    <value>Company name already exists</value>
+  </data>
 </root>

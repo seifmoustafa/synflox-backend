@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Entities.Authentication;
 using Domain.Entities.Common;
+using Domain.Entities.Licensing;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -22,12 +23,14 @@ namespace Infrastructure.Context
         }
 
         #region Admin
-        public DbSet<User> Users { get; set; }
         public DbSet<Admin> Admins { get; set; }
         public DbSet<AdminType> UserTypes { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<OtpCode> OtpCodes { get; set; }
 
+        #endregion
+
+        #region Licensing
+        public DbSet<Company> Companies { get; set; }
         #endregion
 
         #region References

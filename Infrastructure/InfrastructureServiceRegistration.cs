@@ -47,20 +47,12 @@ public static class InfrastructureServiceRegistration
                 ?? "JwtSettings section is missing");
 
         services.Configure<JwtOptions>(configuration.GetSection("JwtSettings"));
-        services.AddOptions<EmailSettings>()
-            .Bind(configuration.GetSection("EmailSettings"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        services.AddOptions<VerificationOptions>()
-            .Bind(configuration.GetSection("Verification"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        services.AddOptions<SmsSettings>()
-            .Bind(configuration.GetSection("SmsSettings"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
         services.AddOptions<EncryptionSettings>()
             .Bind(configuration.GetSection("Encryption"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddOptions<LicenseKeySettings>()
+            .Bind(configuration.GetSection("LicenseKeySettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -115,36 +107,12 @@ public static class InfrastructureServiceRegistration
 
         #region Services
         // register AutoMapper using profiles defined in the Application layer
-        services.AddAutoMapper(typeof(Application.Mapping.UserMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.AdminMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.LicensingMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
-        services.AddScoped<SmtpEmailSender>();
-        services.AddScoped<DevEmailSender>();
-        services.AddScoped<DevSmsSender>();
-        services.AddHttpClient<TwilioSmsSender>();
-        services.AddScoped<TwilioSmsSender>();
-        services.AddSingleton<ChannelEmailQueue>();
-        services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<ChannelEmailQueue>());
-        services.AddHostedService(sp => sp.GetRequiredService<ChannelEmailQueue>());
-        services.AddScoped<IEmailSender>(sp =>
-        {
-            var settings = sp.GetRequiredService<IOptions<EmailSettings>>().Value;
-            return settings.Mode.Equals("Prod", StringComparison.OrdinalIgnoreCase)
-                ? sp.GetRequiredService<SmtpEmailSender>()
-                : sp.GetRequiredService<DevEmailSender>();
-        });
-        services.AddScoped<ISmsSender>(sp =>
-        {
-            var settings = sp.GetRequiredService<IOptions<SmsSettings>>().Value;
-            if (!settings.Mode.Equals("Prod", StringComparison.OrdinalIgnoreCase))
-            {
-                return sp.GetRequiredService<DevSmsSender>();
-            }
-
-            return sp.GetRequiredService<TwilioSmsSender>();
-        });
         // Configure distributed cache (Redis) if connection string provided, otherwise use memory cache
         var cacheConnectionString = configuration.GetConnectionString("RedisConnection");
         if (!string.IsNullOrEmpty(cacheConnectionString))
@@ -166,10 +134,9 @@ public static class InfrastructureServiceRegistration
         // Infrastructure assembly are found correctly
         services.AddLocalization();
         services.AddScoped<ILocalizationService, LocalizationService>();
-        services.AddScoped<IOtpService, OtpService>();
-        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAdminTypeService, AdminTypeService>();
+        services.AddScoped<ILicensingService, LicensingService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IFileService, FileService>();
@@ -206,12 +173,11 @@ public static class InfrastructureServiceRegistration
         // No need to register other Repository  as long as they dont have any other custom method that are not covered by BaseRepository
         services.AddScoped(typeof(IBaseRepository<,>), typeof(BaseRepository<,>));
 
-        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IAdminTypeRepository, AdminTypeRepository>();
+        services.AddScoped<ICompanyRepository, CompanyRepository>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-        services.AddScoped<IOtpRepository, OtpRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion
 

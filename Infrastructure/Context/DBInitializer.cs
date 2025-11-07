@@ -31,10 +31,6 @@ namespace Infrastructure.Context
             var adminUserType = await dbContext.UserTypes
                 .FirstOrDefaultAsync(u => u.AdminTypeName == "Admin");
 
-            var normalUserType = await dbContext.UserTypes
-                .FirstOrDefaultAsync(u => u.AdminTypeName == "User");
-
-
             if (superAdminUserType == null)
             {
                 superAdminUserType = new AdminType { AdminTypeName = "SuperAdmin", Id = Guid.NewGuid() };
@@ -46,13 +42,6 @@ namespace Infrastructure.Context
             {
                 adminUserType = new AdminType { AdminTypeName = "Admin", Id = Guid.NewGuid() };
                 await dbContext.UserTypes.AddAsync(adminUserType);
-                await dbContext.SaveChangesAsync();
-            }
-
-            if (normalUserType == null)
-            {
-                normalUserType = new AdminType { AdminTypeName = "User", Id = Guid.NewGuid() };
-                await dbContext.UserTypes.AddAsync(normalUserType);
                 await dbContext.SaveChangesAsync();
             }
 

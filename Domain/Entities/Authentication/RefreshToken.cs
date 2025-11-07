@@ -16,10 +16,8 @@ namespace Domain.Entities.Authentication
 
         //public bool IsValid {  get; set; }
 
-        public Guid? UserId { get; set; }
         public Guid? AdminId { get; set; }
 
-        public virtual User? User { get; set; }
         public virtual Admin? Admin { get; set; }
     }
 }

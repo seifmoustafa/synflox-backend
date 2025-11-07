@@ -1,11 +1,11 @@
 using Application.DTOs.Admin;
 using Application.DTOs.Authentication;
 using Application.DTOs.Responses;
-using Application.DTOs.User;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 
 namespace WebAPI.Controllers;
 
@@ -72,23 +72,6 @@ public class AdminsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("users")]
-    [Authorize(Policy = "AdminOrSuperAdmin")]
-    public async Task<IActionResult> CreateUser([FromBody] RegistrationRequest request)
-    {
-        if (request == null) return BadRequest();
-
-        if (request.Image?.UploadId != null)
-        {
-            var url = await _uploadService.ConsumeAsync(request.Image.UploadId);
-            if (string.IsNullOrEmpty(url)) return BadRequest();
-            request.ImageUrl = url;
-        }
-
-        var result = await _authService.RegisterAsync(request);
-        return CreatedAtAction(nameof(CreateUser), new { id = result.Id }, result);
-    }
-
     [HttpPut("{id}/password")]
     [Authorize(Policy = "AdminOrSuperAdmin")]
     public async Task<IActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordRequest request)
@@ -145,20 +128,20 @@ public class AdminsController : ControllerBase
 
     [HttpPut("activate-selected")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> ActivateSelected([FromBody] UsersIdsRequest request)
+    public async Task<IActionResult> ActivateSelected([FromBody] AdminIdsRequest request)
     {
-        if (request?.UsersIds == null || !request.UsersIds.Any()) return BadRequest();
-        var ids = request.UsersIds.Select(_idEncryption.Decrypt);
+        if (request?.AdminIds == null || !request.AdminIds.Any()) return BadRequest();
+        var ids = request.AdminIds.Select(_idEncryption.Decrypt);
         int count = await _adminService.ActivateSelectedAsync(ids);
         return Ok(new { count });
     }
 
     [HttpPut("deactivate-selected")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> DeactivateSelected([FromBody] UsersIdsRequest request)
+    public async Task<IActionResult> DeactivateSelected([FromBody] AdminIdsRequest request)
     {
-        if (request?.UsersIds == null || !request.UsersIds.Any()) return BadRequest();
-        var ids = request.UsersIds.Select(_idEncryption.Decrypt);
+        if (request?.AdminIds == null || !request.AdminIds.Any()) return BadRequest();
+        var ids = request.AdminIds.Select(_idEncryption.Decrypt);
         int count = await _adminService.DeactivateSelectedAsync(ids);
         return Ok(new { count });
     }
@@ -189,10 +172,10 @@ public class AdminsController : ControllerBase
 
     [HttpDelete("selected")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> DeleteSelected([FromBody] UsersIdsRequest request)
+    public async Task<IActionResult> DeleteSelected([FromBody] AdminIdsRequest request)
     {
-        if (request?.UsersIds == null || !request.UsersIds.Any()) return BadRequest();
-        var ids = request.UsersIds.Select(_idEncryption.Decrypt)
+        if (request?.AdminIds == null || !request.AdminIds.Any()) return BadRequest();
+        var ids = request.AdminIds.Select(_idEncryption.Decrypt)
             .Where(g => g != _currentUserService.UserId);
         int count = await _adminService.DeleteSelectedAsync(ids);
         return Ok(new { count });

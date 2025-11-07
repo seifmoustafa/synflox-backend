@@ -1,0 +1,24 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace Application.DTOs.Licensing;
+
+public class CreateCompanyDto
+{
+    [Required(ErrorMessage = "Company name is required")]
+    [StringLength(200, ErrorMessage = "Company name cannot exceed 200 characters")]
+    public required string Name { get; set; }
+
+    public DateTime? ExpiryDate { get; set; }
+
+    [EmailAddress(ErrorMessage = "Invalid email address")]
+    [StringLength(200, ErrorMessage = "Email cannot exceed 200 characters")]
+    public string? ContactEmail { get; set; }
+
+    [StringLength(50, ErrorMessage = "Phone number cannot exceed 50 characters")]
+    public string? ContactPhone { get; set; }
+
+    [StringLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
+    public string? Address { get; set; }
+}
+
