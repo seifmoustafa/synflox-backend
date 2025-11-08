@@ -194,11 +194,9 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IModuleService, ModuleService>();
         services.AddScoped<IProjectModuleService, ProjectModuleService>();
         
-        // Register email services
+        // Register email services (validation removed - email services are optional)
         services.AddOptions<Infrastructure.Configurations.EmailSettings>()
-            .Bind(configuration.GetSection("EmailSettings"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            .Bind(configuration.GetSection("EmailSettings"));
         
         services.AddScoped<IEmailSender>(sp =>
         {
