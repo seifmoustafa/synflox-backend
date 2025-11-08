@@ -50,11 +50,8 @@ builder.Services.AddTransient<RequestLoggingMiddleware>();
 builder.Services.AddTransient<EarlyUnicodeHeaderMiddleware>();
 builder.Services.AddTransient<UnicodeHeaderMiddleware>();
 builder.Services.AddTransient<CacheHeadersMiddleware>();
-builder.Services.AddTransient<Infrastructure.Middleware.ApiKeyAuthenticationMiddleware>();
-builder.Services.AddTransient<Infrastructure.Middleware.HmacSignatureMiddleware>();
-builder.Services.AddTransient<Infrastructure.Middleware.RateLimitingMiddleware>();
-builder.Services.AddTransient<Infrastructure.Middleware.UsageTrackingMiddleware>();
-builder.Services.AddTransient<Infrastructure.Middleware.PerformanceMonitoringMiddleware>();
+// Note: Infrastructure.Middleware classes with RequestDelegate constructors should NOT be registered in DI
+// They are added to the pipeline using app.UseMiddleware<T>() instead
 builder.Services.AddTransient<Infrastructure.Middleware.TenantContextMiddleware>();
 builder.Services.AddOptions<CacheHeadersOptions>()
     .Bind(builder.Configuration.GetSection("CacheHeaders"))
