@@ -368,7 +368,7 @@ For each mapping profile, verify:
 ### 13.2 Business Logic Values
 
 - [x] Check for hardcoded business rules ✅ COMPLETED - No hardcoded business rules found
-- [x] Check for hardcoded report definitions (should be in DB) ✅ COMPLETED - Reports moved to DB (ReportDefinition entity)
+- [x] Check for hardcoded report definitions (should be in DB) ✅ COMPLETED - Reports moved to DB (ReportDefinition entity), report names now come from database
 - [x] Check for any magic numbers or strings ✅ COMPLETED - Only acceptable display strings ("Unknown", "N/A", "All Companies") found - these are acceptable for display purposes, not business logic violations
 
 ## Phase 14: Final Verification

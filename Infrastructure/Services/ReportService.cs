@@ -81,8 +81,10 @@ public class ReportService : IReportService
             throw new Domain.Exceptions.BadRequestException(_localizer["Report.Inactive"]);
         }
 
-        // Generate report based on report type
-        return await GeneratePreBuiltReportAsync(reportDefinition.ReportType, parameters);
+        // Generate report based on report type, passing report name from database
+        var result = await GeneratePreBuiltReportAsync(reportDefinition.ReportType, parameters);
+        result.ReportName = reportDefinition.Name; // Use name from database instead of hardcoded value
+        return result;
     }
 
     public async Task<ReportResultDto> GeneratePreBuiltReportAsync(
@@ -128,7 +130,7 @@ public class ReportService : IReportService
 
         return new ReportResultDto
         {
-            ReportName = "Subscription Expiry Report",
+            ReportName = string.Empty, // Will be set from ReportDefinition.Name in GenerateReportAsync
             Data = expiringCompanies,
             Summary = new Dictionary<string, object>
             {
@@ -170,7 +172,7 @@ public class ReportService : IReportService
 
         return new ReportResultDto
         {
-            ReportName = "Status Summary Report",
+            ReportName = string.Empty, // Will be set from ReportDefinition.Name in GenerateReportAsync
             Data = new List<Dictionary<string, object>>
             {
                 new Dictionary<string, object> { { "Status", "Active" }, { "Count", activeCount } },
@@ -214,7 +216,7 @@ public class ReportService : IReportService
 
         return new ReportResultDto
         {
-            ReportName = "Usage Analytics Report",
+            ReportName = string.Empty, // Will be set from ReportDefinition.Name in GenerateReportAsync
             Data = usageByCompany,
             Summary = new Dictionary<string, object>
             {
@@ -249,7 +251,7 @@ public class ReportService : IReportService
 
         return new ReportResultDto
         {
-            ReportName = "Trial Conversion Report",
+            ReportName = string.Empty, // Will be set from ReportDefinition.Name in GenerateReportAsync
             Data = trialCompanies,
             Summary = new Dictionary<string, object>
             {
@@ -294,7 +296,7 @@ public class ReportService : IReportService
 
         return new ReportResultDto
         {
-            ReportName = "Module Usage Report",
+            ReportName = string.Empty, // Will be set from ReportDefinition.Name in GenerateReportAsync
             Data = data,
             Summary = new Dictionary<string, object>
             {
