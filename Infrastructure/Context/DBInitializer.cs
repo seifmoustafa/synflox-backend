@@ -67,79 +67,333 @@ namespace Infrastructure.Context
             // Seed Menu Items
             if (dbContext.MenuItems.Count() == 0)
             {
-                var MenuItems = new List<MenuItems>
+                // Step 1: Create all parent items (top-level and group headers)
+                var dashboard = new MenuItems
                 {
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.System",
-                        Href = null, // Parent item, no direct route
-                        Icon = "settings",
-                        Order = 1,
-                        ParentMenuItemsId = null,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.Subscribers",
-                        Href = null, // Parent item, no direct route
-                        Icon = "users",
-                        Order = 2,
-                        ParentMenuItemsId = null,
-                        IsActive = true,
-                    },
+                    Id = Guid.NewGuid(),
+                    Name = "Dashboard",
+                    Href = "/",
+                    Icon = "LayoutDashboard",
+                    Order = 1,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
                 };
 
-                // Add child menu items for System
-                var systemParent = MenuItems.First(m => m.Name == "nav.System");
-                var systemChildren = new List<MenuItems>
+                var subscribers = new MenuItems
                 {
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.Admins",
-                        Href = "/admins",
-                        Icon = "UserShield",
-                        Order = 1,
-                        ParentMenuItemsId = systemParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.AdminTypes",
-                        Href = "/admin-types",
-                        Icon = "UserTag",
-                        Order = 2,
-                        ParentMenuItemsId = systemParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
+                    Id = Guid.NewGuid(),
+                    Name = "Subscribers",
+                    Href = null, // Parent item, no direct route
+                    Icon = "UsersRound",
+                    Order = 2,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
                 };
 
-                // Add child menu items for Subscribers
-                var subscribersParent = MenuItems.First(m => m.Name == "nav.Subscribers");
+                var system = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "System",
+                    Href = null, // Parent item, no direct route
+                    Icon = "Settings",
+                    Order = 3,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var apiIntegration = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "API Integration",
+                    Href = null, // Parent item, no direct route
+                    Icon = "Code",
+                    Order = 4,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var analyticsReports = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Analytics & Reports",
+                    Href = null, // Parent item, no direct route
+                    Icon = "BarChart3",
+                    Order = 5,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var systemManagement = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "System Management",
+                    Href = null, // Parent item, no direct route
+                    Icon = "Activity",
+                    Order = 6,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var notifications = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Notifications",
+                    Href = "/notifications",
+                    Icon = "Bell",
+                    Order = 7,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var settings = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Settings",
+                    Href = "/settings",
+                    Icon = "Settings",
+                    Order = 8,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var profile = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Profile",
+                    Href = "/profile",
+                    Icon = "User",
+                    Order = 9,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = null, // All authenticated users
+                    IsActive = true,
+                };
+
+                var menuItems = new MenuItems
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Menu Items",
+                    Href = "/menu-items",
+                    Icon = "Menu",
+                    Order = 10,
+                    ParentMenuItemsId = null,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }), // SuperAdmin only
+                    IsActive = true,
+                };
+
+                // Add all parent items to context first
+                var parentItems = new List<MenuItems>
+                {
+                    dashboard,
+                    subscribers,
+                    system,
+                    apiIntegration,
+                    analyticsReports,
+                    systemManagement,
+                    notifications,
+                    settings,
+                    profile,
+                    menuItems
+                };
+
+                await dbContext.MenuItems.AddRangeAsync(parentItems);
+                await dbContext.SaveChangesAsync();
+
+                // Step 2: Create child items for Subscribers
                 var subscribersChildren = new List<MenuItems>
                 {
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.Companies",
+                        Name = "Companies",
                         Href = "/companies",
-                        Icon = "building",
+                        Icon = "Building2",
                         Order = 1,
-                        ParentMenuItemsId = subscribersParent.Id,
+                        ParentMenuItemsId = subscribers.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Company Groups",
+                        Href = "/company-groups",
+                        Icon = "UsersRound",
+                        Order = 2,
+                        ParentMenuItemsId = subscribers.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Subscription Plans",
+                        Href = "/subscription-plans",
+                        Icon = "CreditCard",
+                        Order = 3,
+                        ParentMenuItemsId = subscribers.Id,
+                        AllowedUserTypes = null, // All authenticated users
                         IsActive = true,
                     },
                 };
 
-                // Add all menu items to context
-                await dbContext.MenuItems.AddRangeAsync(MenuItems);
-                await dbContext.MenuItems.AddRangeAsync(systemChildren);
-                await dbContext.MenuItems.AddRangeAsync(subscribersChildren);
+                // Step 3: Create child items for System
+                var systemChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Admins",
+                        Href = "/admins",
+                        Icon = "Users",
+                        Order = 1,
+                        ParentMenuItemsId = system.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Admin Types",
+                        Href = "/admin-types",
+                        Icon = "UserCog",
+                        Order = 2,
+                        ParentMenuItemsId = system.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Projects",
+                        Href = "/projects",
+                        Icon = "FolderKanban",
+                        Order = 3,
+                        ParentMenuItemsId = system.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Modules",
+                        Href = "/modules",
+                        Icon = "Package",
+                        Order = 4,
+                        ParentMenuItemsId = system.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                };
+
+                // Step 4: Create child items for API Integration
+                var apiIntegrationChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "API Keys",
+                        Href = "/api-keys",
+                        Icon = "Key",
+                        Order = 1,
+                        ParentMenuItemsId = apiIntegration.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Webhooks",
+                        Href = "/webhooks",
+                        Icon = "Webhook",
+                        Order = 2,
+                        ParentMenuItemsId = apiIntegration.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                };
+
+                // Step 5: Create child items for Analytics & Reports
+                var analyticsReportsChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Analytics",
+                        Href = "/analytics",
+                        Icon = "BarChart3",
+                        Order = 1,
+                        ParentMenuItemsId = analyticsReports.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Reports",
+                        Href = "/reports",
+                        Icon = "FileText",
+                        Order = 2,
+                        ParentMenuItemsId = analyticsReports.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                };
+
+                // Step 6: Create child items for System Management
+                var systemManagementChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Metrics",
+                        Href = "/metrics",
+                        Icon = "Activity",
+                        Order = 1,
+                        ParentMenuItemsId = systemManagement.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Error Logs",
+                        Href = "/error-logs",
+                        Icon = "AlertCircle",
+                        Order = 2,
+                        ParentMenuItemsId = systemManagement.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Login Attempts",
+                        Href = "/login-attempts",
+                        Icon = "Shield",
+                        Order = 3,
+                        ParentMenuItemsId = systemManagement.Id,
+                        AllowedUserTypes = null, // All authenticated users
+                        IsActive = true,
+                    },
+                };
+
+                // Add all child items to context
+                var allChildren = new List<MenuItems>();
+                allChildren.AddRange(subscribersChildren);
+                allChildren.AddRange(systemChildren);
+                allChildren.AddRange(apiIntegrationChildren);
+                allChildren.AddRange(analyticsReportsChildren);
+                allChildren.AddRange(systemManagementChildren);
+
+                await dbContext.MenuItems.AddRangeAsync(allChildren);
                 await dbContext.SaveChangesAsync();
             }
 
