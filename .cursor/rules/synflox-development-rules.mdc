@@ -221,22 +221,91 @@ When implementing a new feature, follow this exact order:
 
 ## ID Encryption Rules
 
+### Architecture Principle: Encryption/Decryption ONLY in Mappers
+
+**CRITICAL RULE**: All ID encryption/decryption must happen in AutoMapper converters. Services work ONLY with decrypted GUIDs internally.
+
+### Rule: Encryption/Decryption ONLY in Mappers
+
+- **Entity → DTO**: Mapper encrypts IDs using `EncryptGuidConverter`
+- **DTO → Entity**: Mapper decrypts IDs using `DecryptGuidConverter` (when DTO contains encrypted IDs)
+- **Route Parameters**: Controllers receive encrypted GUIDs, decrypt them before calling services (this is acceptable as it's the boundary layer)
+- **Services**: Work ONLY with decrypted GUIDs internally, never encrypt/decrypt manually
+- **Service-to-Service**: Always pass decrypted GUIDs
+
 ### When to Encrypt IDs:
-- ✅ **ALWAYS** encrypt IDs in GET responses (via AutoMapper `EncryptGuidConverter`)
-- ✅ **ALWAYS** decrypt IDs in POST/PUT/DELETE requests (in Controller)
+- ✅ **ALWAYS** encrypt IDs in Entity → DTO mappings (via AutoMapper `EncryptGuidConverter`)
 - ✅ **ALWAYS** encrypt IDs in response DTOs that contain entity IDs
+- ✅ **ALWAYS** encrypt IDs for webhook payloads (external systems) - **Exception**: This is acceptable because webhooks are sent to external systems
+
+### When to Decrypt IDs:
+- ✅ **ALWAYS** decrypt IDs in DTO → Entity mappings (via AutoMapper `DecryptGuidConverter`)
+- ✅ **Controllers** can decrypt route/query parameters (boundary layer - acceptable)
+- ✅ **Controllers** can decrypt list IDs from request DTOs (boundary layer - acceptable)
 
 ### Implementation:
+
+#### Entity → DTO (Encryption):
 ```csharp
 // In AutoMapper Profile:
 CreateMap<Entity, EntityDto>()
     .ForMember(d => d.Id,
         opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
-
-// In Controller:
-var decryptedId = _idEncryption.Decrypt(id);
-var result = await _service.GetByIdAsync(decryptedId);
 ```
+
+#### DTO → Entity (Decryption):
+```csharp
+// In AutoMapper Profile:
+CreateMap<CreateEntityDto, Entity>()
+    .ForMember(d => d.ParentId,
+        opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.ParentId));
+
+// For string IDs (encrypted GUIDs as strings):
+CreateMap<UpdateEntityDto, Entity>()
+    .ForMember(d => d.ParentId,
+        opt => opt.ConvertUsing<DecryptStringToGuidConverter, string?>(s => s.ParentId));
+```
+
+#### Controller (Route Parameters - Acceptable):
+```csharp
+// Controllers decrypt route/query parameters (boundary layer)
+[HttpGet("{id}")]
+public async Task<IActionResult> GetEntity(Guid id)
+{
+    var decryptedId = _idEncryption.Decrypt(id); // Acceptable at boundary
+    var result = await _service.GetByIdAsync(decryptedId);
+    return Ok(new ApiResponse<EntityDto>(200, string.Empty, result));
+}
+```
+
+#### Controller (Request Body DTOs with IDs - Acceptable):
+```csharp
+// Controllers can decrypt IDs in request body DTOs (boundary layer)
+[HttpPut("{id}/project-modules")]
+public async Task<IActionResult> UpdatePlanProjectModules(Guid id, [FromBody] UpdatePlanProjectModulesDto request)
+{
+    var decryptedId = _idEncryption.Decrypt(id);
+    // Decrypt list of IDs from request DTO
+    var decryptedProjectModuleIds = request.ProjectModuleIds
+        .Select(moduleId => _idEncryption.Decrypt(moduleId))
+        .ToList();
+    var decryptedRequest = new UpdatePlanProjectModulesDto
+    {
+        ProjectModuleIds = decryptedProjectModuleIds
+    };
+    var result = await _service.UpdatePlanProjectModulesAsync(decryptedId, decryptedRequest);
+    return Ok(new ApiResponse<SubscriptionPlanDto>(200, string.Empty, result));
+}
+```
+
+### What NOT to Do:
+- ❌ **NEVER** manually encrypt/decrypt IDs in Services (except webhook payloads)
+- ❌ **NEVER** pass encrypted IDs between services (always use decrypted GUIDs)
+- ❌ **NEVER** manually decrypt DTO IDs in services (use mapper)
+- ✅ **EXCEPTION**: Webhook payloads can encrypt IDs (external systems - documented in code)
+- ✅ **EXCEPTION**: Controllers can decrypt route/query parameters (boundary layer)
+- ✅ **EXCEPTION**: Controllers can decrypt IDs in request body DTOs (boundary layer)
+- ✅ **EXCEPTION**: Response DTOs that don't go through mapper can manually encrypt IDs (e.g., BulkOperationResult)
 
 ## Authorization Rules
 

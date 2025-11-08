@@ -50,9 +50,6 @@ public class AdminService : IAdminService
 
     public async Task<AdminDto> CreateAsync(CreateAdminDto dto)
     {
-        if (dto.AdminTypeId.HasValue)
-            dto.AdminTypeId = _idEncryption.Decrypt(dto.AdminTypeId.Value);
-
         var admin = _mapper.Map<Admin>(dto);
 
         var existing = await _repo.GetByUserNameAsync(admin.Username);
@@ -77,9 +74,6 @@ public class AdminService : IAdminService
             if (existing != null && existing.Id != id)
                 throw new BadRequestException(_localizer["UsernameTaken"]);
         }
-
-        if (dto.AdminTypeId.HasValue)
-            dto.AdminTypeId = _idEncryption.Decrypt(dto.AdminTypeId.Value);
 
         _mapper.Map(dto, admin);
         await _repo.UpdateAsync(admin);

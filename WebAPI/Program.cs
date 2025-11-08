@@ -10,8 +10,10 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.IO;
 using System.Globalization;
+using System.Linq;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +50,12 @@ builder.Services.AddTransient<RequestLoggingMiddleware>();
 builder.Services.AddTransient<EarlyUnicodeHeaderMiddleware>();
 builder.Services.AddTransient<UnicodeHeaderMiddleware>();
 builder.Services.AddTransient<CacheHeadersMiddleware>();
+builder.Services.AddTransient<Infrastructure.Middleware.ApiKeyAuthenticationMiddleware>();
+builder.Services.AddTransient<Infrastructure.Middleware.HmacSignatureMiddleware>();
+builder.Services.AddTransient<Infrastructure.Middleware.RateLimitingMiddleware>();
+builder.Services.AddTransient<Infrastructure.Middleware.UsageTrackingMiddleware>();
+builder.Services.AddTransient<Infrastructure.Middleware.PerformanceMonitoringMiddleware>();
+builder.Services.AddTransient<Infrastructure.Middleware.TenantContextMiddleware>();
 builder.Services.AddOptions<CacheHeadersOptions>()
     .Bind(builder.Configuration.GetSection("CacheHeaders"))
     .ValidateDataAnnotations()
@@ -55,6 +63,10 @@ builder.Services.AddOptions<CacheHeadersOptions>()
 builder.Services.AddTransient<ETagMiddleware>();
 builder.Services.AddOptions<ETagOptions>()
     .Bind(builder.Configuration.GetSection("ETag"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddOptions<Infrastructure.Settings.RateLimitingSettings>()
+    .Bind(builder.Configuration.GetSection("RateLimitingSettings"))
     .ValidateDataAnnotations()
     .ValidateOnStart();
 // Register both cache types for ETag middleware (it will use distributed if available)
@@ -65,6 +77,13 @@ builder.Services.AddResponseCaching();
 builder.Services.AddControllers();
 builder.Services.AddAuthorizationPolicies();
 builder.Services.AddAuthenticationRateLimiter();
+
+// Register health checks
+builder.Services.AddHealthChecks()
+    .AddCheck<Infrastructure.HealthChecks.DatabaseHealthCheck>("database")
+    .AddCheck<Infrastructure.HealthChecks.RedisHealthCheck>("redis", tags: new[] { "optional" })
+    .AddCheck<Infrastructure.HealthChecks.DiskSpaceHealthCheck>("disk")
+    .AddCheck<Infrastructure.HealthChecks.EmailHealthCheck>("email", tags: new[] { "optional" });
 #endregion
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -146,6 +165,22 @@ app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/authentication"), b
 });
 #endregion
 
+// API Key authentication (before JWT authentication)
+app.UseMiddleware<Infrastructure.Middleware.TenantContextMiddleware>();
+app.UseMiddleware<Infrastructure.Middleware.ApiKeyAuthenticationMiddleware>();
+
+// HMAC signature validation (after API key auth, before rate limiting)
+app.UseMiddleware<Infrastructure.Middleware.HmacSignatureMiddleware>();
+
+// Rate limiting (after API key auth to access API key info)
+app.UseMiddleware<Infrastructure.Middleware.RateLimitingMiddleware>();
+
+// Usage tracking (after authentication to get company ID)
+app.UseMiddleware<Infrastructure.Middleware.UsageTrackingMiddleware>();
+
+// Performance monitoring (after usage tracking to measure full request time)
+app.UseMiddleware<Infrastructure.Middleware.PerformanceMonitoringMiddleware>();
+
 app.UseAuthentication();
 app.UseMiddleware<CustomClaimsPrincipalMiddleware>();
 
@@ -161,6 +196,27 @@ app.UseAuthorization();
 
 #region Endpoint mapping
 app.MapControllers();
+
+// Health check endpoint (public, no authentication required)
+app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                data = e.Value.Data
+            })
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 #endregion
 
 app.Run();

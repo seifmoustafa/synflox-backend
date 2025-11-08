@@ -204,4 +204,301 @@
   <data name="MenuItems.HasChildren" xml:space="preserve">
     <value>Cannot delete menu item: it has child menu items</value>
   </data>
+  <data name="Notification.ExpiryWarningTitle" xml:space="preserve">
+    <value>Subscription Expiring in {0} Days</value>
+  </data>
+  <data name="Notification.ExpiryWarningMessage" xml:space="preserve">
+    <value>Your subscription for {0} will expire in {1} days on {2}. Please renew to continue service.</value>
+  </data>
+  <data name="Notification.ExpiryWarningEmailSubject" xml:space="preserve">
+    <value>SYNFLOX: {0} Subscription Expiring in {1} Days</value>
+  </data>
+  <data name="Notification.ExpiryWarningEmailBody" xml:space="preserve">
+    <value>Dear {0},&#xD;&#xA;&#xD;&#xA;Your subscription will expire in {1} days on {2}. Please renew your subscription to avoid service interruption.&#xD;&#xA;&#xD;&#xA;Thank you,&#xD;&#xA;SYNFLOX Team</value>
+  </data>
+  <data name="Notification.ExpiredTitle" xml:space="preserve">
+    <value>Subscription Expired</value>
+  </data>
+  <data name="Notification.ExpiredMessage" xml:space="preserve">
+    <value>Your subscription for {0} has expired on {1}. Please renew to restore service.</value>
+  </data>
+  <data name="Notification.ExpiredEmailSubject" xml:space="preserve">
+    <value>SYNFLOX: {0} Subscription Expired</value>
+  </data>
+  <data name="Notification.ExpiredEmailBody" xml:space="preserve">
+    <value>Dear {0},&#xD;&#xA;&#xD;&#xA;Your subscription has expired on {1}. Please renew your subscription to restore service.&#xD;&#xA;&#xD;&#xA;Thank you,&#xD;&#xA;SYNFLOX Team</value>
+  </data>
+  <data name="Notification.MarkedAsRead" xml:space="preserve">
+    <value>Notification marked as read</value>
+  </data>
+  <data name="Notification.AllMarkedAsRead" xml:space="preserve">
+    <value>All notifications marked as read</value>
+  </data>
+  <data name="Notification.ActivatedTitle" xml:space="preserve">
+    <value>Subscription Activated</value>
+  </data>
+  <data name="Notification.ActivatedMessage" xml:space="preserve">
+    <value>Your subscription for {0} has been activated with expiry date: {1}</value>
+  </data>
+  <data name="Notification.SuspendedTitle" xml:space="preserve">
+    <value>Subscription Suspended</value>
+  </data>
+  <data name="Notification.SuspendedMessage" xml:space="preserve">
+    <value>Your subscription for {0} has been suspended</value>
+  </data>
+  <data name="Notification.ResumedTitle" xml:space="preserve">
+    <value>Subscription Resumed</value>
+  </data>
+  <data name="Notification.ResumedMessage" xml:space="preserve">
+    <value>Your subscription for {0} has been resumed</value>
+  </data>
+  <data name="Notification.ExtendedTitle" xml:space="preserve">
+    <value>Subscription Extended</value>
+  </data>
+  <data name="Notification.ExtendedMessage" xml:space="preserve">
+    <value>Your subscription for {0} has been extended to: {1}</value>
+  </data>
+  <data name="ApiKey.Created" xml:space="preserve">
+    <value>API key created successfully</value>
+  </data>
+  <data name="ApiKey.NotFound" xml:space="preserve">
+    <value>API key not found</value>
+  </data>
+  <data name="ApiKey.Revoked" xml:space="preserve">
+    <value>API key revoked successfully</value>
+  </data>
+  <data name="ApiKey.Regenerated" xml:space="preserve">
+    <value>API key regenerated successfully</value>
+  </data>
+  <data name="ApiKey.Invalid" xml:space="preserve">
+    <value>Invalid API key</value>
+  </data>
+  <data name="ApiKey.Expired" xml:space="preserve">
+    <value>API key has expired</value>
+  </data>
+  <data name="ApiKey.Updated" xml:space="preserve">
+    <value>API key updated successfully</value>
+  </data>
+  <data name="AccountLocked" xml:space="preserve">
+    <value>Account is temporarily locked due to too many failed login attempts. Please try again later.</value>
+  </data>
+  <data name="Webhook.Created" xml:space="preserve">
+    <value>Webhook created successfully</value>
+  </data>
+  <data name="Webhook.NotFound" xml:space="preserve">
+    <value>Webhook not found</value>
+  </data>
+  <data name="Webhook.Deleted" xml:space="preserve">
+    <value>Webhook deleted successfully</value>
+  </data>
+  <data name="Webhook.RetryInitiated" xml:space="preserve">
+    <value>Retry of failed webhook deliveries initiated</value>
+  </data>
+  <data name="BulkOperation.InvalidRequest" xml:space="preserve">
+    <value>Invalid bulk operation request</value>
+  </data>
+  <data name="BulkOperation.InvalidAction" xml:space="preserve">
+    <value>Invalid action for this endpoint</value>
+  </data>
+  <data name="BulkOperation.ExpiryDateRequired" xml:space="preserve">
+    <value>Expiry date is required for this operation</value>
+  </data>
+  <data name="BulkOperation.UpdateDtoRequired" xml:space="preserve">
+    <value>Update DTO is required for bulk update</value>
+  </data>
+  <data name="BulkOperation.Completed" xml:space="preserve">
+    <value>Bulk operation completed</value>
+  </data>
+  <data name="SubscriptionPlan.Created" xml:space="preserve">
+    <value>Subscription plan created successfully</value>
+  </data>
+  <data name="SubscriptionPlan.NotFound" xml:space="preserve">
+    <value>Subscription plan not found</value>
+  </data>
+  <data name="SubscriptionPlan.Updated" xml:space="preserve">
+    <value>Subscription plan updated successfully</value>
+  </data>
+  <data name="SubscriptionPlan.Deleted" xml:space="preserve">
+    <value>Subscription plan deleted successfully</value>
+  </data>
+  <data name="SubscriptionPlan.NameExists" xml:space="preserve">
+    <value>A subscription plan with this name already exists</value>
+  </data>
+  <data name="Trial.Started" xml:space="preserve">
+    <value>Trial period started successfully</value>
+  </data>
+  <data name="Trial.Converted" xml:space="preserve">
+    <value>Trial converted to active subscription successfully</value>
+  </data>
+  <data name="Trial.AlreadyActive" xml:space="preserve">
+    <value>Company already has an active trial period</value>
+  </data>
+  <data name="Trial.NotTrial" xml:space="preserve">
+    <value>Company is not on a trial subscription</value>
+  </data>
+  <data name="Notification.TrialStartedTitle" xml:space="preserve">
+    <value>Trial Period Started</value>
+  </data>
+  <data name="Notification.TrialStartedMessage" xml:space="preserve">
+    <value>Trial period started for {0}. Trial will end on {2} ({1} days).</value>
+  </data>
+  <data name="Notification.TrialConvertedTitle" xml:space="preserve">
+    <value>Trial Converted to Active Subscription</value>
+  </data>
+  <data name="Notification.TrialConvertedMessage" xml:space="preserve">
+    <value>Trial for {0} has been converted to an active subscription with expiry date: {1}</value>
+  </data>
+  <data name="Project.Created" xml:space="preserve">
+    <value>Project created successfully</value>
+  </data>
+  <data name="Project.Updated" xml:space="preserve">
+    <value>Project updated successfully</value>
+  </data>
+  <data name="Project.Deleted" xml:space="preserve">
+    <value>Project deleted successfully</value>
+  </data>
+  <data name="Project.NotFound" xml:space="preserve">
+    <value>Project not found</value>
+  </data>
+  <data name="Project.NameExists" xml:space="preserve">
+    <value>A project with this name already exists</value>
+  </data>
+  <data name="Module.Created" xml:space="preserve">
+    <value>Module created successfully</value>
+  </data>
+  <data name="Module.Updated" xml:space="preserve">
+    <value>Module updated successfully</value>
+  </data>
+  <data name="Module.Deleted" xml:space="preserve">
+    <value>Module deleted successfully</value>
+  </data>
+  <data name="Module.NotFound" xml:space="preserve">
+    <value>Module not found</value>
+  </data>
+  <data name="Module.NameExists" xml:space="preserve">
+    <value>A module with this name already exists</value>
+  </data>
+  <data name="ProjectModule.Created" xml:space="preserve">
+    <value>Project-module relationship created successfully</value>
+  </data>
+  <data name="ProjectModule.Deleted" xml:space="preserve">
+    <value>Project-module relationship deleted successfully</value>
+  </data>
+  <data name="ProjectModule.NotFound" xml:space="preserve">
+    <value>Project-module relationship not found</value>
+  </data>
+  <data name="ProjectModule.AlreadyExists" xml:space="preserve">
+    <value>This project-module relationship already exists</value>
+  </data>
+  <data name="SubscriptionPlan.ProjectModulesUpdated" xml:space="preserve">
+    <value>Subscription plan project-modules updated successfully</value>
+  </data>
+  <data name="PasswordPolicy.Updated" xml:space="preserve">
+    <value>Password policy updated successfully</value>
+  </data>
+  <data name="PasswordPolicy.MinLength" xml:space="preserve">
+    <value>Password must be at least {0} characters long</value>
+  </data>
+  <data name="PasswordPolicy.RequireUppercase" xml:space="preserve">
+    <value>Password must contain at least one uppercase letter</value>
+  </data>
+  <data name="PasswordPolicy.RequireLowercase" xml:space="preserve">
+    <value>Password must contain at least one lowercase letter</value>
+  </data>
+  <data name="PasswordPolicy.RequireNumbers" xml:space="preserve">
+    <value>Password must contain at least one number</value>
+  </data>
+  <data name="PasswordPolicy.RequireSpecialChars" xml:space="preserve">
+    <value>Password must contain at least one special character</value>
+  </data>
+  <data name="PasswordPolicy.PreventReuse" xml:space="preserve">
+    <value>Password cannot be one of the last {0} passwords used</value>
+  </data>
+  <data name="PasswordExpired" xml:space="preserve">
+    <value>Your password has expired. Please change your password to continue.</value>
+  </data>
+  <data name="Metrics.SummaryRetrieved" xml:space="preserve">
+    <value>Metrics summary retrieved successfully</value>
+  </data>
+  <data name="Metrics.HistoryRetrieved" xml:space="preserve">
+    <value>Metrics history retrieved successfully</value>
+  </data>
+  <data name="Metrics.Aggregated" xml:space="preserve">
+    <value>Metrics aggregated successfully</value>
+  </data>
+  <data name="Metrics.CleanedUp" xml:space="preserve">
+    <value>Old metrics cleaned up successfully</value>
+  </data>
+  <data name="ErrorLog.ErrorsRetrieved" xml:space="preserve">
+    <value>Error logs retrieved successfully</value>
+  </data>
+  <data name="ErrorLog.ErrorRetrieved" xml:space="preserve">
+    <value>Error log retrieved successfully</value>
+  </data>
+  <data name="ErrorLog.NotFound" xml:space="preserve">
+    <value>Error log not found</value>
+  </data>
+  <data name="ErrorLog.CleanedUp" xml:space="preserve">
+    <value>Old error logs cleaned up successfully</value>
+  </data>
+  <data name="CompanyGroup.Created" xml:space="preserve">
+    <value>Company group created successfully</value>
+  </data>
+  <data name="CompanyGroup.Updated" xml:space="preserve">
+    <value>Company group updated successfully</value>
+  </data>
+  <data name="CompanyGroup.Deleted" xml:space="preserve">
+    <value>Company group deleted successfully</value>
+  </data>
+  <data name="CompanyGroup.NotFound" xml:space="preserve">
+    <value>Company group not found</value>
+  </data>
+  <data name="CompanyGroup.CompaniesAdded" xml:space="preserve">
+    <value>Companies added to group successfully</value>
+  </data>
+  <data name="CompanyGroup.CompaniesRemoved" xml:space="preserve">
+    <value>Companies removed from group successfully</value>
+  </data>
+  <data name="CompanyGroup.BulkActivated" xml:space="preserve">
+    <value>All companies in group activated successfully</value>
+  </data>
+  <data name="CompanyGroup.BulkSuspended" xml:space="preserve">
+    <value>All companies in group suspended successfully</value>
+  </data>
+  <data name="CompanyGroup.BulkResumed" xml:space="preserve">
+    <value>All companies in group resumed successfully</value>
+  </data>
+  <data name="CompanyGroup.BulkExtended" xml:space="preserve">
+    <value>All companies in group extended successfully</value>
+  </data>
+  <data name="CompanyCustomField.Created" xml:space="preserve">
+    <value>Custom field created successfully</value>
+  </data>
+  <data name="CompanyCustomField.Updated" xml:space="preserve">
+    <value>Custom field updated successfully</value>
+  </data>
+  <data name="CompanyCustomField.Deleted" xml:space="preserve">
+    <value>Custom field deleted successfully</value>
+  </data>
+  <data name="CompanyCustomField.NotFound" xml:space="preserve">
+    <value>Custom field not found</value>
+  </data>
+  <data name="CompanyCustomField.AlreadyExists" xml:space="preserve">
+    <value>A custom field with this name already exists for this company</value>
+  </data>
+  <data name="Import.FileRequired" xml:space="preserve">
+    <value>Import file is required</value>
+  </data>
+  <data name="Import.Completed" xml:space="preserve">
+    <value>Import completed</value>
+  </data>
+  <data name="Report.Generated" xml:space="preserve">
+    <value>Report generated successfully</value>
+  </data>
+  <data name="Report.NotFound" xml:space="preserve">
+    <value>Report not found</value>
+  </data>
+  <data name="Report.InvalidType" xml:space="preserve">
+    <value>Invalid report type</value>
+  </data>
 </root>

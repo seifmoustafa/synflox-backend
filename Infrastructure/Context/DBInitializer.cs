@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Application.Services;
 using Domain.Entities.Authentication;
 using Domain.Entities.Navigation;
+using Domain.Entities.Reporting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -139,6 +140,64 @@ namespace Infrastructure.Context
                 await dbContext.MenuItems.AddRangeAsync(MenuItems);
                 await dbContext.MenuItems.AddRangeAsync(systemChildren);
                 await dbContext.MenuItems.AddRangeAsync(subscribersChildren);
+                await dbContext.SaveChangesAsync();
+            }
+
+            // Seed Pre-built Report Definitions
+            if (dbContext.ReportDefinitions.Count() == 0)
+            {
+                var preBuiltReports = new List<ReportDefinition>
+                {
+                    new ReportDefinition
+                    {
+                        Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                        Name = "Subscription Expiry Report",
+                        Description = "Companies expiring within specified days",
+                        ReportType = "SubscriptionExpiry",
+                        IsPreBuilt = true,
+                        Parameters = "{\"days\": 30}",
+                        IsActive = true
+                    },
+                    new ReportDefinition
+                    {
+                        Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+                        Name = "Status Summary Report",
+                        Description = "Breakdown of companies by license status",
+                        ReportType = "StatusSummary",
+                        IsPreBuilt = true,
+                        IsActive = true
+                    },
+                    new ReportDefinition
+                    {
+                        Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
+                        Name = "Usage Analytics Report",
+                        Description = "API usage statistics by company",
+                        ReportType = "UsageAnalytics",
+                        IsPreBuilt = true,
+                        Parameters = "{\"fromDate\": \"DateTime\", \"toDate\": \"DateTime\"}",
+                        IsActive = true
+                    },
+                    new ReportDefinition
+                    {
+                        Id = Guid.Parse("00000000-0000-0000-0000-000000000004"),
+                        Name = "Trial Conversion Report",
+                        Description = "Trial companies and conversion statistics",
+                        ReportType = "TrialConversion",
+                        IsPreBuilt = true,
+                        IsActive = true
+                    },
+                    new ReportDefinition
+                    {
+                        Id = Guid.Parse("00000000-0000-0000-0000-000000000005"),
+                        Name = "Module Usage Report",
+                        Description = "Module usage statistics by company",
+                        ReportType = "ModuleUsage",
+                        IsPreBuilt = true,
+                        IsActive = true
+                    }
+                };
+
+                await dbContext.ReportDefinitions.AddRangeAsync(preBuiltReports);
                 await dbContext.SaveChangesAsync();
             }
         }

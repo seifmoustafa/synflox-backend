@@ -143,6 +143,61 @@ namespace WebAPI.Middlewares
             {
                 var (statusCode, message, level, errors) = MapException(ex);
                 _logger.Log(level, ex, "Handled exception");
+
+                // Log error to database if it's an error or critical
+                if (level >= LogLevel.Error)
+                {
+                    try
+                    {
+                        var errorLogService = context.RequestServices.GetService<Application.Services.IErrorLogService>();
+                        if (errorLogService != null)
+                        {
+                            // Get request body if available
+                            string? requestBody = null;
+                            if (context.Request.Body.CanSeek)
+                            {
+                                context.Request.Body.Position = 0;
+                                using var reader = new StreamReader(context.Request.Body, System.Text.Encoding.UTF8, leaveOpen: true);
+                                requestBody = await reader.ReadToEndAsync();
+                                context.Request.Body.Position = 0;
+                            }
+
+                            // Get user ID if authenticated
+                            Guid? userId = null;
+                            if (context.User?.Identity?.IsAuthenticated == true)
+                            {
+                                var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                                if (Guid.TryParse(userIdClaim, out var parsedUserId))
+                                {
+                                    userId = parsedUserId;
+                                }
+                            }
+
+                            // Get company ID from context
+                            var companyId = context.Items["CompanyId"] as Guid?;
+
+                            var severity = level == LogLevel.Critical ? "Critical" : "Error";
+                            await errorLogService.LogErrorAsync(
+                                ex,
+                                context.Request.Method,
+                                context.Request.Path.Value,
+                                context.Request.QueryString.Value,
+                                requestBody,
+                                statusCode,
+                                context.Connection.RemoteIpAddress?.ToString(),
+                                context.Request.Headers["User-Agent"].ToString(),
+                                userId,
+                                companyId,
+                                null,
+                                severity);
+                        }
+                    }
+                    catch
+                    {
+                        // Don't let error logging break error handling
+                    }
+                }
+
                 await WriteResponseAsync(context, statusCode, message, errors);
             }
         }

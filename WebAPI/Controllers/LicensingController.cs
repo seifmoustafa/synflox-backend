@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Application.DTOs.Licensing;
 using Application.DTOs.Responses;
@@ -15,15 +16,18 @@ public class LicensingController : ControllerBase
     private readonly ILicensingService _licensingService;
     private readonly ILocalizationService _localizer;
     private readonly IIdEncryptionService _idEncryption;
+    private readonly ISubscriptionHistoryService _historyService;
 
     public LicensingController(
         ILicensingService licensingService, 
         ILocalizationService localizer,
-        IIdEncryptionService idEncryption)
+        IIdEncryptionService idEncryption,
+        ISubscriptionHistoryService historyService)
     {
         _licensingService = licensingService;
         _localizer = localizer;
         _idEncryption = idEncryption;
+        _historyService = historyService;
     }
 
     [HttpPut("{id}/activate")]
@@ -165,6 +169,186 @@ public class LicensingController : ControllerBase
                 return Ok(new ApiResponse<LicenseKeyValidationResponse>(200, result.Message, result));
             }
             return Unauthorized(new ApiResponse<LicenseKeyValidationResponse>(401, result.Message, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpGet("{id}/history")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> GetCompanyHistory(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(id);
+            var (history, meta) = await _historyService.GetHistoryByCompanyIdAsync(decryptedId, page, pageSize);
+            return Ok(new ApiResponse<object>(200, string.Empty, new { history, pagination = meta }));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpGet("history")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> GetAllHistory(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] Guid? companyId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var from = fromDate ?? DateTime.UtcNow.AddDays(-30);
+            var to = toDate ?? DateTime.UtcNow;
+            Guid? decryptedCompanyId = null;
+            if (companyId.HasValue)
+            {
+                decryptedCompanyId = _idEncryption.Decrypt(companyId.Value);
+            }
+
+            var (history, meta) = await _historyService.GetHistoryByDateRangeAsync(from, to, decryptedCompanyId, page, pageSize);
+            return Ok(new ApiResponse<object>(200, string.Empty, new { history, pagination = meta }));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk-activate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkActivate([FromBody] BulkOperationRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null || request.CompanyIds == null || request.CompanyIds.Count == 0)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidRequest"]));
+
+        if (request.Action != BulkOperationAction.Activate)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidAction"]));
+
+        if (!request.ExpiryDate.HasValue)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.ExpiryDateRequired"]));
+
+        try
+        {
+            var decryptedIds = request.CompanyIds.Select(id => _idEncryption.Decrypt(id)).ToList();
+            var result = await _licensingService.BulkActivateAsync(decryptedIds, request.ExpiryDate.Value);
+            return Ok(new ApiResponse<BulkOperationResponse>(200, _localizer["BulkOperation.Completed"], result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk-suspend")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkSuspend([FromBody] BulkOperationRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null || request.CompanyIds == null || request.CompanyIds.Count == 0)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidRequest"]));
+
+        if (request.Action != BulkOperationAction.Suspend)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidAction"]));
+
+        try
+        {
+            var decryptedIds = request.CompanyIds.Select(id => _idEncryption.Decrypt(id)).ToList();
+            var result = await _licensingService.BulkSuspendAsync(decryptedIds);
+            return Ok(new ApiResponse<BulkOperationResponse>(200, _localizer["BulkOperation.Completed"], result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk-resume")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkResume([FromBody] BulkOperationRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null || request.CompanyIds == null || request.CompanyIds.Count == 0)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidRequest"]));
+
+        if (request.Action != BulkOperationAction.Resume)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidAction"]));
+
+        try
+        {
+            var decryptedIds = request.CompanyIds.Select(id => _idEncryption.Decrypt(id)).ToList();
+            var result = await _licensingService.BulkResumeAsync(decryptedIds);
+            return Ok(new ApiResponse<BulkOperationResponse>(200, _localizer["BulkOperation.Completed"], result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk-extend")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkExtend([FromBody] BulkOperationRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null || request.CompanyIds == null || request.CompanyIds.Count == 0)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidRequest"]));
+
+        if (request.Action != BulkOperationAction.Extend)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.InvalidAction"]));
+
+        if (!request.ExpiryDate.HasValue)
+            return BadRequest(new ApiResponse<string>(400, _localizer["BulkOperation.ExpiryDateRequired"]));
+
+        try
+        {
+            var decryptedIds = request.CompanyIds.Select(id => _idEncryption.Decrypt(id)).ToList();
+            var result = await _licensingService.BulkExtendAsync(decryptedIds, request.ExpiryDate.Value);
+            return Ok(new ApiResponse<BulkOperationResponse>(200, _localizer["BulkOperation.Completed"], result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("{id}/trial/start")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> StartTrial(Guid id, [FromBody] StartTrialRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(id);
+            var result = await _licensingService.StartTrialAsync(decryptedId, request.TrialDays);
+            return Ok(new ApiResponse<CompanyDto>(200, _localizer["Trial.Started"], result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("{id}/trial/convert")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> ConvertTrialToActive(Guid id, [FromBody] ConvertTrialRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(id);
+            var result = await _licensingService.ConvertTrialToActiveAsync(decryptedId, request.ExpiryDate);
+            return Ok(new ApiResponse<CompanyDto>(200, _localizer["Trial.Converted"], result));
         }
         catch (Exception ex)
         {

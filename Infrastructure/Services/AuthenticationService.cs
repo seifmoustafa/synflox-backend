@@ -8,6 +8,7 @@ using AutoMapper;
 using Domain.Entities.Authentication;
 using Domain.Interfaces;
 using Domain.Exceptions;
+using Microsoft.AspNetCore.Http;
 
 namespace Infrastructure.Services
 {
@@ -22,6 +23,9 @@ namespace Infrastructure.Services
         private readonly ILocalizationService _localizer;
         private readonly IIdEncryptionService _idEncryption;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILoginAttemptService _loginAttemptService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IPasswordPolicyService _passwordPolicyService;
 
         public AuthenticationService(
             IAdminRepository adminRepository,
@@ -32,7 +36,10 @@ namespace Infrastructure.Services
             IMapper mapper,
             ILocalizationService localizer,
             IIdEncryptionService idEncryption,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ILoginAttemptService loginAttemptService,
+            IHttpContextAccessor httpContextAccessor,
+            IPasswordPolicyService passwordPolicyService)
         {
             _adminRepository = adminRepository;
             _passwordHasher = passwordHasher;
@@ -43,15 +50,23 @@ namespace Infrastructure.Services
             _localizer = localizer;
             _idEncryption = idEncryption;
             _unitOfWork = unitOfWork;
+            _loginAttemptService = loginAttemptService;
+            _httpContextAccessor = httpContextAccessor;
+            _passwordPolicyService = passwordPolicyService;
         }
 
         public async Task<AdminDto> RegisterAdminAsync(CreateAdminDto request)
         {
-            if (request.AdminTypeId.HasValue)
-                request.AdminTypeId = _idEncryption.Decrypt(request.AdminTypeId.Value);
+            // Validate password against policy
+            var passwordValidation = await _passwordPolicyService.ValidatePasswordAsync(request.Password);
+            if (!passwordValidation.IsValid)
+            {
+                throw new BadRequestException(string.Join(", ", passwordValidation.Errors));
+            }
 
             var admin = _mapper.Map<Admin>(request);
-            admin.Password = _passwordHasher.HashPassword(request.Password);
+            var passwordHash = _passwordHasher.HashPassword(request.Password);
+            admin.Password = passwordHash;
 
             if (admin.AdminTypeId == Guid.Empty)
             {
@@ -65,30 +80,94 @@ namespace Infrastructure.Services
             await _adminRepository.AddAsync(admin);
             await _unitOfWork.SaveChangesAsync();
 
+            // Record password in history
+            await _passwordPolicyService.RecordPasswordChangeAsync(admin.Id, passwordHash);
+
             return _mapper.Map<AdminDto>(admin);
         }
 
         public async Task<AuthenticationResponse> AdminAuthenticationAsync(string username, string password)
         {
+            // Get IP address from request
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+            // Check if account is locked
+            var isLocked = await _loginAttemptService.IsAccountLockedAsync(username, ipAddress);
+            if (isLocked)
+            {
+                await _loginAttemptService.RecordAttemptAsync(
+                    username,
+                    false,
+                    ipAddress,
+                    _localizer["AccountLocked"],
+                    null);
+
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["AccountLocked"]
+                };
+            }
+
             var admin = await _adminRepository.GetByUserNameAsync(username);
             if (admin == null)
             {
+                await _loginAttemptService.RecordAttemptAsync(
+                    username,
+                    false,
+                    ipAddress,
+                    _localizer["InvalidAdminCredentials"],
+                    null);
+
                 return new AuthenticationResponse
                 {
                     Success = false,
                     ErrorMessage = _localizer["InvalidAdminCredentials"]
+                };
+            }
+
+            // Check if password has expired
+            var isPasswordExpired = await _passwordPolicyService.IsPasswordExpiredAsync(admin.Id);
+            if (isPasswordExpired)
+            {
+                await _loginAttemptService.RecordAttemptAsync(
+                    username,
+                    false,
+                    ipAddress,
+                    _localizer["PasswordExpired"],
+                    null);
+
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["PasswordExpired"]
                 };
             }
 
             bool checkPassword = _passwordHasher.VerifyPassword(password, admin.Password);
             if (!checkPassword)
             {
+                await _loginAttemptService.RecordAttemptAsync(
+                    username,
+                    false,
+                    ipAddress,
+                    _localizer["InvalidAdminCredentials"],
+                    null);
+
                 return new AuthenticationResponse
                 {
                     Success = false,
                     ErrorMessage = _localizer["InvalidAdminCredentials"]
                 };
             }
+
+            // Record successful login
+            await _loginAttemptService.RecordAttemptAsync(
+                username,
+                true,
+                ipAddress,
+                null,
+                admin.Id);
 
             admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
                 ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
@@ -166,9 +245,27 @@ namespace Infrastructure.Services
                 throw new BadRequestException(_localizer["TargetNotAdmin"]);
             }
 
-            admin.Password = _passwordHasher.HashPassword(newPassword);
+            // Validate password against policy
+            var passwordValidation = await _passwordPolicyService.ValidatePasswordAsync(newPassword, adminId);
+            if (!passwordValidation.IsValid)
+            {
+                throw new BadRequestException(string.Join(", ", passwordValidation.Errors));
+            }
+
+            // Check if password has expired
+            var isExpired = await _passwordPolicyService.IsPasswordExpiredAsync(adminId);
+            if (isExpired)
+            {
+                // Password expired, but allow change (this is the change password flow)
+            }
+
+            var passwordHash = _passwordHasher.HashPassword(newPassword);
+            admin.Password = passwordHash;
             await _adminRepository.UpdateAsync(admin);
             await _unitOfWork.SaveChangesAsync();
+
+            // Record password in history
+            await _passwordPolicyService.RecordPasswordChangeAsync(adminId, passwordHash);
         }
 
         private async Task<AuthenticationResponse> GenerateTokensAsync(

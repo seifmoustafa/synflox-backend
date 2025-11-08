@@ -29,6 +29,9 @@ namespace Infrastructure.Services
         private readonly LicenseKeySettings _licenseKeySettings;
         private readonly IIdEncryptionService _idEncryption;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionHistoryService _historyService;
+        private readonly INotificationService _notificationService;
+        private readonly IWebhookService _webhookService;
 
         public LicensingService(
             ICompanyRepository repository,
@@ -38,7 +41,10 @@ namespace Infrastructure.Services
             IUnitOfWork unitOfWork,
             IOptions<LicenseKeySettings> licenseKeySettings,
             IIdEncryptionService idEncryption,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            ISubscriptionHistoryService historyService,
+            INotificationService notificationService,
+            IWebhookService webhookService)
         {
             _repository = repository;
             _companyService = companyService;
@@ -48,6 +54,9 @@ namespace Infrastructure.Services
             _licenseKeySettings = licenseKeySettings.Value;
             _idEncryption = idEncryption;
             _currentUserService = currentUserService;
+            _historyService = historyService;
+            _notificationService = notificationService;
+            _webhookService = webhookService;
         }
 
         public async Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate)
@@ -68,10 +77,50 @@ namespace Infrastructure.Services
                 throw new BadRequestException(_localizer["Licensing.CompanyAlreadyActive"]);
             }
 
+            var oldExpiryDate = company.ExpiryDate;
+            var oldIsActive = company.IsActive;
+
             company.IsActive = true;
             company.ExpiryDate = expiryDate;
+            company.IsExpired = false; // Reset expired flag when activating
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
+
+            // Log to history
+            await _historyService.LogSubscriptionEventAsync(
+                company.Id,
+                Domain.Enums.SubscriptionHistoryActionType.Activated,
+                new { IsActive = oldIsActive, ExpiryDate = oldExpiryDate },
+                new { IsActive = company.IsActive, ExpiryDate = company.ExpiryDate },
+                _currentUserService.UserId,
+                $"Subscription activated with expiry date: {expiryDate:yyyy-MM-dd}");
+
+            // Create notification
+            try
+            {
+                var title = _localizer["Notification.ActivatedTitle"];
+                var message = string.Format(_localizer["Notification.ActivatedMessage"], company.Name, expiryDate.ToString("yyyy-MM-dd"));
+                await _notificationService.CreateNotificationAsync(
+                    company.Id,
+                    Domain.Enums.NotificationType.Activated,
+                    title,
+                    message);
+            }
+            catch (Exception notifEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            // Trigger webhook
+            try
+            {
+                var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, ExpiryDate = expiryDate, EventType = "CompanyActivated" };
+                await _webhookService.TriggerWebhookAsync(company.Id, Domain.Enums.WebhookEventType.CompanyActivated, webhookPayload);
+            }
+            catch (Exception webhookEx)
+            {
+                // Log but don't fail the operation
+            }
 
             var dto = _mapper.Map<CompanyDto>(company);
             SetLicenseKeyIfSuperAdmin(dto, company);
@@ -91,9 +140,47 @@ namespace Infrastructure.Services
                 throw new BadRequestException(_localizer["Licensing.CompanyAlreadySuspended"]);
             }
 
+            var oldIsActive = company.IsActive;
+
             company.IsActive = false;
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
+
+            // Log to history
+            await _historyService.LogSubscriptionEventAsync(
+                company.Id,
+                Domain.Enums.SubscriptionHistoryActionType.Suspended,
+                new { IsActive = oldIsActive },
+                new { IsActive = company.IsActive },
+                _currentUserService.UserId,
+                "Subscription suspended");
+
+            // Create notification
+            try
+            {
+                var title = _localizer["Notification.SuspendedTitle"];
+                var message = string.Format(_localizer["Notification.SuspendedMessage"], company.Name);
+                await _notificationService.CreateNotificationAsync(
+                    company.Id,
+                    Domain.Enums.NotificationType.Suspended,
+                    title,
+                    message);
+            }
+            catch (Exception notifEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            // Trigger webhook
+            try
+            {
+                var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, EventType = "CompanySuspended" };
+                await _webhookService.TriggerWebhookAsync(company.Id, Domain.Enums.WebhookEventType.CompanySuspended, webhookPayload);
+            }
+            catch (Exception webhookEx)
+            {
+                // Log but don't fail the operation
+            }
 
             var dto = _mapper.Map<CompanyDto>(company);
             SetLicenseKeyIfSuperAdmin(dto, company);
@@ -113,9 +200,47 @@ namespace Infrastructure.Services
                 throw new BadRequestException(_localizer["Licensing.CompanyAlreadyActive"]);
             }
 
+            var oldIsActive = company.IsActive;
+
             company.IsActive = true;
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
+
+            // Log to history
+            await _historyService.LogSubscriptionEventAsync(
+                company.Id,
+                Domain.Enums.SubscriptionHistoryActionType.Resumed,
+                new { IsActive = oldIsActive },
+                new { IsActive = company.IsActive },
+                _currentUserService.UserId,
+                "Subscription resumed");
+
+            // Create notification
+            try
+            {
+                var title = _localizer["Notification.ResumedTitle"];
+                var message = string.Format(_localizer["Notification.ResumedMessage"], company.Name);
+                await _notificationService.CreateNotificationAsync(
+                    company.Id,
+                    Domain.Enums.NotificationType.Resumed,
+                    title,
+                    message);
+            }
+            catch (Exception notifEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            // Trigger webhook
+            try
+            {
+                var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, EventType = "CompanyResumed" };
+                await _webhookService.TriggerWebhookAsync(company.Id, Domain.Enums.WebhookEventType.CompanyResumed, webhookPayload);
+            }
+            catch (Exception webhookEx)
+            {
+                // Log but don't fail the operation
+            }
 
             var dto = _mapper.Map<CompanyDto>(company);
             SetLicenseKeyIfSuperAdmin(dto, company);
@@ -135,9 +260,48 @@ namespace Infrastructure.Services
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
             }
 
+            var oldExpiryDate = company.ExpiryDate;
+
             company.ExpiryDate = newExpiryDate;
+            company.IsExpired = false; // Reset expired flag when extending
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
+
+            // Log to history
+            await _historyService.LogSubscriptionEventAsync(
+                company.Id,
+                Domain.Enums.SubscriptionHistoryActionType.Extended,
+                new { ExpiryDate = oldExpiryDate },
+                new { ExpiryDate = company.ExpiryDate },
+                _currentUserService.UserId,
+                $"Subscription extended to: {newExpiryDate:yyyy-MM-dd}");
+
+            // Create notification
+            try
+            {
+                var title = _localizer["Notification.ExtendedTitle"];
+                var message = string.Format(_localizer["Notification.ExtendedMessage"], company.Name, newExpiryDate.ToString("yyyy-MM-dd"));
+                await _notificationService.CreateNotificationAsync(
+                    company.Id,
+                    Domain.Enums.NotificationType.Extended,
+                    title,
+                    message);
+            }
+            catch (Exception notifEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            // Trigger webhook
+            try
+            {
+                var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, NewExpiryDate = newExpiryDate, EventType = "CompanyExtended" };
+                await _webhookService.TriggerWebhookAsync(company.Id, Domain.Enums.WebhookEventType.CompanyExtended, webhookPayload);
+            }
+            catch (Exception webhookEx)
+            {
+                // Log but don't fail the operation
+            }
 
             var dto = _mapper.Map<CompanyDto>(company);
             SetLicenseKeyIfSuperAdmin(dto, company);
@@ -260,8 +424,14 @@ namespace Infrastructure.Services
         {
             var now = DateTime.UtcNow;
 
-            // Expired takes precedence - if expiry date has passed, it's expired
-            if (company.ExpiryDate.HasValue && company.ExpiryDate.Value < now)
+            // Check trial expiry first
+            if (company.IsTrial && company.TrialEndDate.HasValue && company.TrialEndDate.Value < now)
+            {
+                return LicenseStatus.Expired;
+            }
+
+            // Expired takes precedence - check both IsExpired flag and ExpiryDate
+            if (company.IsExpired || (company.ExpiryDate.HasValue && company.ExpiryDate.Value < now))
             {
                 return LicenseStatus.Expired;
             }
@@ -270,6 +440,12 @@ namespace Infrastructure.Services
             if (!company.IsActive)
             {
                 return LicenseStatus.Suspended;
+            }
+
+            // If it's a trial, return Active (trial is considered active until expiry)
+            if (company.IsTrial)
+            {
+                return LicenseStatus.Active;
             }
 
             // Otherwise, it's active
@@ -401,6 +577,288 @@ namespace Infrastructure.Services
         {
             public string Payload { get; set; } = string.Empty;
             public string Signature { get; set; } = string.Empty;
+        }
+
+        public async Task<BulkOperationResponse> BulkActivateAsync(List<Guid> companyIds, DateTime expiryDate)
+        {
+            var response = new BulkOperationResponse
+            {
+                TotalRequested = companyIds.Count
+            };
+
+            foreach (var companyId in companyIds)
+            {
+                try
+                {
+                    await ActivateCompanyAsync(companyId, expiryDate);
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = true
+                    });
+                    response.Successful++;
+                }
+                catch (Exception ex)
+                {
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = false,
+                        ErrorMessage = ex.Message
+                    });
+                    response.Failed++;
+                }
+            }
+
+            return response;
+        }
+
+        public async Task<BulkOperationResponse> BulkSuspendAsync(List<Guid> companyIds)
+        {
+            var response = new BulkOperationResponse
+            {
+                TotalRequested = companyIds.Count
+            };
+
+            foreach (var companyId in companyIds)
+            {
+                try
+                {
+                    await SuspendCompanyAsync(companyId);
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = true
+                    });
+                    response.Successful++;
+                }
+                catch (Exception ex)
+                {
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = false,
+                        ErrorMessage = ex.Message
+                    });
+                    response.Failed++;
+                }
+            }
+
+            return response;
+        }
+
+        public async Task<BulkOperationResponse> BulkResumeAsync(List<Guid> companyIds)
+        {
+            var response = new BulkOperationResponse
+            {
+                TotalRequested = companyIds.Count
+            };
+
+            foreach (var companyId in companyIds)
+            {
+                try
+                {
+                    await ResumeCompanyAsync(companyId);
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = true
+                    });
+                    response.Successful++;
+                }
+                catch (Exception ex)
+                {
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = false,
+                        ErrorMessage = ex.Message
+                    });
+                    response.Failed++;
+                }
+            }
+
+            return response;
+        }
+
+        public async Task<BulkOperationResponse> BulkExtendAsync(List<Guid> companyIds, DateTime newExpiryDate)
+        {
+            var response = new BulkOperationResponse
+            {
+                TotalRequested = companyIds.Count
+            };
+
+            foreach (var companyId in companyIds)
+            {
+                try
+                {
+                    await ExtendCompanyAsync(companyId, newExpiryDate);
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = true
+                    });
+                    response.Successful++;
+                }
+                catch (Exception ex)
+                {
+                    var company = await _repository.GetByIdAsync(companyId, null);
+                    response.Results.Add(new BulkOperationResult
+                    {
+                        CompanyId = _idEncryption.Encrypt(companyId),
+                        CompanyName = company?.Name ?? "Unknown",
+                        Success = false,
+                        ErrorMessage = ex.Message
+                    });
+                    response.Failed++;
+                }
+            }
+
+            return response;
+        }
+
+        public async Task<CompanyDto> StartTrialAsync(Guid companyId, int trialDays)
+        {
+            var company = await _repository.GetByIdAsync(companyId, null);
+            if (company == null || company.IsDeleted)
+            {
+                throw new NotFoundException(_localizer["Company.CompanyNotFound"]);
+            }
+
+            if (company.IsTrial && company.TrialEndDate.HasValue && company.TrialEndDate.Value > DateTime.UtcNow)
+            {
+                throw new BadRequestException(_localizer["Trial.AlreadyActive"]);
+            }
+
+            company.IsTrial = true;
+            company.TrialEndDate = DateTime.UtcNow.AddDays(trialDays);
+            company.IsActive = true;
+            company.IsExpired = false;
+            company.UpdatedTimestamp = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(company);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Log to history
+            await _historyService.LogSubscriptionEventAsync(
+                company.Id,
+                Domain.Enums.SubscriptionHistoryActionType.Activated,
+                new { IsTrial = false, TrialEndDate = (DateTime?)null },
+                new { IsTrial = company.IsTrial, TrialEndDate = company.TrialEndDate },
+                _currentUserService.UserId,
+                $"Trial started for {trialDays} days");
+
+            // Create notification
+            try
+            {
+                var title = _localizer["Notification.TrialStartedTitle"];
+                var message = string.Format(_localizer["Notification.TrialStartedMessage"], company.Name, trialDays, company.TrialEndDate.Value.ToString("yyyy-MM-dd"));
+                await _notificationService.CreateNotificationAsync(
+                    company.Id,
+                    Domain.Enums.NotificationType.Activated,
+                    title,
+                    message);
+            }
+            catch (Exception notifEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            // Trigger webhook
+            try
+            {
+                var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, TrialDays = trialDays, TrialEndDate = company.TrialEndDate.Value.ToString("yyyy-MM-dd"), EventType = "TrialStarted" };
+                await _webhookService.TriggerWebhookAsync(company.Id, Domain.Enums.WebhookEventType.CompanyActivated, webhookPayload);
+            }
+            catch (Exception webhookEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            return dto;
+        }
+
+        public async Task<CompanyDto> ConvertTrialToActiveAsync(Guid companyId, DateTime expiryDate)
+        {
+            var company = await _repository.GetByIdAsync(companyId, null);
+            if (company == null || company.IsDeleted)
+            {
+                throw new NotFoundException(_localizer["Company.CompanyNotFound"]);
+            }
+
+            if (!company.IsTrial)
+            {
+                throw new BadRequestException(_localizer["Trial.NotTrial"]);
+            }
+
+            var oldIsTrial = company.IsTrial;
+            var oldTrialEndDate = company.TrialEndDate;
+
+            company.IsTrial = false;
+            company.TrialEndDate = null;
+            company.ExpiryDate = expiryDate;
+            company.IsActive = true;
+            company.IsExpired = false;
+            company.UpdatedTimestamp = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(company);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Log to history
+            await _historyService.LogSubscriptionEventAsync(
+                company.Id,
+                Domain.Enums.SubscriptionHistoryActionType.Activated,
+                new { IsTrial = oldIsTrial, TrialEndDate = oldTrialEndDate, ExpiryDate = (DateTime?)null },
+                new { IsTrial = company.IsTrial, TrialEndDate = company.TrialEndDate, ExpiryDate = company.ExpiryDate },
+                _currentUserService.UserId,
+                $"Trial converted to active subscription with expiry date: {expiryDate:yyyy-MM-dd}");
+
+            // Create notification
+            try
+            {
+                var title = _localizer["Notification.TrialConvertedTitle"];
+                var message = string.Format(_localizer["Notification.TrialConvertedMessage"], company.Name, expiryDate.ToString("yyyy-MM-dd"));
+                await _notificationService.CreateNotificationAsync(
+                    company.Id,
+                    Domain.Enums.NotificationType.Activated,
+                    title,
+                    message);
+            }
+            catch (Exception notifEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            // Trigger webhook
+            try
+            {
+                var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, ExpiryDate = expiryDate, EventType = "TrialConverted" };
+                await _webhookService.TriggerWebhookAsync(company.Id, Domain.Enums.WebhookEventType.CompanyActivated, webhookPayload);
+            }
+            catch (Exception webhookEx)
+            {
+                // Log but don't fail the operation
+            }
+
+            var dto = _mapper.Map<CompanyDto>(company);
+            SetLicenseKeyIfSuperAdmin(dto, company);
+            return dto;
         }
     }
 }

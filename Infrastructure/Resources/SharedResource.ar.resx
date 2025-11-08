@@ -204,4 +204,301 @@
   <data name="MenuItems.HasChildren" xml:space="preserve">
     <value>لا يمكن حذف عنصر القائمة: لديه عناصر قائمة فرعية</value>
   </data>
+  <data name="Notification.ExpiryWarningTitle" xml:space="preserve">
+    <value>انتهاء الاشتراك خلال {0} أيام</value>
+  </data>
+  <data name="Notification.ExpiryWarningMessage" xml:space="preserve">
+    <value>سينتهي اشتراكك لـ {0} خلال {1} أيام في {2}. يرجى التجديد لمواصلة الخدمة.</value>
+  </data>
+  <data name="Notification.ExpiryWarningEmailSubject" xml:space="preserve">
+    <value>SYNFLOX: انتهاء اشتراك {0} خلال {1} أيام</value>
+  </data>
+  <data name="Notification.ExpiryWarningEmailBody" xml:space="preserve">
+    <value>عزيزي {0}،&#xD;&#xA;&#xD;&#xA;سينتهي اشتراكك خلال {1} أيام في {2}. يرجى تجديد اشتراكك لتجنب انقطاع الخدمة.&#xD;&#xA;&#xD;&#xA;شكراً لك،&#xD;&#xA;فريق SYNFLOX</value>
+  </data>
+  <data name="Notification.ExpiredTitle" xml:space="preserve">
+    <value>انتهى الاشتراك</value>
+  </data>
+  <data name="Notification.ExpiredMessage" xml:space="preserve">
+    <value>انتهى اشتراكك لـ {0} في {1}. يرجى التجديد لاستعادة الخدمة.</value>
+  </data>
+  <data name="Notification.ExpiredEmailSubject" xml:space="preserve">
+    <value>SYNFLOX: انتهى اشتراك {0}</value>
+  </data>
+  <data name="Notification.ExpiredEmailBody" xml:space="preserve">
+    <value>عزيزي {0}،&#xD;&#xA;&#xD;&#xA;انتهى اشتراكك في {1}. يرجى تجديد اشتراكك لاستعادة الخدمة.&#xD;&#xA;&#xD;&#xA;شكراً لك،&#xD;&#xA;فريق SYNFLOX</value>
+  </data>
+  <data name="Notification.MarkedAsRead" xml:space="preserve">
+    <value>تم تحديد الإشعار كمقروء</value>
+  </data>
+  <data name="Notification.AllMarkedAsRead" xml:space="preserve">
+    <value>تم تحديد جميع الإشعارات كمقروءة</value>
+  </data>
+  <data name="Notification.ActivatedTitle" xml:space="preserve">
+    <value>تم تفعيل الاشتراك</value>
+  </data>
+  <data name="Notification.ActivatedMessage" xml:space="preserve">
+    <value>تم تفعيل اشتراكك لـ {0} بتاريخ انتهاء: {1}</value>
+  </data>
+  <data name="Notification.SuspendedTitle" xml:space="preserve">
+    <value>تم تعليق الاشتراك</value>
+  </data>
+  <data name="Notification.SuspendedMessage" xml:space="preserve">
+    <value>تم تعليق اشتراكك لـ {0}</value>
+  </data>
+  <data name="Notification.ResumedTitle" xml:space="preserve">
+    <value>تم استئناف الاشتراك</value>
+  </data>
+  <data name="Notification.ResumedMessage" xml:space="preserve">
+    <value>تم استئناف اشتراكك لـ {0}</value>
+  </data>
+  <data name="Notification.ExtendedTitle" xml:space="preserve">
+    <value>تم تمديد الاشتراك</value>
+  </data>
+  <data name="Notification.ExtendedMessage" xml:space="preserve">
+    <value>تم تمديد اشتراكك لـ {0} حتى: {1}</value>
+  </data>
+  <data name="ApiKey.Created" xml:space="preserve">
+    <value>تم إنشاء مفتاح API بنجاح</value>
+  </data>
+  <data name="ApiKey.NotFound" xml:space="preserve">
+    <value>مفتاح API غير موجود</value>
+  </data>
+  <data name="ApiKey.Revoked" xml:space="preserve">
+    <value>تم إلغاء مفتاح API بنجاح</value>
+  </data>
+  <data name="ApiKey.Regenerated" xml:space="preserve">
+    <value>تم إعادة إنشاء مفتاح API بنجاح</value>
+  </data>
+  <data name="ApiKey.Invalid" xml:space="preserve">
+    <value>مفتاح API غير صالح</value>
+  </data>
+  <data name="ApiKey.Expired" xml:space="preserve">
+    <value>انتهت صلاحية مفتاح API</value>
+  </data>
+  <data name="ApiKey.Updated" xml:space="preserve">
+    <value>تم تحديث مفتاح API بنجاح</value>
+  </data>
+  <data name="AccountLocked" xml:space="preserve">
+    <value>الحساب مؤقتاً مقفل بسبب محاولات تسجيل دخول فاشلة كثيرة. يرجى المحاولة مرة أخرى لاحقاً.</value>
+  </data>
+  <data name="Webhook.Created" xml:space="preserve">
+    <value>تم إنشاء Webhook بنجاح</value>
+  </data>
+  <data name="Webhook.NotFound" xml:space="preserve">
+    <value>Webhook غير موجود</value>
+  </data>
+  <data name="Webhook.Deleted" xml:space="preserve">
+    <value>تم حذف Webhook بنجاح</value>
+  </data>
+  <data name="Webhook.RetryInitiated" xml:space="preserve">
+    <value>تم بدء إعادة محاولة تسليمات Webhook الفاشلة</value>
+  </data>
+  <data name="BulkOperation.InvalidRequest" xml:space="preserve">
+    <value>طلب العملية المجمعة غير صالح</value>
+  </data>
+  <data name="BulkOperation.InvalidAction" xml:space="preserve">
+    <value>إجراء غير صالح لهذا النقطة</value>
+  </data>
+  <data name="BulkOperation.ExpiryDateRequired" xml:space="preserve">
+    <value>تاريخ الانتهاء مطلوب لهذه العملية</value>
+  </data>
+  <data name="BulkOperation.UpdateDtoRequired" xml:space="preserve">
+    <value>Update DTO مطلوب للتحديث المجمع</value>
+  </data>
+  <data name="BulkOperation.Completed" xml:space="preserve">
+    <value>اكتملت العملية المجمعة</value>
+  </data>
+  <data name="SubscriptionPlan.Created" xml:space="preserve">
+    <value>تم إنشاء خطة الاشتراك بنجاح</value>
+  </data>
+  <data name="SubscriptionPlan.NotFound" xml:space="preserve">
+    <value>خطة الاشتراك غير موجودة</value>
+  </data>
+  <data name="SubscriptionPlan.Updated" xml:space="preserve">
+    <value>تم تحديث خطة الاشتراك بنجاح</value>
+  </data>
+  <data name="SubscriptionPlan.Deleted" xml:space="preserve">
+    <value>تم حذف خطة الاشتراك بنجاح</value>
+  </data>
+  <data name="SubscriptionPlan.NameExists" xml:space="preserve">
+    <value>خطة اشتراك بهذا الاسم موجودة بالفعل</value>
+  </data>
+  <data name="Trial.Started" xml:space="preserve">
+    <value>تم بدء فترة التجربة بنجاح</value>
+  </data>
+  <data name="Trial.Converted" xml:space="preserve">
+    <value>تم تحويل التجربة إلى اشتراك نشط بنجاح</value>
+  </data>
+  <data name="Trial.AlreadyActive" xml:space="preserve">
+    <value>الشركة لديها بالفعل فترة تجربة نشطة</value>
+  </data>
+  <data name="Trial.NotTrial" xml:space="preserve">
+    <value>الشركة ليست في فترة تجربة</value>
+  </data>
+  <data name="Notification.TrialStartedTitle" xml:space="preserve">
+    <value>تم بدء فترة التجربة</value>
+  </data>
+  <data name="Notification.TrialStartedMessage" xml:space="preserve">
+    <value>تم بدء فترة التجربة لـ {0}. ستنتهي التجربة في {2} ({1} أيام).</value>
+  </data>
+  <data name="Notification.TrialConvertedTitle" xml:space="preserve">
+    <value>تم تحويل التجربة إلى اشتراك نشط</value>
+  </data>
+  <data name="Notification.TrialConvertedMessage" xml:space="preserve">
+    <value>تم تحويل التجربة لـ {0} إلى اشتراك نشط بتاريخ انتهاء: {1}</value>
+  </data>
+  <data name="Project.Created" xml:space="preserve">
+    <value>تم إنشاء المشروع بنجاح</value>
+  </data>
+  <data name="Project.Updated" xml:space="preserve">
+    <value>تم تحديث المشروع بنجاح</value>
+  </data>
+  <data name="Project.Deleted" xml:space="preserve">
+    <value>تم حذف المشروع بنجاح</value>
+  </data>
+  <data name="Project.NotFound" xml:space="preserve">
+    <value>المشروع غير موجود</value>
+  </data>
+  <data name="Project.NameExists" xml:space="preserve">
+    <value>مشروع بهذا الاسم موجود بالفعل</value>
+  </data>
+  <data name="Module.Created" xml:space="preserve">
+    <value>تم إنشاء الوحدة بنجاح</value>
+  </data>
+  <data name="Module.Updated" xml:space="preserve">
+    <value>تم تحديث الوحدة بنجاح</value>
+  </data>
+  <data name="Module.Deleted" xml:space="preserve">
+    <value>تم حذف الوحدة بنجاح</value>
+  </data>
+  <data name="Module.NotFound" xml:space="preserve">
+    <value>الوحدة غير موجودة</value>
+  </data>
+  <data name="Module.NameExists" xml:space="preserve">
+    <value>وحدة بهذا الاسم موجودة بالفعل</value>
+  </data>
+  <data name="ProjectModule.Created" xml:space="preserve">
+    <value>تم إنشاء علاقة المشروع-الوحدة بنجاح</value>
+  </data>
+  <data name="ProjectModule.Deleted" xml:space="preserve">
+    <value>تم حذف علاقة المشروع-الوحدة بنجاح</value>
+  </data>
+  <data name="ProjectModule.NotFound" xml:space="preserve">
+    <value>علاقة المشروع-الوحدة غير موجودة</value>
+  </data>
+  <data name="ProjectModule.AlreadyExists" xml:space="preserve">
+    <value>علاقة المشروع-الوحدة هذه موجودة بالفعل</value>
+  </data>
+  <data name="SubscriptionPlan.ProjectModulesUpdated" xml:space="preserve">
+    <value>تم تحديث وحدات مشروع خطة الاشتراك بنجاح</value>
+  </data>
+  <data name="PasswordPolicy.Updated" xml:space="preserve">
+    <value>تم تحديث سياسة كلمة المرور بنجاح</value>
+  </data>
+  <data name="PasswordPolicy.MinLength" xml:space="preserve">
+    <value>يجب أن تكون كلمة المرور على الأقل {0} أحرف</value>
+  </data>
+  <data name="PasswordPolicy.RequireUppercase" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل</value>
+  </data>
+  <data name="PasswordPolicy.RequireLowercase" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل</value>
+  </data>
+  <data name="PasswordPolicy.RequireNumbers" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على رقم واحد على الأقل</value>
+  </data>
+  <data name="PasswordPolicy.RequireSpecialChars" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على حرف خاص واحد على الأقل</value>
+  </data>
+  <data name="PasswordPolicy.PreventReuse" xml:space="preserve">
+    <value>لا يمكن استخدام كلمة المرور من آخر {0} كلمات مرور مستخدمة</value>
+  </data>
+  <data name="PasswordExpired" xml:space="preserve">
+    <value>انتهت صلاحية كلمة المرور الخاصة بك. يرجى تغيير كلمة المرور للمتابعة.</value>
+  </data>
+  <data name="Metrics.SummaryRetrieved" xml:space="preserve">
+    <value>تم استرجاع ملخص المقاييس بنجاح</value>
+  </data>
+  <data name="Metrics.HistoryRetrieved" xml:space="preserve">
+    <value>تم استرجاع تاريخ المقاييس بنجاح</value>
+  </data>
+  <data name="Metrics.Aggregated" xml:space="preserve">
+    <value>تم تجميع المقاييس بنجاح</value>
+  </data>
+  <data name="Metrics.CleanedUp" xml:space="preserve">
+    <value>تم تنظيف المقاييس القديمة بنجاح</value>
+  </data>
+  <data name="ErrorLog.ErrorsRetrieved" xml:space="preserve">
+    <value>تم استرجاع سجلات الأخطاء بنجاح</value>
+  </data>
+  <data name="ErrorLog.ErrorRetrieved" xml:space="preserve">
+    <value>تم استرجاع سجل الخطأ بنجاح</value>
+  </data>
+  <data name="ErrorLog.NotFound" xml:space="preserve">
+    <value>سجل الخطأ غير موجود</value>
+  </data>
+  <data name="ErrorLog.CleanedUp" xml:space="preserve">
+    <value>تم تنظيف سجلات الأخطاء القديمة بنجاح</value>
+  </data>
+  <data name="CompanyGroup.Created" xml:space="preserve">
+    <value>تم إنشاء مجموعة الشركات بنجاح</value>
+  </data>
+  <data name="CompanyGroup.Updated" xml:space="preserve">
+    <value>تم تحديث مجموعة الشركات بنجاح</value>
+  </data>
+  <data name="CompanyGroup.Deleted" xml:space="preserve">
+    <value>تم حذف مجموعة الشركات بنجاح</value>
+  </data>
+  <data name="CompanyGroup.NotFound" xml:space="preserve">
+    <value>مجموعة الشركات غير موجودة</value>
+  </data>
+  <data name="CompanyGroup.CompaniesAdded" xml:space="preserve">
+    <value>تم إضافة الشركات إلى المجموعة بنجاح</value>
+  </data>
+  <data name="CompanyGroup.CompaniesRemoved" xml:space="preserve">
+    <value>تم إزالة الشركات من المجموعة بنجاح</value>
+  </data>
+  <data name="CompanyGroup.BulkActivated" xml:space="preserve">
+    <value>تم تفعيل جميع الشركات في المجموعة بنجاح</value>
+  </data>
+  <data name="CompanyGroup.BulkSuspended" xml:space="preserve">
+    <value>تم تعليق جميع الشركات في المجموعة بنجاح</value>
+  </data>
+  <data name="CompanyGroup.BulkResumed" xml:space="preserve">
+    <value>تم استئناف جميع الشركات في المجموعة بنجاح</value>
+  </data>
+  <data name="CompanyGroup.BulkExtended" xml:space="preserve">
+    <value>تم تمديد جميع الشركات في المجموعة بنجاح</value>
+  </data>
+  <data name="CompanyCustomField.Created" xml:space="preserve">
+    <value>تم إنشاء الحقل المخصص بنجاح</value>
+  </data>
+  <data name="CompanyCustomField.Updated" xml:space="preserve">
+    <value>تم تحديث الحقل المخصص بنجاح</value>
+  </data>
+  <data name="CompanyCustomField.Deleted" xml:space="preserve">
+    <value>تم حذف الحقل المخصص بنجاح</value>
+  </data>
+  <data name="CompanyCustomField.NotFound" xml:space="preserve">
+    <value>الحقل المخصص غير موجود</value>
+  </data>
+  <data name="CompanyCustomField.AlreadyExists" xml:space="preserve">
+    <value>حقل مخصص بهذا الاسم موجود بالفعل لهذه الشركة</value>
+  </data>
+  <data name="Import.FileRequired" xml:space="preserve">
+    <value>ملف الاستيراد مطلوب</value>
+  </data>
+  <data name="Import.Completed" xml:space="preserve">
+    <value>اكتمل الاستيراد</value>
+  </data>
+  <data name="Report.Generated" xml:space="preserve">
+    <value>تم إنشاء التقرير بنجاح</value>
+  </data>
+  <data name="Report.NotFound" xml:space="preserve">
+    <value>التقرير غير موجود</value>
+  </data>
+  <data name="Report.InvalidType" xml:space="preserve">
+    <value>نوع التقرير غير صالح</value>
+  </data>
 </root>

@@ -25,15 +25,59 @@ namespace Infrastructure.Context
         public DbSet<Admin> Admins { get; set; }
         public DbSet<AdminType> UserTypes { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Domain.Entities.Authentication.ApiKey> ApiKeys { get; set; }
+        public DbSet<Domain.Entities.Authentication.LoginAttempt> LoginAttempts { get; set; }
+        public DbSet<Domain.Entities.Authentication.PasswordHistory> PasswordHistories { get; set; }
+        #endregion
 
+        #region Settings
+        public DbSet<Domain.Entities.Settings.PasswordPolicy> PasswordPolicies { get; set; }
         #endregion
 
         #region Licensing
         public DbSet<Company> Companies { get; set; }
+        public DbSet<SubscriptionHistory> SubscriptionHistories { get; set; }
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<Module> Modules { get; set; }
+        public DbSet<ProjectModule> ProjectModules { get; set; }
+        public DbSet<PlanProjectModule> PlanProjectModules { get; set; }
+        public DbSet<CompanyGroup> CompanyGroups { get; set; }
+        public DbSet<CompanyGroupMember> CompanyGroupMembers { get; set; }
+        public DbSet<CompanyCustomField> CompanyCustomFields { get; set; }
+        #endregion
+
+        #region Notifications
+        public DbSet<Domain.Entities.Notifications.Notification> Notifications { get; set; }
+        #endregion
+
+        #region Webhooks
+        public DbSet<Domain.Entities.Webhooks.Webhook> Webhooks { get; set; }
+        public DbSet<Domain.Entities.Webhooks.WebhookDelivery> WebhookDeliveries { get; set; }
+        #endregion
+
+        #region Analytics
+        public DbSet<Domain.Entities.Analytics.CompanyUsageLog> CompanyUsageLogs { get; set; }
+        #endregion
+
+        #region Metrics
+        public DbSet<Domain.Entities.Metrics.SystemMetric> SystemMetrics { get; set; }
+        #endregion
+
+        #region Logging
+        public DbSet<Domain.Entities.Logging.ErrorLog> ErrorLogs { get; set; }
+        #endregion
+
+        #region Tenancy
+        public DbSet<Domain.Entities.Tenancy.Tenant> Tenants { get; set; }
         #endregion
 
         #region Navigation
         public DbSet<Domain.Entities.Navigation.MenuItems> MenuItems { get; set; }
+        #endregion
+
+        #region Reporting
+        public DbSet<Domain.Entities.Reporting.ReportDefinition> ReportDefinitions { get; set; }
         #endregion
 
         #region References

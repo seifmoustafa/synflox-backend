@@ -8,5 +8,5 @@ public class UpdateAdminRequest
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? PhoneNumber { get; set; }
-    public Guid? AdminTypeId { get; set; }
+    public Guid AdminTypeId { get; set; }
 }

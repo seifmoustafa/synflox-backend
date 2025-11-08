@@ -53,5 +53,35 @@ public interface ILicensingService
     /// Used by offline systems to check their license status.
     /// </summary>
     Task<LicenseKeyValidationResponse> ValidateLicenseKeyAsync(string licenseKey);
+
+    /// <summary>
+    /// Performs bulk activation on multiple companies.
+    /// </summary>
+    Task<BulkOperationResponse> BulkActivateAsync(List<Guid> companyIds, DateTime expiryDate);
+
+    /// <summary>
+    /// Performs bulk suspension on multiple companies.
+    /// </summary>
+    Task<BulkOperationResponse> BulkSuspendAsync(List<Guid> companyIds);
+
+    /// <summary>
+    /// Performs bulk resume on multiple companies.
+    /// </summary>
+    Task<BulkOperationResponse> BulkResumeAsync(List<Guid> companyIds);
+
+    /// <summary>
+    /// Performs bulk extension on multiple companies.
+    /// </summary>
+    Task<BulkOperationResponse> BulkExtendAsync(List<Guid> companyIds, DateTime newExpiryDate);
+
+    /// <summary>
+    /// Starts a trial period for a company.
+    /// </summary>
+    Task<CompanyDto> StartTrialAsync(Guid companyId, int trialDays);
+
+    /// <summary>
+    /// Converts a trial subscription to an active paid subscription.
+    /// </summary>
+    Task<CompanyDto> ConvertTrialToActiveAsync(Guid companyId, DateTime expiryDate);
 }
 

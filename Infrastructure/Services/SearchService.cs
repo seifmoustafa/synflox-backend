@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Application.DTOs.Search;
 using Application.DTOs.Responses;
 using Application.Services_Interfaces;
+using Application.Services;
 using Infrastructure.Context;
 
 namespace Infrastructure.Services
@@ -14,10 +15,12 @@ namespace Infrastructure.Services
     public class SearchService : ISearchService
     {
         private readonly ApplicationDBContext _context;
+        private readonly IIdEncryptionService _idEncryption;
 
-        public SearchService(ApplicationDBContext context)
+        public SearchService(ApplicationDBContext context, IIdEncryptionService idEncryption)
         {
             _context = context;
+            _idEncryption = idEncryption;
         }
 
         /// <summary>
@@ -323,12 +326,17 @@ namespace Infrastructure.Services
         /// </summary>
         private SearchResultDto BuildSearchResult(object entity, string entityTypeName, string searchQuery)
         {
+            var entityId = GetEntityId(entity);
+            var hierarchyPath = BuildHierarchyPath(entity);
+            
             return new SearchResultDto
             {
-                Id = GetEntityId(entity),
+                // Encrypt IDs manually (special case - not using AutoMapper for generic search)
+                Id = _idEncryption.Encrypt(entityId),
                 EntityType = entityTypeName,
-                HierarchyPath = BuildHierarchyPath(entity),
-                NavigationRoute = BuildNavigationRoute(entityTypeName, GetEntityId(entity), BuildHierarchyPath(entity)),
+                // Encrypt hierarchy path IDs
+                HierarchyPath = hierarchyPath.Select(id => _idEncryption.Encrypt(id)).ToList(),
+                NavigationRoute = BuildNavigationRoute(entityTypeName, entityId, hierarchyPath),
                 Title = GetEntityTitle(entity),
                 TitleEn = GetEntityTitleEn(entity),
                 Summary = GetEntitySummary(entity),
@@ -570,9 +578,11 @@ namespace Infrastructure.Services
             var categoryEntity = GetEntityCategoryEntity(entity);
             if (categoryEntity == null) return null;
 
+            var categoryId = GetEntityId(categoryEntity);
             return new CategoryInfoDto
             {
-                Id = GetEntityId(categoryEntity),
+                // Encrypt ID manually (special case - not using AutoMapper for generic search)
+                Id = _idEncryption.Encrypt(categoryId),
                 Name = GetEntityTitle(categoryEntity),
                 NameEn = GetEntityTitleEn(categoryEntity)
             };

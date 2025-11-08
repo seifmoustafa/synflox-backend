@@ -2,6 +2,7 @@ using AutoMapper;
 using Domain.Entities.Authentication;
 using Application.DTOs.Admin;
 using Application.DTOs.AdminType;
+using Application.Services;
 
 namespace Application.Mapping;
 
@@ -18,9 +19,13 @@ public class AdminMappingProfile : Profile
                 opt => opt.MapFrom(s => s.AdminType.AdminTypeName));
 
         CreateMap<CreateAdminDto, Admin>()
-            .ForMember(d => d.Password, opt => opt.Ignore());
+            .ForMember(d => d.Password, opt => opt.Ignore())
+            .ForMember(d => d.AdminTypeId,
+                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.AdminTypeId));
 
         CreateMap<UpdateAdminRequest, Admin>()
+            .ForMember(d => d.AdminTypeId,
+                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.AdminTypeId))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         CreateMap<AdminType, AdminTypeDto>()

@@ -18,7 +18,6 @@ public class MenuItemsService : IMenuItemsService
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IIdEncryptionService _idEncryption;
     private readonly ICurrentUserService _currentUserService;
 
     public MenuItemsService(
@@ -26,14 +25,12 @@ public class MenuItemsService : IMenuItemsService
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
-        IIdEncryptionService idEncryption,
         ICurrentUserService currentUserService)
     {
         _repository = repository;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
-        _idEncryption = idEncryption;
         _currentUserService = currentUserService;
     }
 
@@ -80,23 +77,19 @@ public class MenuItemsService : IMenuItemsService
     {
         var MenuItems = _mapper.Map<MenuItems>(dto);
 
-        // Handle parent menu item ID if provided
-        if (!string.IsNullOrEmpty(dto.ParentMenuItemsId))
+        // Validate parent menu item ID if provided (mapper already decrypted it)
+        if (MenuItems.ParentMenuItemsId.HasValue)
         {
-            try
+            var parent = await _repository.GetByIdAsync(MenuItems.ParentMenuItemsId.Value, null);
+            if (parent == null || parent.IsDeleted)
             {
-                var parentId = _idEncryption.Decrypt(dto.ParentMenuItemsId);
-                var parent = await _repository.GetByIdAsync(parentId, null);
-                if (parent == null || parent.IsDeleted)
-                {
-                    throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
-                }
-                MenuItems.ParentMenuItemsId = parentId;
+                throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
             }
-            catch (Exception)
-            {
-                throw new BadRequestException(_localizer["MenuItems.InvalidParentId"]);
-            }
+        }
+        else if (!string.IsNullOrEmpty(dto.ParentMenuItemsId))
+        {
+            // If DTO had a value but mapper returned null, decryption failed
+            throw new BadRequestException(_localizer["MenuItems.InvalidParentId"]);
         }
 
         var created = await _repository.AddAsync(MenuItems);
@@ -113,46 +106,39 @@ public class MenuItemsService : IMenuItemsService
             throw new NotFoundException(_localizer["MenuItems.NotFound"]);
         }
 
-        // Prevent circular reference
-        if (!string.IsNullOrEmpty(dto.ParentMenuItemsId))
-        {
-            try
-            {
-                var parentId = _idEncryption.Decrypt(dto.ParentMenuItemsId);
-                if (parentId == id)
-                {
-                    throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
-                }
-
-                // Check if the parent is a descendant (would create circular reference)
-                if (await IsDescendantAsync(MenuItems, parentId))
-                {
-                    throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
-                }
-
-                var parent = await _repository.GetByIdAsync(parentId, null);
-                if (parent == null || parent.IsDeleted)
-                {
-                    throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
-                }
-                MenuItems.ParentMenuItemsId = parentId;
-            }
-            catch (BadRequestException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw new BadRequestException(_localizer["MenuItems.InvalidParentId"]);
-            }
-        }
-        else if (dto.ParentMenuItemsId == string.Empty)
-        {
-            // Empty string means remove parent
-            MenuItems.ParentMenuItemsId = null;
-        }
-
+        // Map DTO to entity (mapper will decrypt ParentMenuItemsId if provided)
+        // Empty string is handled by mapper (returns null)
         _mapper.Map(dto, MenuItems);
+        
+        // Validate parent ID if provided (after mapper decryption)
+        if (MenuItems.ParentMenuItemsId.HasValue)
+        {
+            var parentId = MenuItems.ParentMenuItemsId.Value;
+
+            // Prevent circular reference
+            if (parentId == id)
+            {
+                throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
+            }
+
+            // Check if the parent is a descendant (would create circular reference)
+            if (await IsDescendantAsync(MenuItems, parentId))
+            {
+                throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
+            }
+
+            var parent = await _repository.GetByIdAsync(parentId, null);
+            if (parent == null || parent.IsDeleted)
+            {
+                throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
+            }
+        }
+        else if (!string.IsNullOrEmpty(dto.ParentMenuItemsId) && dto.ParentMenuItemsId != string.Empty)
+        {
+            // If DTO had a non-empty value but mapper returned null, decryption failed
+            throw new BadRequestException(_localizer["MenuItems.InvalidParentId"]);
+        }
+
         await _repository.UpdateAsync(MenuItems);
         await _unitOfWork.SaveChangesAsync();
 

@@ -110,11 +110,23 @@ public static class InfrastructureServiceRegistration
         // register AutoMapper using profiles defined in the Application layer
         services.AddAutoMapper(typeof(Application.Mapping.AdminMappingProfile).Assembly);
         services.AddAutoMapper(typeof(Application.Mapping.LicensingMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.NotificationMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.ApiKeyMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.LoginAttemptMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.WebhookMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.SubscriptionPlanMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.PasswordPolicyMappingProfile).Assembly);
         services.AddAutoMapper(typeof(Application.Mapping.MenuItemsMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.ErrorLogMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(Application.Mapping.TenantMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
+        
+        // Register HttpClientFactory for webhook service
+        services.AddHttpClient();
+        
         // Configure distributed cache (Redis) if connection string provided and Redis is available
         // Otherwise, fallback to in-memory distributed cache
         var cacheConnectionString = configuration.GetConnectionString("RedisConnection");
@@ -162,6 +174,45 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<ILicensingService, LicensingService>();
+        services.AddScoped<ISubscriptionHistoryService, SubscriptionHistoryService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IApiKeyService, ApiKeyService>();
+        services.AddScoped<ILoginAttemptService, LoginAttemptService>();
+        services.AddScoped<IWebhookService, WebhookService>();
+        services.AddScoped<ICompanyUsageAnalyticsService, CompanyUsageAnalyticsService>();
+        services.AddScoped<IMetricsService, MetricsService>();
+        services.AddScoped<IErrorLogService, ErrorLogService>();
+        services.AddScoped<ICompanyGroupService, CompanyGroupService>();
+        services.AddScoped<ICompanyCustomFieldService, CompanyCustomFieldService>();
+        services.AddScoped<IExportService, ExportService>();
+        services.AddScoped<IImportService, ImportService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
+        services.AddScoped<IPasswordPolicyService, PasswordPolicyService>();
+        services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<IModuleService, ModuleService>();
+        services.AddScoped<IProjectModuleService, ProjectModuleService>();
+        
+        // Register email services
+        services.AddOptions<Infrastructure.Configurations.EmailSettings>()
+            .Bind(configuration.GetSection("EmailSettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        services.AddScoped<IEmailSender>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<Infrastructure.Configurations.EmailSettings>>().Value;
+            return settings.Mode.Equals("Prod", StringComparison.OrdinalIgnoreCase)
+                ? sp.GetRequiredService<Infrastructure.Services.SmtpEmailSender>()
+                : sp.GetRequiredService<Infrastructure.Services.DevEmailSender>();
+        });
+        services.AddScoped<Infrastructure.Services.SmtpEmailSender>();
+        services.AddScoped<Infrastructure.Services.DevEmailSender>();
+        services.AddSingleton<Infrastructure.Services.ChannelEmailQueue>();
+        services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<Infrastructure.Services.ChannelEmailQueue>());
+        services.AddHostedService(sp => sp.GetRequiredService<Infrastructure.Services.ChannelEmailQueue>());
+        
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -194,6 +245,30 @@ public static class InfrastructureServiceRegistration
         });
         
         services.AddHostedService<UploadCleanupWorker>();
+        
+        // Register ExpiryCheckSettings
+        services.AddOptions<ExpiryCheckSettings>()
+            .Bind(configuration.GetSection("ExpiryCheckSettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        // Register SubscriptionExpiryWorker
+        services.AddHostedService<SubscriptionExpiryWorker>();
+        
+        // Register NotificationSettings
+        services.AddOptions<NotificationSettings>()
+            .Bind(configuration.GetSection("NotificationSettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        // Register ExpiryNotificationWorker
+        services.AddHostedService<ExpiryNotificationWorker>();
+        
+        // Register LoginSecuritySettings
+        services.AddOptions<LoginSecuritySettings>()
+            .Bind(configuration.GetSection("LoginSecuritySettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         #endregion
 
         #region Repositories Registration
@@ -203,7 +278,28 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IAdminTypeRepository, AdminTypeRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<ISubscriptionHistoryRepository, SubscriptionHistoryRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
+        services.AddScoped<ILoginAttemptRepository, LoginAttemptRepository>();
+        services.AddScoped<IWebhookRepository, WebhookRepository>();
+        services.AddScoped<IWebhookDeliveryRepository, WebhookDeliveryRepository>();
+        services.AddScoped<ICompanyUsageLogRepository, CompanyUsageLogRepository>();
+        services.AddScoped<ISystemMetricRepository, SystemMetricRepository>();
+        services.AddScoped<IErrorLogRepository, ErrorLogRepository>();
+        services.AddScoped<ICompanyGroupRepository, CompanyGroupRepository>();
+        services.AddScoped<ICompanyGroupMemberRepository, CompanyGroupMemberRepository>();
+        services.AddScoped<ICompanyCustomFieldRepository, CompanyCustomFieldRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IModuleRepository, ModuleRepository>();
+        services.AddScoped<IProjectModuleRepository, ProjectModuleRepository>();
+        services.AddScoped<IPlanProjectModuleRepository, PlanProjectModuleRepository>();
+        services.AddScoped<IPasswordPolicyRepository, PasswordPolicyRepository>();
+        services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
         services.AddScoped<IMenuItemsRepository, MenuItemsRepository>();
+        services.AddScoped<IReportDefinitionRepository, ReportDefinitionRepository>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

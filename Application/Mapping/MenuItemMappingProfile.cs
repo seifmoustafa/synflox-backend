@@ -26,7 +26,8 @@ public class MenuItemsMappingProfile : Profile
 
         CreateMap<CreateMenuItemsDto, MenuItems>()
             .ForMember(d => d.Id, opt => opt.Ignore())
-            .ForMember(d => d.ParentMenuItemsId, opt => opt.Ignore()) // Will be set manually
+            .ForMember(d => d.ParentMenuItemsId,
+                opt => opt.ConvertUsing<DecryptStringToGuidConverter, string?>(s => s.ParentMenuItemsId))
             .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.IsActive, opt => opt.MapFrom(s => true))
@@ -40,7 +41,8 @@ public class MenuItemsMappingProfile : Profile
             .ForMember(d => d.IsDeleted, opt => opt.Ignore());
 
         CreateMap<UpdateMenuItemsDto, MenuItems>()
-            .ForMember(d => d.ParentMenuItemsId, opt => opt.Ignore()) // Will be set manually
+            .ForMember(d => d.ParentMenuItemsId,
+                opt => opt.ConvertUsing<DecryptStringToGuidConverter, string?>(s => s.ParentMenuItemsId))
             .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom((src, dest) => 

@@ -17,7 +17,7 @@ namespace WebAPI.Configurations
                 });
 
                 options.EnableAnnotations();
-
+                options.SchemaFilter<SwaggerExampleSchemaFilter>();
 
                 //options.TagActionsBy(api => [api.GroupName]);
                 //options.DocInclusionPredicate((docName, api) => true);
