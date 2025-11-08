@@ -71,7 +71,7 @@ namespace Infrastructure.Context
                 var dashboard = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Dashboard",
+                    Name = "nav.dashboard",
                     Href = "/",
                     Icon = "LayoutDashboard",
                     Order = 1,
@@ -83,7 +83,7 @@ namespace Infrastructure.Context
                 var subscribers = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Subscribers",
+                    Name = "nav.subscribers",
                     Href = null, // Parent item, no direct route
                     Icon = "UsersRound",
                     Order = 2,
@@ -95,7 +95,7 @@ namespace Infrastructure.Context
                 var system = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "System",
+                    Name = "nav.system",
                     Href = null, // Parent item, no direct route
                     Icon = "Settings",
                     Order = 3,
@@ -107,7 +107,7 @@ namespace Infrastructure.Context
                 var apiIntegration = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "API Integration",
+                    Name = "nav.api-integration",
                     Href = null, // Parent item, no direct route
                     Icon = "Code",
                     Order = 4,
@@ -119,7 +119,7 @@ namespace Infrastructure.Context
                 var analyticsReports = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Analytics & Reports",
+                    Name = "nav.analytics-reports",
                     Href = null, // Parent item, no direct route
                     Icon = "BarChart3",
                     Order = 5,
@@ -131,7 +131,7 @@ namespace Infrastructure.Context
                 var systemManagement = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "System Management",
+                    Name = "nav.system-management",
                     Href = null, // Parent item, no direct route
                     Icon = "Activity",
                     Order = 6,
@@ -143,7 +143,7 @@ namespace Infrastructure.Context
                 var notifications = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Notifications",
+                    Name = "nav.notifications",
                     Href = "/notifications",
                     Icon = "Bell",
                     Order = 7,
@@ -155,7 +155,7 @@ namespace Infrastructure.Context
                 var settings = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Settings",
+                    Name = "nav.settings",
                     Href = "/settings",
                     Icon = "Settings",
                     Order = 8,
@@ -167,7 +167,7 @@ namespace Infrastructure.Context
                 var profile = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Profile",
+                    Name = "nav.profile",
                     Href = "/profile",
                     Icon = "User",
                     Order = 9,
@@ -179,7 +179,7 @@ namespace Infrastructure.Context
                 var menuItems = new MenuItems
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Menu Items",
+                    Name = "nav.menu-items",
                     Href = "/menu-items",
                     Icon = "Menu",
                     Order = 10,
@@ -200,7 +200,7 @@ namespace Infrastructure.Context
                     notifications,
                     settings,
                     profile,
-                    menuItems
+                    menuItems,
                 };
 
                 await dbContext.MenuItems.AddRangeAsync(parentItems);
@@ -212,7 +212,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Companies",
+                        Name = "nav.companies",
                         Href = "/companies",
                         Icon = "Building2",
                         Order = 1,
@@ -223,7 +223,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Company Groups",
+                        Name = "nav.company-groups",
                         Href = "/company-groups",
                         Icon = "UsersRound",
                         Order = 2,
@@ -234,7 +234,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Subscription Plans",
+                        Name = "nav.subscription-plans",
                         Href = "/subscription-plans",
                         Icon = "CreditCard",
                         Order = 3,
@@ -250,7 +250,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Admins",
+                        Name = "nav.admins",
                         Href = "/admins",
                         Icon = "Users",
                         Order = 1,
@@ -261,7 +261,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Admin Types",
+                        Name = "nav.admin-types",
                         Href = "/admin-types",
                         Icon = "UserCog",
                         Order = 2,
@@ -272,7 +272,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Projects",
+                        Name = "nav.projects",
                         Href = "/projects",
                         Icon = "FolderKanban",
                         Order = 3,
@@ -283,7 +283,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Modules",
+                        Name = "nav.modules",
                         Href = "/modules",
                         Icon = "Package",
                         Order = 4,
@@ -299,7 +299,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "API Keys",
+                        Name = "nav.api-keys",
                         Href = "/api-keys",
                         Icon = "Key",
                         Order = 1,
@@ -310,7 +310,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Webhooks",
+                        Name = "nav.webhooks",
                         Href = "/webhooks",
                         Icon = "Webhook",
                         Order = 2,
@@ -326,7 +326,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Analytics",
+                        Name = "nav.analytics",
                         Href = "/analytics",
                         Icon = "BarChart3",
                         Order = 1,
@@ -337,7 +337,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Reports",
+                        Name = "nav.reports",
                         Href = "/reports",
                         Icon = "FileText",
                         Order = 2,
@@ -353,7 +353,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Metrics",
+                        Name = "nav.metrics",
                         Href = "/metrics",
                         Icon = "Activity",
                         Order = 1,
@@ -364,7 +364,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Error Logs",
+                        Name = "nav.error-logs",
                         Href = "/error-logs",
                         Icon = "AlertCircle",
                         Order = 2,
@@ -375,7 +375,7 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "Login Attempts",
+                        Name = "nav.login-attempts",
                         Href = "/login-attempts",
                         Icon = "Shield",
                         Order = 3,
@@ -410,7 +410,7 @@ namespace Infrastructure.Context
                         ReportType = "SubscriptionExpiry",
                         IsPreBuilt = true,
                         Parameters = "{\"days\": 30}",
-                        IsActive = true
+                        IsActive = true,
                     },
                     new ReportDefinition
                     {
@@ -419,7 +419,7 @@ namespace Infrastructure.Context
                         Description = "Breakdown of companies by license status",
                         ReportType = "StatusSummary",
                         IsPreBuilt = true,
-                        IsActive = true
+                        IsActive = true,
                     },
                     new ReportDefinition
                     {
@@ -429,7 +429,7 @@ namespace Infrastructure.Context
                         ReportType = "UsageAnalytics",
                         IsPreBuilt = true,
                         Parameters = "{\"fromDate\": \"DateTime\", \"toDate\": \"DateTime\"}",
-                        IsActive = true
+                        IsActive = true,
                     },
                     new ReportDefinition
                     {
@@ -438,7 +438,7 @@ namespace Infrastructure.Context
                         Description = "Trial companies and conversion statistics",
                         ReportType = "TrialConversion",
                         IsPreBuilt = true,
-                        IsActive = true
+                        IsActive = true,
                     },
                     new ReportDefinition
                     {
@@ -447,8 +447,8 @@ namespace Infrastructure.Context
                         Description = "Module usage statistics by company",
                         ReportType = "ModuleUsage",
                         IsPreBuilt = true,
-                        IsActive = true
-                    }
+                        IsActive = true,
+                    },
                 };
 
                 await dbContext.ReportDefinitions.AddRangeAsync(preBuiltReports);
