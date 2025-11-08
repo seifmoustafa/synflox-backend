@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Application.Services;
 using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Middleware;
@@ -18,16 +19,13 @@ public class HmacSignatureMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<HmacSignatureMiddleware> _logger;
-    private readonly IApiKeyRepository _apiKeyRepository;
 
     public HmacSignatureMiddleware(
         RequestDelegate next,
-        ILogger<HmacSignatureMiddleware> logger,
-        IApiKeyRepository apiKeyRepository)
+        ILogger<HmacSignatureMiddleware> logger)
     {
         _next = next;
         _logger = logger;
-        _apiKeyRepository = apiKeyRepository;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -96,7 +94,9 @@ public class HmacSignatureMiddleware
         }
 
         // Get API key from database by hashing the provided key
-        var apiKeys = await _apiKeyRepository.FindAsync(ak => !ak.IsDeleted);
+        // Resolve scoped service from request services (not from constructor)
+        var apiKeyRepository = context.RequestServices.GetRequiredService<IApiKeyRepository>();
+        var apiKeys = await apiKeyRepository.FindAsync(ak => !ak.IsDeleted);
         Domain.Entities.Authentication.ApiKey? apiKey = null;
         
         var providedKeyHash = HashApiKey(apiKeyValue);
