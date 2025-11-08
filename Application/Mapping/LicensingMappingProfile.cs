@@ -33,6 +33,8 @@ public class LicensingMappingProfile : Profile
                 opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
             .ForMember(d => d.CompanyId,
                 opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.CompanyId))
+            .ForMember(d => d.PerformedBy,
+                opt => opt.ConvertUsing<EncryptNullableGuidConverter, Guid?>(s => s.PerformedBy))
             .ForMember(d => d.ActionTypeName,
                 opt => opt.MapFrom(s => s.ActionType.ToString()));
 

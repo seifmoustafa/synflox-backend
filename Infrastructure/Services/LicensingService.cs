@@ -112,6 +112,8 @@ namespace Infrastructure.Services
             }
 
             // Trigger webhook
+            // NOTE: Webhook payloads encrypt IDs because they are sent to external systems
+            // This is an exception to the rule - encryption here is acceptable for external API contracts
             try
             {
                 var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, ExpiryDate = expiryDate, EventType = "CompanyActivated" };
@@ -172,6 +174,8 @@ namespace Infrastructure.Services
             }
 
             // Trigger webhook
+            // NOTE: Webhook payloads encrypt IDs because they are sent to external systems
+            // This is an exception to the rule - encryption here is acceptable for external API contracts
             try
             {
                 var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, EventType = "CompanySuspended" };
@@ -232,6 +236,8 @@ namespace Infrastructure.Services
             }
 
             // Trigger webhook
+            // NOTE: Webhook payloads encrypt IDs because they are sent to external systems
+            // This is an exception to the rule - encryption here is acceptable for external API contracts
             try
             {
                 var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, EventType = "CompanyResumed" };
@@ -293,6 +299,8 @@ namespace Infrastructure.Services
             }
 
             // Trigger webhook
+            // NOTE: Webhook payloads encrypt IDs because they are sent to external systems
+            // This is an exception to the rule - encryption here is acceptable for external API contracts
             try
             {
                 var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, NewExpiryDate = newExpiryDate, EventType = "CompanyExtended" };
@@ -403,6 +411,8 @@ namespace Infrastructure.Services
                     ExpiryDate = company.ExpiryDate,
                     IsActive = company.IsActive,
                     ClockTampered = clockTampered,
+                    // Encrypt ID for response DTO (Entity → DTO encryption handled by mapper)
+                    // This is manual encryption for response DTOs that don't go through mapper
                     CompanyId = _idEncryption.Encrypt(company.Id),
                     Message = clockTampered 
                         ? _localizer["Licensing.SystemClockTampered"]
@@ -594,6 +604,8 @@ namespace Infrastructure.Services
                     var company = await _repository.GetByIdAsync(companyId, null);
                     response.Results.Add(new BulkOperationResult
                     {
+                        // Encrypt ID for response DTO (Entity → DTO encryption handled by mapper)
+                        // This is manual encryption for response DTOs that don't go through mapper
                         CompanyId = _idEncryption.Encrypt(companyId),
                         CompanyName = company?.Name ?? "Unknown",
                         Success = true
@@ -605,6 +617,8 @@ namespace Infrastructure.Services
                     var company = await _repository.GetByIdAsync(companyId, null);
                     response.Results.Add(new BulkOperationResult
                     {
+                        // Encrypt ID for response DTO (Entity → DTO encryption handled by mapper)
+                        // This is manual encryption for response DTOs that don't go through mapper
                         CompanyId = _idEncryption.Encrypt(companyId),
                         CompanyName = company?.Name ?? "Unknown",
                         Success = false,
@@ -643,6 +657,8 @@ namespace Infrastructure.Services
                     var company = await _repository.GetByIdAsync(companyId, null);
                     response.Results.Add(new BulkOperationResult
                     {
+                        // Encrypt ID for response DTO (Entity → DTO encryption handled by mapper)
+                        // This is manual encryption for response DTOs that don't go through mapper
                         CompanyId = _idEncryption.Encrypt(companyId),
                         CompanyName = company?.Name ?? "Unknown",
                         Success = false,
@@ -681,6 +697,8 @@ namespace Infrastructure.Services
                     var company = await _repository.GetByIdAsync(companyId, null);
                     response.Results.Add(new BulkOperationResult
                     {
+                        // Encrypt ID for response DTO (Entity → DTO encryption handled by mapper)
+                        // This is manual encryption for response DTOs that don't go through mapper
                         CompanyId = _idEncryption.Encrypt(companyId),
                         CompanyName = company?.Name ?? "Unknown",
                         Success = false,
@@ -719,6 +737,8 @@ namespace Infrastructure.Services
                     var company = await _repository.GetByIdAsync(companyId, null);
                     response.Results.Add(new BulkOperationResult
                     {
+                        // Encrypt ID for response DTO (Entity → DTO encryption handled by mapper)
+                        // This is manual encryption for response DTOs that don't go through mapper
                         CompanyId = _idEncryption.Encrypt(companyId),
                         CompanyName = company?.Name ?? "Unknown",
                         Success = false,
@@ -779,6 +799,8 @@ namespace Infrastructure.Services
             }
 
             // Trigger webhook
+            // NOTE: Webhook payloads encrypt IDs because they are sent to external systems
+            // This is an exception to the rule - encryption here is acceptable for external API contracts
             try
             {
                 var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, TrialDays = trialDays, TrialEndDate = company.TrialEndDate.Value.ToString("yyyy-MM-dd"), EventType = "TrialStarted" };
@@ -846,6 +868,8 @@ namespace Infrastructure.Services
             }
 
             // Trigger webhook
+            // NOTE: Webhook payloads encrypt IDs because they are sent to external systems
+            // This is an exception to the rule - encryption here is acceptable for external API contracts
             try
             {
                 var webhookPayload = new { CompanyId = _idEncryption.Encrypt(company.Id), CompanyName = company.Name, ExpiryDate = expiryDate, EventType = "TrialConverted" };
