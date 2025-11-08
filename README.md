@@ -88,17 +88,17 @@ SYNFLOX follows **Clean Architecture** principles with strict separation of conc
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    WebAPI Layer                              │
+│                    WebAPI Layer                             │
 │  Controllers, Middleware, Configuration, Startup            │
 │  - 24 Controllers (200+ endpoints)                          │
 │  - 9 Middleware components                                  │
-│  - Authentication/Authorization                        │
+│  - Authentication/Authorization                             │
 │  - Localization (EN/AR)                                     │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                 Application Layer                            │
-│  Business Logic Interfaces, DTOs, Mappings                 │
+│                 Application Layer                           │
+│  Business Logic Interfaces, DTOs, Mappings                  │
 │  - 50+ DTOs (Request/Response)                              │
 │  - Service Interfaces (Business Contracts)                  │
 │  - AutoMapper Profiles                                      │
@@ -106,7 +106,7 @@ SYNFLOX follows **Clean Architecture** principles with strict separation of conc
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    Domain Layer                              │
+│                    Domain Layer                             │
 │  Core Business Entities, Interfaces, Enums                  │
 │  - 35+ Entities                                             │
 │  - Repository Interfaces                                    │
@@ -118,7 +118,7 @@ SYNFLOX follows **Clean Architecture** principles with strict separation of conc
 ┌─────────────────────────────────────────────────────────────┐
 │              Infrastructure Layer                           │
 │  Data Access, External Services, Implementations            │
-│  - EF Core Context & Configurations                        │
+│  - EF Core Context & Configurations                         │
 │  - Repository Implementations                               │
 │  - Service Implementations                                  │
 │  - Background Workers                                       │
