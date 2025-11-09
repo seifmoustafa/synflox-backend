@@ -46,6 +46,7 @@ public class CompanyCustomFieldService : ICompanyCustomFieldService
             throw new BadRequestException(_localizer["CompanyCustomField.AlreadyExists"]);
 
         var field = _mapper.Map<CompanyCustomField>(request);
+        field.CompanyId = request.CompanyId; // Set CompanyId manually (ignored in mapping)
         var created = await _repository.AddAsync(field);
         await _unitOfWork.SaveChangesAsync();
 

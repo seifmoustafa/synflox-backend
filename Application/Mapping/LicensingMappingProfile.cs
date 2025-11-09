@@ -142,8 +142,7 @@ public class LicensingMappingProfile : Profile
 
         CreateMap<CreateCompanyCustomFieldDto, CompanyCustomField>()
             .ForMember(d => d.Id, opt => opt.Ignore())
-            .ForMember(d => d.CompanyId,
-                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.CompanyId))
+            .ForMember(d => d.CompanyId, opt => opt.Ignore()) // Set manually in service/controller
             .ForMember(d => d.FieldType, opt => opt.MapFrom(s => s.FieldType.ToString()))
             .ForMember(d => d.CreatedTimestamp, opt => opt.Ignore())
             .ForMember(d => d.UpdatedTimestamp, opt => opt.Ignore())

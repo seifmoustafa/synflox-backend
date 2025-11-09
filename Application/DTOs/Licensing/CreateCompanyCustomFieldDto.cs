@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using Domain.Enums;
 
@@ -8,7 +9,9 @@ namespace Application.DTOs.Licensing;
 /// </summary>
 public class CreateCompanyCustomFieldDto
 {
-    [Required(ErrorMessage = "Company ID is required")]
+    /// <summary>
+    /// Company ID (decrypted Guid). Set by controller from route parameter.
+    /// </summary>
     public Guid CompanyId { get; set; }
 
     [Required(ErrorMessage = "Field name is required")]

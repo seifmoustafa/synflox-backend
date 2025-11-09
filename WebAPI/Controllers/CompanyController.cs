@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Application.DTOs.Licensing;
 using Application.DTOs.Responses;
 using Application.Services;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -214,10 +215,19 @@ public class CompanyController : ControllerBase
         try
         {
             var decryptedId = _idEncryption.Decrypt(id);
-            request.CompanyId = decryptedId; // Override with route parameter
+            // Override CompanyId from route parameter (ignore value from body if sent)
+            request.CompanyId = decryptedId;
             var result = await _customFieldService.CreateFieldAsync(request);
             return CreatedAtAction(nameof(GetCustomField), new { id, fieldId = result.Id },
                 new ApiResponse<CompanyCustomFieldDto>(201, _localizer["CompanyCustomField.Created"], result));
+        }
+        catch (BadRequestException ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ApiResponse<string>(404, ex.Message));
         }
         catch (Exception ex)
         {
