@@ -23,6 +23,7 @@ public class WebhookService : IWebhookService
 {
     private readonly IWebhookRepository _repository;
     private readonly IWebhookDeliveryRepository _deliveryRepository;
+    private readonly ICompanyRepository _companyRepository;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -32,6 +33,7 @@ public class WebhookService : IWebhookService
     public WebhookService(
         IWebhookRepository repository,
         IWebhookDeliveryRepository deliveryRepository,
+        ICompanyRepository companyRepository,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
@@ -40,6 +42,7 @@ public class WebhookService : IWebhookService
     {
         _repository = repository;
         _deliveryRepository = deliveryRepository;
+        _companyRepository = companyRepository;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -49,15 +52,34 @@ public class WebhookService : IWebhookService
 
     public async Task<WebhookDto> CreateWebhookAsync(CreateWebhookRequest request)
     {
-        // Generate secret for HMAC signing
-        var secret = GenerateSecret();
-
         // Map DTO to Entity using AutoMapper (automatically decrypts CompanyId)
         var entity = _mapper.Map<Webhook>(request);
+        
+        // Validate that the company exists
+        var company = await _companyRepository.GetByIdAsync(entity.CompanyId, null);
+        if (company == null || company.IsDeleted)
+        {
+            // Log the decrypted company ID for debugging
+            _logger.LogWarning("Company not found for ID: {CompanyId} (decrypted from request)", entity.CompanyId);
+            throw new NotFoundException(_localizer["Company.NotFound"]);
+        }
+        
         entity.Id = Guid.NewGuid();
-        entity.Secret = secret;
-        entity.IsActive = true;
+        
+        // Use provided secret or generate a new one for HMAC signing
+        if (string.IsNullOrWhiteSpace(entity.Secret))
+        {
+            entity.Secret = GenerateSecret();
+        }
+        
+        entity.IsActive = request.IsActive;
         entity.IsDeleted = false;
+
+        // Ensure Events is never null (should be handled by mapper, but double-check)
+        if (string.IsNullOrEmpty(entity.Events))
+        {
+            entity.Events = "[]";
+        }
 
         var created = await _repository.AddAsync(entity);
         await _unitOfWork.SaveChangesAsync();

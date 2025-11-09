@@ -39,12 +39,19 @@ public class WebhookController : ControllerBase
 
         try
         {
-            var decryptedCompanyId = _idEncryption.Decrypt(request.CompanyId);
-            request.CompanyId = decryptedCompanyId;
-
+            // Note: CompanyId decryption is handled by AutoMapper (DecryptGuidConverter)
+            // No need to decrypt here as it would cause double decryption
             var result = await _webhookService.CreateWebhookAsync(request);
             return CreatedAtAction(nameof(GetWebhook), new { id = result.Id },
                 new ApiResponse<WebhookDto>(201, _localizer["Webhook.Created"], result));
+        }
+        catch (Domain.Exceptions.NotFoundException ex)
+        {
+            return NotFound(new ApiResponse<string>(404, ex.Message));
+        }
+        catch (Domain.Exceptions.BadRequestException ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
         }
         catch (Exception ex)
         {

@@ -27,9 +27,10 @@ public class WebhookMappingProfile : Profile
             .ForMember(d => d.Events,
                 opt => opt.MapFrom(s => s.Events != null && s.Events.Length > 0
                     ? JsonSerializer.Serialize(s.Events, new JsonSerializerOptions())
-                    : null))
-            .ForMember(d => d.Secret, opt => opt.Ignore()) // Set manually in service
-            .ForMember(d => d.RetryCount, opt => opt.Ignore())
+                    : "[]")) // Return empty JSON array instead of null
+            .ForMember(d => d.Secret, opt => opt.MapFrom(s => !string.IsNullOrWhiteSpace(s.Secret) ? s.Secret : string.Empty)) // Use provided secret or empty string (service will generate if empty)
+            .ForMember(d => d.RetryCount, opt => opt.MapFrom(s => s.RetryCount > 0 ? s.RetryCount : 3))
+            .ForMember(d => d.IsActive, opt => opt.MapFrom(s => s.IsActive))
             .ForMember(d => d.LastTriggeredAt, opt => opt.Ignore())
             .ForMember(d => d.CreatedTimestamp, opt => opt.Ignore())
             .ForMember(d => d.UpdatedTimestamp, opt => opt.Ignore())
