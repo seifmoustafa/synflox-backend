@@ -52,7 +52,8 @@ public class ApiKey : AuditEntity<Guid>
     public DateTime? ExpiresAt { get; set; }
 
     /// <summary>
-    /// Timestamp when the API key was last used.
+    /// Timestamp when the API key was last used (exact server local time).
+    /// Null if the API key has never been used.
     /// </summary>
     public DateTime? LastUsedAt { get; set; }
 

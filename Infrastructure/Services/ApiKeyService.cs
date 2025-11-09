@@ -196,22 +196,24 @@ public class ApiKeyService : IApiKeyService
             return (false, null, null);
         }
 
-        // Update last used timestamp
-        entity.LastUsedAt = DateTime.UtcNow;
+        // Update last used timestamp to exact server local time when API key is used
+        // This records the precise moment the API key was validated/used using server's local time
+        // Set it the same way UpdatedTimestamp is set in other services
+        entity.LastUsedAt = DateTime.Now;
         
-        // Explicitly mark the LastUsedAt property as modified to ensure EF Core tracks the change
-        // The entity is already tracked from GetByKeyHashAsync, so we can modify it directly
+        // Check if entity is already tracked - if so, just mark as modified
+        // If not tracked, use UpdateAsync to attach and mark as modified
         var entry = _context.Entry(entity);
         if (entry.State == EntityState.Detached)
         {
-            // If entity is not tracked, attach it first
-            _context.Attach(entity);
+            await _repository.UpdateAsync(entity);
+        }
+        else
+        {
+            // Entity is already tracked, just mark the properties as modified
+            entry.Property(e => e.LastUsedAt).IsModified = true;
         }
         
-        // Mark LastUsedAt as modified explicitly
-        entry.Property(e => e.LastUsedAt).IsModified = true;
-        
-        // Save changes
         await _unitOfWork.SaveChangesAsync();
 
         var dto = _mapper.Map<ApiKeyDto>(entity);
@@ -223,7 +225,11 @@ public class ApiKeyService : IApiKeyService
         var apiKey = await _repository.GetByIdAsync(apiKeyId, null);
         if (apiKey != null && !apiKey.IsDeleted)
         {
-            apiKey.LastUsedAt = DateTime.UtcNow;
+            // Record the exact server local time when the API key is used
+            var exactUsageTime = DateTime.Now;
+            apiKey.LastUsedAt = exactUsageTime;
+            
+            // Use repository UpdateAsync to ensure the entity change is properly tracked
             await _repository.UpdateAsync(apiKey);
             await _unitOfWork.SaveChangesAsync();
         }

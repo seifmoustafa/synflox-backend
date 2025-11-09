@@ -58,6 +58,14 @@ public class ETagMiddleware : IMiddleware
             return;
         }
 
+        // Skip ETag caching for API keys endpoint - LastUsedAt changes frequently during testing
+        // TODO: Re-enable caching with proper invalidation in production
+        if (context.Request.Path.StartsWithSegments("/api/api-keys", StringComparison.OrdinalIgnoreCase))
+        {
+            await next(context);
+            return;
+        }
+
         if (!HttpMethods.IsGet(context.Request.Method))
         {
             await next(context);

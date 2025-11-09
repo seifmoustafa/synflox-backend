@@ -17,17 +17,20 @@ public class LicensingController : ControllerBase
     private readonly ILocalizationService _localizer;
     private readonly IIdEncryptionService _idEncryption;
     private readonly ISubscriptionHistoryService _historyService;
+    private readonly IApiKeyService _apiKeyService;
 
     public LicensingController(
         ILicensingService licensingService, 
         ILocalizationService localizer,
         IIdEncryptionService idEncryption,
-        ISubscriptionHistoryService historyService)
+        ISubscriptionHistoryService historyService,
+        IApiKeyService apiKeyService)
     {
         _licensingService = licensingService;
         _localizer = localizer;
         _idEncryption = idEncryption;
         _historyService = historyService;
+        _apiKeyService = apiKeyService;
     }
 
     [HttpPut("{companyId}/activate")]
@@ -121,14 +124,17 @@ public class LicensingController : ControllerBase
 
     /// <summary>
     /// Gets company status using API key's companyId (no companyId in route needed).
+    /// The ApiKeyAuthenticationMiddleware should have already validated the API key and updated LastUsedAt.
     /// </summary>
-    [HttpGet("status")]
+    [HttpGet("company-status")]
     public async Task<IActionResult> GetCompanyStatusFromApiKey()
     {
         try
         {
             // Get companyId from API key (set by ApiKeyAuthenticationMiddleware)
+            // The middleware calls ValidateApiKeyAsync which updates LastUsedAt
             var companyIdFromContext = HttpContext.Items["CompanyId"] as Guid?;
+            
             if (!companyIdFromContext.HasValue)
             {
                 return Unauthorized(new ApiResponse<string>(401, _localizer["Authentication.Required"] ?? "API key required"));
