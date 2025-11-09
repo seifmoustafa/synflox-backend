@@ -16,11 +16,16 @@ public class SmtpEmailSender : IEmailSender
 {
     private readonly EmailSettings _settings;
     private readonly ILocalizationService _localizer;
+    private readonly ILogger<SmtpEmailSender> _logger;
 
-    public SmtpEmailSender(IOptions<EmailSettings> options, ILocalizationService localizer)
+    public SmtpEmailSender(
+        IOptions<EmailSettings> options, 
+        ILocalizationService localizer,
+        ILogger<SmtpEmailSender> logger)
     {
         _settings = options.Value;
         _localizer = localizer;
+        _logger = logger;
     }
 
     public async Task SendEmailAsync(string to, string subject, string body)
@@ -29,6 +34,12 @@ public class SmtpEmailSender : IEmailSender
         {
             throw new InvalidOperationException(_localizer["SmtpCredentialsMissing"]);
         }
+        
+        // Log the email configuration being used (for debugging)
+        _logger.LogInformation(
+            "Sending email - SMTP User: {User}, FromEmail: {FromEmail}, To: {To}, Host: {Host}, Port: {Port}", 
+            _settings.User, _settings.FromEmail, to, _settings.Host, _settings.Port);
+        
         using var client = new SmtpClient(_settings.Host, _settings.Port)
         {
             Credentials = new NetworkCredential(_settings.User, _settings.Pass),
@@ -43,7 +54,18 @@ public class SmtpEmailSender : IEmailSender
             Body = body
         };
         message.To.Add(to);
-        await client.SendMailAsync(message);
+        
+        try
+        {
+            await client.SendMailAsync(message);
+            _logger.LogInformation("Email sent successfully - From: {FromEmail}, To: {To}", _settings.FromEmail, to);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email - User: {User}, FromEmail: {FromEmail}, To: {To}", 
+                _settings.User, _settings.FromEmail, to);
+            throw;
+        }
     }
 }
 

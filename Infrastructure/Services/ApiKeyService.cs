@@ -57,10 +57,24 @@ public class ApiKeyService : IApiKeyService
         await _unitOfWork.SaveChangesAsync();
 
         var response = _mapper.Map<CreateApiKeyResponse>(created);
+        
+        // Ensure API key is set (defensive check)
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new InvalidOperationException("Failed to generate API key");
+        }
+        
         response.ApiKey = apiKey;
         response.KeyPrefix = keyPrefix;
         response.SigningSecret = signingSecret;
         response.Message = _localizer["ApiKey.Created"];
+        
+        // Verify the response has the API key before returning
+        if (string.IsNullOrEmpty(response.ApiKey))
+        {
+            throw new InvalidOperationException("API key was not set in response");
+        }
+        
         return response;
     }
 
@@ -135,10 +149,24 @@ public class ApiKeyService : IApiKeyService
         await _unitOfWork.SaveChangesAsync();
 
         var response = _mapper.Map<CreateApiKeyResponse>(apiKey);
+        
+        // Ensure API key is set (defensive check)
+        if (string.IsNullOrEmpty(newApiKey))
+        {
+            throw new InvalidOperationException("Failed to generate new API key");
+        }
+        
         response.ApiKey = newApiKey;
         response.KeyPrefix = keyPrefix;
         response.SigningSecret = newSigningSecret;
         response.Message = _localizer["ApiKey.Regenerated"];
+        
+        // Verify the response has the API key before returning
+        if (string.IsNullOrEmpty(response.ApiKey))
+        {
+            throw new InvalidOperationException("API key was not set in response");
+        }
+        
         return response;
     }
 

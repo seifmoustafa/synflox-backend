@@ -40,8 +40,14 @@ public class ApiKeyController : ControllerBase
         try
         {
             var result = await _apiKeyService.CreateApiKeyAsync(request);
-            return CreatedAtAction(nameof(GetApiKey), new { id = result.Id },
-                new ApiResponse<CreateApiKeyResponse>(201, result.Message, result));
+            
+            // Ensure the API key is present in the response
+            if (string.IsNullOrEmpty(result.ApiKey))
+            {
+                return BadRequest(new ApiResponse<string>(400, _localizer["ApiKey.GenerationFailed"] ?? "Failed to generate API key"));
+            }
+            
+            return StatusCode(201, new ApiResponse<CreateApiKeyResponse>(201, result.Message, result));
         }
         catch (Exception ex)
         {
@@ -153,6 +159,13 @@ public class ApiKeyController : ControllerBase
         {
             var decryptedId = _idEncryption.Decrypt(id);
             var result = await _apiKeyService.RegenerateApiKeyAsync(decryptedId);
+            
+            // Ensure the API key is present in the response
+            if (string.IsNullOrEmpty(result.ApiKey))
+            {
+                return BadRequest(new ApiResponse<string>(400, _localizer["ApiKey.GenerationFailed"] ?? "Failed to regenerate API key"));
+            }
+            
             return Ok(new ApiResponse<CreateApiKeyResponse>(200, result.Message, result));
         }
         catch (Exception ex)
