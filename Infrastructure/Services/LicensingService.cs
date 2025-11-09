@@ -95,7 +95,7 @@ namespace Infrastructure.Services
                 _currentUserService.UserId,
                 $"Subscription activated with expiry date: {expiryDate:yyyy-MM-dd}");
 
-            // Create notification
+            // Create notification and send email
             try
             {
                 var title = _localizer["Notification.ActivatedTitle"];
@@ -104,7 +104,8 @@ namespace Infrastructure.Services
                     company.Id,
                     Domain.Enums.NotificationType.Activated,
                     title,
-                    message);
+                    message,
+                    company.ContactEmail);
             }
             catch (Exception notifEx)
             {
@@ -157,7 +158,7 @@ namespace Infrastructure.Services
                 _currentUserService.UserId,
                 "Subscription suspended");
 
-            // Create notification
+            // Create notification and send email
             try
             {
                 var title = _localizer["Notification.SuspendedTitle"];
@@ -166,7 +167,8 @@ namespace Infrastructure.Services
                     company.Id,
                     Domain.Enums.NotificationType.Suspended,
                     title,
-                    message);
+                    message,
+                    company.ContactEmail);
             }
             catch (Exception notifEx)
             {
@@ -219,7 +221,7 @@ namespace Infrastructure.Services
                 _currentUserService.UserId,
                 "Subscription resumed");
 
-            // Create notification
+            // Create notification and send email
             try
             {
                 var title = _localizer["Notification.ResumedTitle"];
@@ -228,7 +230,8 @@ namespace Infrastructure.Services
                     company.Id,
                     Domain.Enums.NotificationType.Resumed,
                     title,
-                    message);
+                    message,
+                    company.ContactEmail);
             }
             catch (Exception notifEx)
             {
@@ -282,7 +285,7 @@ namespace Infrastructure.Services
                 _currentUserService.UserId,
                 $"Subscription extended to: {newExpiryDate:yyyy-MM-dd}");
 
-            // Create notification
+            // Create notification and send email
             try
             {
                 var title = _localizer["Notification.ExtendedTitle"];
@@ -291,7 +294,8 @@ namespace Infrastructure.Services
                     company.Id,
                     Domain.Enums.NotificationType.Extended,
                     title,
-                    message);
+                    message,
+                    company.ContactEmail);
             }
             catch (Exception notifEx)
             {
@@ -782,7 +786,7 @@ namespace Infrastructure.Services
                 _currentUserService.UserId,
                 $"Trial started for {trialDays} days");
 
-            // Create notification
+            // Create notification and send email
             try
             {
                 var title = _localizer["Notification.TrialStartedTitle"];
@@ -791,7 +795,8 @@ namespace Infrastructure.Services
                     company.Id,
                     Domain.Enums.NotificationType.Activated,
                     title,
-                    message);
+                    message,
+                    company.ContactEmail);
             }
             catch (Exception notifEx)
             {
@@ -851,7 +856,7 @@ namespace Infrastructure.Services
                 _currentUserService.UserId,
                 $"Trial converted to active subscription with expiry date: {expiryDate:yyyy-MM-dd}");
 
-            // Create notification
+            // Create notification and send email
             try
             {
                 var title = _localizer["Notification.TrialConvertedTitle"];
@@ -860,7 +865,8 @@ namespace Infrastructure.Services
                     company.Id,
                     Domain.Enums.NotificationType.Activated,
                     title,
-                    message);
+                    message,
+                    company.ContactEmail);
             }
             catch (Exception notifEx)
             {

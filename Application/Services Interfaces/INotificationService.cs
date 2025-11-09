@@ -12,13 +12,14 @@ namespace Application.Services;
 public interface INotificationService
 {
     /// <summary>
-    /// Creates a new notification.
+    /// Creates a new notification and optionally sends email.
     /// </summary>
     Task<NotificationDto> CreateNotificationAsync(
         Guid companyId,
         Domain.Enums.NotificationType type,
         string title,
-        string message);
+        string message,
+        string? companyEmail = null);
 
     /// <summary>
     /// Gets notifications for a specific company.

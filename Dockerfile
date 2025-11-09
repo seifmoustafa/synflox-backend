@@ -28,7 +28,7 @@ COPY --from=build /app/publish .
 EXPOSE 10000
 
 # Set environment variables for email configuration
-ENV EmailSettings__User=seif.moustafa516@gmail.com \
-    EmailSettings__Pass=paagqvddbrdagikq
+ENV EmailSettings__User=seifmoustafa.off.eng@gmail.com \
+    EmailSettings__Pass=rdxfviwuhrnghthbc
 
 ENTRYPOINT ["sh", "-c", "dotnet WebAPI.dll --urls http://0.0.0.0:$PORT"]

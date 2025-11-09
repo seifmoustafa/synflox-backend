@@ -258,6 +258,30 @@
   <data name="Notification.ExtendedMessage" xml:space="preserve">
     <value>Your subscription for {0} has been extended to: {1}</value>
   </data>
+  <data name="Notification.ActivatedEmailSubject" xml:space="preserve">
+    <value>Subscription Activated - {0}</value>
+  </data>
+  <data name="Notification.ActivatedEmailBody" xml:space="preserve">
+    <value>Dear {0},&#xD;&#xA;&#xD;&#xA;Your subscription has been activated with expiry date: {1}.&#xD;&#xA;&#xD;&#xA;Thank you for using our service.&#xD;&#xA;&#xD;&#xA;Best regards,&#xD;&#xA;SYNFLOX Team</value>
+  </data>
+  <data name="Notification.SuspendedEmailSubject" xml:space="preserve">
+    <value>Subscription Suspended - {0}</value>
+  </data>
+  <data name="Notification.SuspendedEmailBody" xml:space="preserve">
+    <value>Dear {0},&#xD;&#xA;&#xD;&#xA;Your subscription has been suspended. Please contact support for assistance.&#xD;&#xA;&#xD;&#xA;Best regards,&#xD;&#xA;SYNFLOX Team</value>
+  </data>
+  <data name="Notification.ResumedEmailSubject" xml:space="preserve">
+    <value>Subscription Resumed - {0}</value>
+  </data>
+  <data name="Notification.ResumedEmailBody" xml:space="preserve">
+    <value>Dear {0},&#xD;&#xA;&#xD;&#xA;Your subscription has been resumed. You can now access all features.&#xD;&#xA;&#xD;&#xA;Best regards,&#xD;&#xA;SYNFLOX Team</value>
+  </data>
+  <data name="Notification.ExtendedEmailSubject" xml:space="preserve">
+    <value>Subscription Extended - {0}</value>
+  </data>
+  <data name="Notification.ExtendedEmailBody" xml:space="preserve">
+    <value>Dear {0},&#xD;&#xA;&#xD;&#xA;Your subscription has been extended to: {1}.&#xD;&#xA;&#xD;&#xA;Thank you for your continued support.&#xD;&#xA;&#xD;&#xA;Best regards,&#xD;&#xA;SYNFLOX Team</value>
+  </data>
   <data name="ApiKey.Created" xml:space="preserve">
     <value>API key created successfully</value>
   </data>
