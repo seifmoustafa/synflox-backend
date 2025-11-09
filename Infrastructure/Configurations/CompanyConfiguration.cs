@@ -53,6 +53,12 @@ namespace Infrastructure.Configurations
                 .HasForeignKey(c => c.SubscriptionPlanId)
                 .OnDelete(DeleteBehavior.SetNull); // Set to null if plan is deleted
 
+            // One-to-many relationship with CompanyCustomFields
+            builder.HasMany(c => c.CustomFields)
+                .WithOne(f => f.Company)
+                .HasForeignKey(f => f.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascade delete custom fields when company is deleted
+
             // Index for trial subscriptions
             builder.HasIndex(c => new { c.IsTrial, c.TrialEndDate, c.IsDeleted })
                 .HasDatabaseName("IX_Companies_Trial_Deleted");

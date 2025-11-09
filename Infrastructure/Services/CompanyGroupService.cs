@@ -136,14 +136,9 @@ public class CompanyGroupService : ICompanyGroupService
         int page = 1,
         int pageSize = 10)
     {
-        var companies = await _repository.GetCompaniesInGroupAsync(groupId);
-        var companiesList = companies.ToList();
-
-        var skip = (page - 1) * pageSize;
-        var pagedCompanies = companiesList.Skip(skip).Take(pageSize);
-
-        var dtos = _mapper.Map<IEnumerable<CompanyDto>>(pagedCompanies);
-        var meta = new PaginationMetadata(companiesList.Count, pageSize, page);
+        var (companies, totalCount) = await _repository.GetCompaniesInGroupAsync(groupId, page, pageSize);
+        var dtos = _mapper.Map<IEnumerable<CompanyDto>>(companies);
+        var meta = new PaginationMetadata(totalCount, pageSize, page);
 
         return (dtos, meta);
     }
@@ -156,7 +151,7 @@ public class CompanyGroupService : ICompanyGroupService
 
     public async Task BulkActivateByGroupAsync(Guid groupId)
     {
-        var companies = await _repository.GetCompaniesInGroupAsync(groupId);
+        var companies = await _repository.GetAllCompaniesInGroupAsync(groupId);
         foreach (var company in companies)
         {
             await _licensingService.ActivateCompanyAsync(company.Id, DateTime.UtcNow.AddYears(1));
@@ -165,7 +160,7 @@ public class CompanyGroupService : ICompanyGroupService
 
     public async Task BulkSuspendByGroupAsync(Guid groupId)
     {
-        var companies = await _repository.GetCompaniesInGroupAsync(groupId);
+        var companies = await _repository.GetAllCompaniesInGroupAsync(groupId);
         foreach (var company in companies)
         {
             await _licensingService.SuspendCompanyAsync(company.Id);
@@ -174,7 +169,7 @@ public class CompanyGroupService : ICompanyGroupService
 
     public async Task BulkResumeByGroupAsync(Guid groupId)
     {
-        var companies = await _repository.GetCompaniesInGroupAsync(groupId);
+        var companies = await _repository.GetAllCompaniesInGroupAsync(groupId);
         foreach (var company in companies)
         {
             await _licensingService.ResumeCompanyAsync(company.Id);
@@ -183,7 +178,7 @@ public class CompanyGroupService : ICompanyGroupService
 
     public async Task BulkExtendByGroupAsync(Guid groupId, DateTime expiryDate)
     {
-        var companies = await _repository.GetCompaniesInGroupAsync(groupId);
+        var companies = await _repository.GetAllCompaniesInGroupAsync(groupId);
         foreach (var company in companies)
         {
             await _licensingService.ExtendCompanyAsync(company.Id, expiryDate);

@@ -11,9 +11,17 @@ namespace Domain.Interfaces;
 public interface ICompanyGroupRepository : IBaseRepository<Guid, CompanyGroup>
 {
     /// <summary>
-    /// Gets companies in a group.
+    /// Gets companies in a group with pagination.
     /// </summary>
-    Task<IEnumerable<Company>> GetCompaniesInGroupAsync(Guid groupId);
+    Task<(IEnumerable<Company> Companies, int TotalCount)> GetCompaniesInGroupAsync(
+        Guid groupId,
+        int page = 1,
+        int pageSize = 10);
+
+    /// <summary>
+    /// Gets all companies in a group (without pagination, for bulk operations).
+    /// </summary>
+    Task<IEnumerable<Company>> GetAllCompaniesInGroupAsync(Guid groupId);
 
     /// <summary>
     /// Gets groups for a company.

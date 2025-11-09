@@ -18,13 +18,39 @@ public class CompanyGroupRepository : BaseRepository<Guid, CompanyGroup>, ICompa
         _context = context;
     }
 
-    public async Task<IEnumerable<Company>> GetCompaniesInGroupAsync(Guid groupId)
+    public async Task<(IEnumerable<Company> Companies, int TotalCount)> GetCompaniesInGroupAsync(
+        Guid groupId,
+        int page = 1,
+        int pageSize = 10)
+    {
+        var query = _context.Set<CompanyGroupMember>()
+            .Where(m => m.CompanyGroupId == groupId && !m.IsDeleted)
+            .Include(m => m.Company)
+            .Where(m => !m.Company.IsDeleted)
+            .Select(m => m.Company);
+
+        // Get total count before pagination
+        var totalCount = await query.CountAsync();
+
+        // Apply pagination at database level
+        var skip = (page - 1) * pageSize;
+        var companies = await query
+            .Skip(skip)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return (companies, totalCount);
+    }
+
+    public async Task<IEnumerable<Company>> GetAllCompaniesInGroupAsync(Guid groupId)
     {
         return await _context.Set<CompanyGroupMember>()
             .Where(m => m.CompanyGroupId == groupId && !m.IsDeleted)
             .Include(m => m.Company)
             .Where(m => !m.Company.IsDeleted)
             .Select(m => m.Company)
+            .AsNoTracking()
             .ToListAsync();
     }
 

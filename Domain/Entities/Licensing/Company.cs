@@ -60,5 +60,10 @@ namespace Domain.Entities.Licensing
         /// The date when the trial period ends.
         /// </summary>
         public DateTime? TrialEndDate { get; set; }
+
+        /// <summary>
+        /// Navigation property to the custom fields for this company.
+        /// </summary>
+        public ICollection<CompanyCustomField> CustomFields { get; set; } = new List<CompanyCustomField>();
     }
 }
