@@ -68,18 +68,7 @@ namespace Infrastructure.Context
             if (dbContext.MenuItems.Count() == 0)
             {
                 // Step 1: Create all parent items (top-level and group headers)
-                var dashboard = new MenuItems
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "nav.dashboard",
-                    Href = "/",
-                    Icon = "LayoutDashboard",
-                    Order = 1,
-                    ParentMenuItemsId = null,
-                    AllowedUserTypes = null, // All authenticated users
-                    IsActive = true,
-                };
-
+               
                 var subscribers = new MenuItems
                 {
                     Id = Guid.NewGuid(),
@@ -191,7 +180,6 @@ namespace Infrastructure.Context
                 // Add all parent items to context first
                 var parentItems = new List<MenuItems>
                 {
-                    dashboard,
                     subscribers,
                     system,
                     apiIntegration,
