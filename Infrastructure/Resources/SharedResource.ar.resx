@@ -105,6 +105,9 @@
   <data name="Company.CompanyNameExists" xml:space="preserve">
     <value>اسم الشركة موجود بالفعل</value>
   </data>
+  <data name="Company.ExportFileCreated" xml:space="preserve">
+    <value>تم إنشاء ملف التصدير بنجاح</value>
+  </data>
   <data name="Licensing.CompanyCreated" xml:space="preserve">
     <value>تم إنشاء الشركة بنجاح</value>
   </data>

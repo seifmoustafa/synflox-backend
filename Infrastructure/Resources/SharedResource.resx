@@ -105,6 +105,9 @@
   <data name="Company.CompanyNameExists" xml:space="preserve">
     <value>Company name already exists</value>
   </data>
+  <data name="Company.ExportFileCreated" xml:space="preserve">
+    <value>Export file created successfully</value>
+  </data>
   <data name="Licensing.CompanyCreated" xml:space="preserve">
     <value>Company created successfully</value>
   </data>

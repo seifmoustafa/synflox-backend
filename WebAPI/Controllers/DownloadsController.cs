@@ -10,10 +10,12 @@ namespace WebAPI.Controllers;
 public class DownloadsController : ControllerBase
 {
     private readonly IDownloadService _downloadService;
+    private readonly IFileService _fileService;
 
-    public DownloadsController(IDownloadService downloadService)
+    public DownloadsController(IDownloadService downloadService, IFileService fileService)
     {
         _downloadService = downloadService;
+        _fileService = fileService;
     }
 
     /// <summary>
@@ -96,24 +98,27 @@ public class DownloadsController : ControllerBase
     }
 
     /// <summary>
-    /// Downloads a file directly (supports range requests for partial content)
+    /// Downloads a file directly (supports range requests for partial content).
+    /// If deleteAfterDownload=true, the file will be deleted after successful download.
     /// </summary>
     [HttpGet("file")]
     public async Task<IActionResult> DownloadFile(
         [FromQuery] string fileRequestPath,
-        [FromQuery] string? scheme = null)
+        [FromQuery] string? scheme = null,
+        [FromQuery] bool deleteAfterDownload = false)
     {
+        string? schemeToUse = scheme ?? "any";
+        bool shouldDelete = deleteAfterDownload;
+        
         try
         {
             // Support HTTP Range requests
             long? rangeStart = null;
             long? rangeEnd = null;
-            bool supportsRange = false;
 
             var rangeHeader = Request.Headers["Range"].FirstOrDefault();
             if (!string.IsNullOrEmpty(rangeHeader))
             {
-                supportsRange = true;
                 var range = ParseRangeHeader(rangeHeader);
                 if (range.HasValue)
                 {
@@ -124,7 +129,7 @@ public class DownloadsController : ControllerBase
 
             var result = await _downloadService.DownloadFileAsync(
                 fileRequestPath, 
-                scheme, 
+                schemeToUse, 
                 rangeStart, 
                 rangeEnd, 
                 HttpContext.RequestAborted);
@@ -142,6 +147,22 @@ public class DownloadsController : ControllerBase
             {
                 Response.StatusCode = 206; // Partial Content
                 Response.Headers["Content-Range"] = $"bytes {result.RangeStart}-{result.RangeEnd}/{result.FileSize}";
+            }
+
+            // Register callback to delete file after response is sent (only if deleteAfterDownload=true)
+            if (shouldDelete)
+            {
+                Response.OnCompleted(async () =>
+                {
+                    try
+                    {
+                        await _fileService.DeleteFileAsync(fileRequestPath, schemeToUse);
+                    }
+                    catch
+                    {
+                        // Silently fail - file might already be deleted or not exist
+                    }
+                });
             }
 
             return File(result.Stream, result.ContentType, result.FileName);

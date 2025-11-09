@@ -24,5 +24,10 @@ namespace Application.Services
         /// Deletes a previously saved file if it exists.
         /// </summary>
         Task DeleteFileAsync(string fileRequestPath, string schemeName);
+
+        /// <summary>
+        /// Saves a byte array as a file under the configured scheme and returns the public path.
+        /// </summary>
+        Task<string> SaveFileFromBytesAsync(byte[] fileData, string fileName, string schemeName);
     }
 }

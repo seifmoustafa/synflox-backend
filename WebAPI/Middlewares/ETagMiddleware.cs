@@ -66,6 +66,16 @@ public class ETagMiddleware : IMiddleware
             return;
         }
 
+        // Skip ETag caching for export endpoints - these return file downloads, not JSON
+        if (context.Request.Path.StartsWithSegments("/api/companies/export", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/api/reports", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.Value?.Contains("/export", StringComparison.OrdinalIgnoreCase) == true ||
+            context.Request.Path.Value?.Contains("/download", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await next(context);
+            return;
+        }
+
         if (!HttpMethods.IsGet(context.Request.Method))
         {
             await next(context);

@@ -22,17 +22,23 @@ public class CompanyController : ControllerBase
     private readonly ICompanyCustomFieldService _customFieldService;
     private readonly ILocalizationService _localizer;
     private readonly IIdEncryptionService _idEncryption;
+    private readonly IFileService _fileService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public CompanyController(
         ICompanyService companyService,
         ICompanyCustomFieldService customFieldService,
         ILocalizationService localizer,
-        IIdEncryptionService idEncryption)
+        IIdEncryptionService idEncryption,
+        IFileService fileService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _companyService = companyService;
         _customFieldService = customFieldService;
         _localizer = localizer;
         _idEncryption = idEncryption;
+        _fileService = fileService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -299,10 +305,73 @@ public class CompanyController : ControllerBase
     }
 
     /// <summary>
-    /// Exports companies to CSV or Excel format.
+    /// Exports companies to CSV or Excel format and saves to server, returns download URL.
+    /// </summary>
+    [HttpPost("export")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    [SwaggerResponse(200, "Export file created successfully", typeof(ApiResponse<ExportFileResponse>))]
+    public async Task<IActionResult> ExportCompaniesToFile([FromQuery] string format = "csv")
+    {
+        try
+        {
+            var (companies, _) = await _companyService.GetAllCompaniesAsync(1, int.MaxValue);
+            var companiesList = companies.ToList();
+
+            byte[] fileData;
+            string fileExtension;
+            string fileName;
+
+            var formatLower = format.ToLowerInvariant();
+            if (formatLower == "excel" || formatLower == "xlsx")
+            {
+                var exportService = HttpContext.RequestServices.GetRequiredService<IExportService>();
+                fileData = await exportService.ExportCompaniesToExcelAsync(companiesList);
+                fileExtension = "xlsx";
+                fileName = $"companies_export_{DateTime.UtcNow:yyyyMMddHHmmss}.{fileExtension}";
+            }
+            else
+            {
+                var exportService = HttpContext.RequestServices.GetRequiredService<IExportService>();
+                fileData = await exportService.ExportCompaniesToCsvAsync(companiesList);
+                fileExtension = "csv";
+                fileName = $"companies_export_{DateTime.UtcNow:yyyyMMddHHmmss}.{fileExtension}";
+            }
+
+            // Save file to FileHost using "any" scheme (AllFileSettings)
+            var fileRequestPath = await _fileService.SaveFileFromBytesAsync(fileData, fileName, "any");
+
+            // Build download URLs
+            var scheme = Request.Scheme;
+            var host = Request.Host;
+            var downloadUrl = $"{scheme}://{host}/api/downloads/file?fileRequestPath={Uri.EscapeDataString(fileRequestPath)}&scheme=any&deleteAfterDownload=true";
+            var fileUrl = $"{scheme}://{host}{fileRequestPath}"; // Full URL for direct access
+
+            var response = new ExportFileResponse
+            {
+                FileRequestPath = fileRequestPath,
+                DownloadUrl = downloadUrl,
+                FileUrl = fileUrl,
+                FileName = fileName,
+                FileSize = fileData.Length,
+                Format = format.ToLowerInvariant(),
+                ExpiresAt = DateTime.UtcNow.AddHours(24) // Auto-cleanup after 24 hours
+            };
+
+            return Ok(new ApiResponse<ExportFileResponse>(200, _localizer["Company.ExportFileCreated"] ?? "Export file created successfully", response));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Exports companies to CSV or Excel format (direct download - legacy endpoint).
     /// </summary>
     [HttpGet("export")]
     [Authorize(Policy = "SuperAdminOnly")]
+    [ProducesResponseType(typeof(FileResult), 200)]
+    [SwaggerResponse(200, "File download", typeof(FileResult))]
     public async Task<IActionResult> ExportCompanies([FromQuery] string format = "csv")
     {
         try
@@ -313,24 +382,41 @@ public class CompanyController : ControllerBase
             byte[] fileData;
             string contentType;
             string fileExtension;
+            string fileName;
 
-            if (format.ToLowerInvariant() == "excel")
+            var formatLower = format.ToLowerInvariant();
+            if (formatLower == "excel" || formatLower == "xlsx")
             {
                 var exportService = HttpContext.RequestServices.GetRequiredService<IExportService>();
                 fileData = await exportService.ExportCompaniesToExcelAsync(companiesList);
                 contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 fileExtension = "xlsx";
+                fileName = $"companies_export_{DateTime.UtcNow:yyyyMMddHHmmss}.{fileExtension}";
             }
             else
             {
                 var exportService = HttpContext.RequestServices.GetRequiredService<IExportService>();
                 fileData = await exportService.ExportCompaniesToCsvAsync(companiesList);
-                contentType = "text/csv";
+                contentType = "text/csv; charset=utf-8";
                 fileExtension = "csv";
+                fileName = $"companies_export_{DateTime.UtcNow:yyyyMMddHHmmss}.{fileExtension}";
             }
 
-            var fileName = $"companies_export_{DateTime.UtcNow:yyyyMMddHHmmss}.{fileExtension}";
-            return File(fileData, contentType, fileName);
+            // Set proper headers for file download BEFORE returning File result
+            Response.Headers["Content-Disposition"] = $"attachment; filename=\"{fileName}\"; filename*=UTF-8''{Uri.EscapeDataString(fileName)}";
+            Response.Headers["Content-Type"] = contentType;
+            Response.Headers["Content-Length"] = fileData.Length.ToString();
+            
+            // Disable caching for file downloads
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+
+            // Use FileContentResult to ensure proper binary response
+            return new FileContentResult(fileData, contentType)
+            {
+                FileDownloadName = fileName
+            };
         }
         catch (Exception ex)
         {

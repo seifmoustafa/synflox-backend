@@ -116,6 +116,43 @@ public class FileService : IFileService
         return Task.CompletedTask;
     }
 
+    public async Task<string> SaveFileFromBytesAsync(byte[] fileData, string fileName, string schemeName)
+    {
+        if (fileData == null || fileData.Length == 0) throw new ArgumentNullException(nameof(fileData));
+        if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentNullException(nameof(fileName));
+        if (string.IsNullOrWhiteSpace(schemeName)) throw new ArgumentNullException(nameof(schemeName));
+
+        var cfg = _configs.Get(schemeName);
+
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        if (!(cfg.AllowedExtensions.Contains(ext) || cfg.AllowedExtensions.Contains("*")))
+        {
+            throw new BadRequestException(string.Format(_localizer["FileExtensionNotAllowed"], ext));
+        }
+
+        if (fileData.Length > cfg.MaxFileSizeBytes)
+        {
+            throw new BadRequestException(string.Format(_localizer["FileTooLarge"], cfg.MaxFileSizeMb));
+        }
+
+        var storageRoot = Path.Combine(Directory.GetCurrentDirectory(), cfg.StoragePath ?? string.Empty);
+        Directory.CreateDirectory(storageRoot);
+
+        var baseName = SanitizeFileName(Path.GetFileNameWithoutExtension(fileName)) ?? Guid.NewGuid().ToString();
+        var finalFileName = baseName + ext;
+        var dest = Path.Combine(storageRoot, finalFileName);
+        var counter = 1;
+        while (File.Exists(dest))
+        {
+            finalFileName = $"{baseName}_{counter++}{ext}";
+            dest = Path.Combine(storageRoot, finalFileName);
+        }
+
+        await File.WriteAllBytesAsync(dest, fileData);
+
+        return $"{cfg.RequestPath?.TrimEnd('/')}/{finalFileName}";
+    }
+
     private static string? SanitizeFileName(string? name)
     {
         if (string.IsNullOrWhiteSpace(name)) return null;

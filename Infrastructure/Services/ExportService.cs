@@ -38,57 +38,65 @@ public class ExportService : IExportService
                           $"{(company.UpdatedTimestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? "")}");
         }
 
-        return Task.FromResult(Encoding.UTF8.GetBytes(csv.ToString()));
+        // Add UTF-8 BOM for Excel compatibility
+        var csvBytes = Encoding.UTF8.GetBytes(csv.ToString());
+        var bomBytes = Encoding.UTF8.GetPreamble();
+        var result = new byte[bomBytes.Length + csvBytes.Length];
+        Buffer.BlockCopy(bomBytes, 0, result, 0, bomBytes.Length);
+        Buffer.BlockCopy(csvBytes, 0, result, bomBytes.Length, csvBytes.Length);
+
+        return Task.FromResult(result);
     }
 
     public Task<byte[]> ExportCompaniesToExcelAsync(IEnumerable<CompanyDto> companies)
     {
         using var stream = new MemoryStream();
-        using var spreadsheet = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook);
-        
-        var workbookPart = spreadsheet.AddWorkbookPart();
-        workbookPart.Workbook = new Workbook();
-        
-        var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-        worksheetPart.Worksheet = new Worksheet(new SheetData());
-        
-        var sheets = spreadsheet.WorkbookPart!.Workbook.AppendChild(new Sheets());
-        var sheet = new Sheet { Id = spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Companies" };
-        sheets.Append(sheet);
-        
-        var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
-        
-        // Header row
-        var headerRow = new Row { RowIndex = 1 };
-        var headers = new[] { "Id", "Name", "IsActive", "ExpiryDate", "ContactEmail", "ContactPhone", "Address", "IsTrial", "TrialEndDate", "SubscriptionPlanId", "CreatedTimestamp", "UpdatedTimestamp" };
-        foreach (var header in headers)
+        using (var spreadsheet = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook, true))
         {
-            var cell = new Cell { DataType = CellValues.String, CellValue = new CellValue(header) };
-            headerRow.Append(cell);
+            var workbookPart = spreadsheet.AddWorkbookPart();
+            workbookPart.Workbook = new Workbook();
+            
+            var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+            worksheetPart.Worksheet = new Worksheet(new SheetData());
+            
+            var sheets = spreadsheet.WorkbookPart!.Workbook.AppendChild(new Sheets());
+            var sheet = new Sheet { Id = spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Companies" };
+            sheets.Append(sheet);
+            
+            var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
+            
+            // Header row
+            var headerRow = new Row { RowIndex = 1 };
+            var headers = new[] { "Id", "Name", "IsActive", "ExpiryDate", "ContactEmail", "ContactPhone", "Address", "IsTrial", "TrialEndDate", "SubscriptionPlanId", "CreatedTimestamp", "UpdatedTimestamp" };
+            foreach (var header in headers)
+            {
+                var cell = new Cell { DataType = CellValues.String, CellValue = new CellValue(header) };
+                headerRow.Append(cell);
+            }
+            sheetData.Append(headerRow);
+            
+            // Data rows
+            uint rowIndex = 2;
+            foreach (var company in companies)
+            {
+                var row = new Row { RowIndex = rowIndex++ };
+                row.Append(CreateCell(company.Id.ToString()));
+                row.Append(CreateCell(company.Name ?? ""));
+                row.Append(CreateCell(company.IsActive.ToString()));
+                row.Append(CreateCell(company.ExpiryDate?.ToString("yyyy-MM-dd") ?? ""));
+                row.Append(CreateCell(company.ContactEmail ?? ""));
+                row.Append(CreateCell(company.ContactPhone ?? ""));
+                row.Append(CreateCell(company.Address ?? ""));
+                row.Append(CreateCell(company.IsTrial.ToString()));
+                row.Append(CreateCell(company.TrialEndDate?.ToString("yyyy-MM-dd") ?? ""));
+                row.Append(CreateCell(company.SubscriptionPlanId?.ToString() ?? ""));
+                row.Append(CreateCell(company.CreatedTimestamp.ToString("yyyy-MM-dd HH:mm:ss")));
+                row.Append(CreateCell(company.UpdatedTimestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""));
+                sheetData.Append(row);
+            }
+            
+            workbookPart.Workbook.Save();
         }
-        sheetData.Append(headerRow);
-        
-        // Data rows
-        uint rowIndex = 2;
-        foreach (var company in companies)
-        {
-            var row = new Row { RowIndex = rowIndex++ };
-            row.Append(CreateCell(company.Id.ToString()));
-            row.Append(CreateCell(company.Name ?? ""));
-            row.Append(CreateCell(company.IsActive.ToString()));
-            row.Append(CreateCell(company.ExpiryDate?.ToString("yyyy-MM-dd") ?? ""));
-            row.Append(CreateCell(company.ContactEmail ?? ""));
-            row.Append(CreateCell(company.ContactPhone ?? ""));
-            row.Append(CreateCell(company.Address ?? ""));
-            row.Append(CreateCell(company.IsTrial.ToString()));
-            row.Append(CreateCell(company.TrialEndDate?.ToString("yyyy-MM-dd") ?? ""));
-            row.Append(CreateCell(company.SubscriptionPlanId?.ToString() ?? ""));
-            row.Append(CreateCell(company.CreatedTimestamp.ToString("yyyy-MM-dd HH:mm:ss")));
-            row.Append(CreateCell(company.UpdatedTimestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""));
-            sheetData.Append(row);
-        }
-        
-        workbookPart.Workbook.Save();
         
         return Task.FromResult(stream.ToArray());
     }
@@ -120,48 +128,49 @@ public class ExportService : IExportService
     public Task<byte[]> ExportSubscriptionHistoryToExcelAsync(IEnumerable<SubscriptionHistoryDto> history)
     {
         using var stream = new MemoryStream();
-        using var spreadsheet = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook);
-        
-        var workbookPart = spreadsheet.AddWorkbookPart();
-        workbookPart.Workbook = new Workbook();
-        
-        var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-        worksheetPart.Worksheet = new Worksheet(new SheetData());
-        
-        var sheets = spreadsheet.WorkbookPart!.Workbook.AppendChild(new Sheets());
-        var sheet = new Sheet { Id = spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Subscription History" };
-        sheets.Append(sheet);
-        
-        var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
-        
-        // Header row
-        var headerRow = new Row { RowIndex = 1 };
-        var headers = new[] { "Id", "CompanyId", "ActionType", "ActionTypeName", "OldValue", "NewValue", "PerformedBy", "Timestamp", "Notes" };
-        foreach (var header in headers)
+        using (var spreadsheet = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook, true))
         {
-            var cell = new Cell { DataType = CellValues.String, CellValue = new CellValue(header) };
-            headerRow.Append(cell);
+            var workbookPart = spreadsheet.AddWorkbookPart();
+            workbookPart.Workbook = new Workbook();
+            
+            var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+            worksheetPart.Worksheet = new Worksheet(new SheetData());
+            
+            var sheets = spreadsheet.WorkbookPart!.Workbook.AppendChild(new Sheets());
+            var sheet = new Sheet { Id = spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Subscription History" };
+            sheets.Append(sheet);
+            
+            var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
+            
+            // Header row
+            var headerRow = new Row { RowIndex = 1 };
+            var headers = new[] { "Id", "CompanyId", "ActionType", "ActionTypeName", "OldValue", "NewValue", "PerformedBy", "Timestamp", "Notes" };
+            foreach (var header in headers)
+            {
+                var cell = new Cell { DataType = CellValues.String, CellValue = new CellValue(header) };
+                headerRow.Append(cell);
+            }
+            sheetData.Append(headerRow);
+            
+            // Data rows
+            uint rowIndex = 2;
+            foreach (var item in history)
+            {
+                var row = new Row { RowIndex = rowIndex++ };
+                row.Append(CreateCell(item.Id.ToString()));
+                row.Append(CreateCell(item.CompanyId.ToString()));
+                row.Append(CreateCell(((int)item.ActionType).ToString()));
+                row.Append(CreateCell(item.ActionTypeName ?? ""));
+                row.Append(CreateCell(item.OldValue ?? ""));
+                row.Append(CreateCell(item.NewValue ?? ""));
+                row.Append(CreateCell(item.PerformedBy?.ToString() ?? ""));
+                row.Append(CreateCell(item.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")));
+                row.Append(CreateCell(item.Notes ?? ""));
+                sheetData.Append(row);
+            }
+            
+            workbookPart.Workbook.Save();
         }
-        sheetData.Append(headerRow);
-        
-        // Data rows
-        uint rowIndex = 2;
-        foreach (var item in history)
-        {
-            var row = new Row { RowIndex = rowIndex++ };
-            row.Append(CreateCell(item.Id.ToString()));
-            row.Append(CreateCell(item.CompanyId.ToString()));
-            row.Append(CreateCell(((int)item.ActionType).ToString()));
-            row.Append(CreateCell(item.ActionTypeName ?? ""));
-            row.Append(CreateCell(item.OldValue ?? ""));
-            row.Append(CreateCell(item.NewValue ?? ""));
-            row.Append(CreateCell(item.PerformedBy?.ToString() ?? ""));
-            row.Append(CreateCell(item.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")));
-            row.Append(CreateCell(item.Notes ?? ""));
-            sheetData.Append(row);
-        }
-        
-        workbookPart.Workbook.Save();
         
         return Task.FromResult(stream.ToArray());
     }
