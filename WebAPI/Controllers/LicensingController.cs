@@ -30,16 +30,16 @@ public class LicensingController : ControllerBase
         _historyService = historyService;
     }
 
-    [HttpPut("{id}/activate")]
+    [HttpPut("{companyId}/activate")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> ActivateCompany(Guid id, [FromBody] ActivateCompanyRequest request)
+    public async Task<IActionResult> ActivateCompany(Guid companyId, [FromBody] ActivateCompanyRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.ActivateCompanyAsync(decryptedId, request.ExpiryDate);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanyActivated"], result));
         }
@@ -49,13 +49,13 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPut("{id}/suspend")]
+    [HttpPut("{companyId}/suspend")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> SuspendCompany(Guid id)
+    public async Task<IActionResult> SuspendCompany(Guid companyId)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.SuspendCompanyAsync(decryptedId);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanySuspended"], result));
         }
@@ -65,13 +65,13 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPut("{id}/resume")]
+    [HttpPut("{companyId}/resume")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> ResumeCompany(Guid id)
+    public async Task<IActionResult> ResumeCompany(Guid companyId)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.ResumeCompanyAsync(decryptedId);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanyResumed"], result));
         }
@@ -81,16 +81,16 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPut("{id}/extend")]
+    [HttpPut("{companyId}/extend")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> ExtendCompany(Guid id, [FromBody] ExtendCompanyRequest request)
+    public async Task<IActionResult> ExtendCompany(Guid companyId, [FromBody] ExtendCompanyRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.ExtendCompanyAsync(decryptedId, request.NewExpiryDate);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.SubscriptionExtended"], result));
         }
@@ -100,13 +100,16 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/status")]
+    /// <summary>
+    /// Gets company status by companyId from route (public endpoint - no auth required).
+    /// </summary>
+    [HttpGet("{companyId}/status")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetCompanyStatus(Guid id)
+    public async Task<IActionResult> GetCompanyStatus(Guid companyId)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.CheckCompanyStatusAsync(decryptedId);
             return Ok(new ApiResponse<CompanyStatusResponse>(200, result.StatusMessage, result));
         }
@@ -116,13 +119,37 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/license-key/generate")]
-    [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> GenerateLicenseKey(Guid id)
+    /// <summary>
+    /// Gets company status using API key's companyId (no companyId in route needed).
+    /// </summary>
+    [HttpGet("status")]
+    public async Task<IActionResult> GetCompanyStatusFromApiKey()
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            // Get companyId from API key (set by ApiKeyAuthenticationMiddleware)
+            var companyIdFromContext = HttpContext.Items["CompanyId"] as Guid?;
+            if (!companyIdFromContext.HasValue)
+            {
+                return Unauthorized(new ApiResponse<string>(401, _localizer["Authentication.Required"] ?? "API key required"));
+            }
+
+            var result = await _licensingService.CheckCompanyStatusAsync(companyIdFromContext.Value);
+            return Ok(new ApiResponse<CompanyStatusResponse>(200, result.StatusMessage, result));
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new ApiResponse<string>(404, ex.Message));
+        }
+    }
+
+    [HttpPost("{companyId}/license-key/generate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> GenerateLicenseKey(Guid companyId)
+    {
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var licenseKey = await _licensingService.GenerateLicenseKeyAsync(decryptedId);
             return Ok(new ApiResponse<GenerateLicenseKeyResponse>(200, _localizer["Licensing.LicenseKeyGenerated"], 
                 new GenerateLicenseKeyResponse { LicenseKey = licenseKey, Message = _localizer["Licensing.LicenseKeyGenerated"] }));
@@ -133,13 +160,13 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/license-key/regenerate")]
+    [HttpPost("{companyId}/license-key/regenerate")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> RegenerateLicenseKey(Guid id)
+    public async Task<IActionResult> RegenerateLicenseKey(Guid companyId)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var licenseKey = await _licensingService.RegenerateLicenseKeyAsync(decryptedId);
             return Ok(new ApiResponse<GenerateLicenseKeyResponse>(200, _localizer["Licensing.LicenseKeyRegenerated"], 
                 new GenerateLicenseKeyResponse { LicenseKey = licenseKey, Message = _localizer["Licensing.LicenseKeyRegenerated"] }));
@@ -176,13 +203,16 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/history")]
+    /// <summary>
+    /// Gets company history by companyId from route (admin endpoint).
+    /// </summary>
+    [HttpGet("{companyId}/history")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> GetCompanyHistory(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetCompanyHistory(Guid companyId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var (history, meta) = await _historyService.GetHistoryByCompanyIdAsync(decryptedId, page, pageSize);
             return Ok(new ApiResponse<object>(200, string.Empty, new { history, pagination = meta }));
         }
@@ -192,7 +222,34 @@ public class LicensingController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Gets company history using API key's companyId (no companyId in route needed).
+    /// </summary>
     [HttpGet("history")]
+    public async Task<IActionResult> GetCompanyHistoryFromApiKey([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            // Get companyId from API key (set by ApiKeyAuthenticationMiddleware)
+            var companyIdFromContext = HttpContext.Items["CompanyId"] as Guid?;
+            if (!companyIdFromContext.HasValue)
+            {
+                return Unauthorized(new ApiResponse<string>(401, _localizer["Authentication.Required"] ?? "API key required"));
+            }
+
+            var (history, meta) = await _historyService.GetHistoryByCompanyIdAsync(companyIdFromContext.Value, page, pageSize);
+            return Ok(new ApiResponse<object>(200, string.Empty, new { history, pagination = meta }));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Gets all subscription history (admin only - can filter by companyId).
+    /// </summary>
+    [HttpGet("history/all")]
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> GetAllHistory(
         [FromQuery] DateTime? fromDate,
@@ -318,16 +375,16 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/trial/start")]
+    [HttpPost("{companyId}/trial/start")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> StartTrial(Guid id, [FromBody] StartTrialRequest request)
+    public async Task<IActionResult> StartTrial(Guid companyId, [FromBody] StartTrialRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.StartTrialAsync(decryptedId, request.TrialDays);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Trial.Started"], result));
         }
@@ -337,16 +394,16 @@ public class LicensingController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/trial/convert")]
+    [HttpPost("{companyId}/trial/convert")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> ConvertTrialToActive(Guid id, [FromBody] ConvertTrialRequest request)
+    public async Task<IActionResult> ConvertTrialToActive(Guid companyId, [FromBody] ConvertTrialRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedId = _idEncryption.Decrypt(companyId);
             var result = await _licensingService.ConvertTrialToActiveAsync(decryptedId, request.ExpiryDate);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Trial.Converted"], result));
         }

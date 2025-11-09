@@ -23,16 +23,12 @@ public class ApiKeyAuthenticationMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Skip API key authentication for certain paths
+        // Skip API key authentication for certain paths (but still allow tracking if API key is provided)
+        // Note: /api/licensing/validate-key is NOT skipped - API keys will be validated if provided for tracking
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
-        if (path.StartsWith("/api/auth/") || 
-            path.StartsWith("/api/health") ||
-            path.StartsWith("/swagger") ||
-            path.StartsWith("/api/licensing/validate-key"))
-        {
-            await _next(context);
-            return;
-        }
+        var skipAuth = path.StartsWith("/api/auth/") || 
+                       path.StartsWith("/api/health") ||
+                       path.StartsWith("/swagger");
 
         // Check if request has API key in Authorization header
         if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
@@ -65,7 +61,7 @@ public class ApiKeyAuthenticationMiddleware
                             return;
                         }
 
-                        // Add company ID to context for downstream use
+                        // Add company ID to context for downstream use (for tracking)
                         context.Items["CompanyId"] = companyId;
                         context.Items["ApiKeyId"] = apiKeyDto.Id;
                         context.Items["ApiKey"] = apiKeyDto;
@@ -76,6 +72,13 @@ public class ApiKeyAuthenticationMiddleware
                     }
                 }
             }
+        }
+
+        // If skipped paths, continue without API key validation
+        if (skipAuth)
+        {
+            await _next(context);
+            return;
         }
 
         // If no valid API key, check if endpoint requires authentication

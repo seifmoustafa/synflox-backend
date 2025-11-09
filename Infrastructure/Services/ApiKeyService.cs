@@ -12,6 +12,8 @@ using Domain.Entities.Authentication;
 using Domain.Entities.Common;
 using Domain.Exceptions;
 using Domain.Interfaces;
+using Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
@@ -21,17 +23,20 @@ public class ApiKeyService : IApiKeyService
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ApplicationDBContext _context;
 
     public ApiKeyService(
         IApiKeyRepository repository,
         IMapper mapper,
         ILocalizationService localizer,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ApplicationDBContext context)
     {
         _repository = repository;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<CreateApiKeyResponse> CreateApiKeyAsync(CreateApiKeyRequest request)
@@ -193,7 +198,20 @@ public class ApiKeyService : IApiKeyService
 
         // Update last used timestamp
         entity.LastUsedAt = DateTime.UtcNow;
-        await _repository.UpdateAsync(entity);
+        
+        // Explicitly mark the LastUsedAt property as modified to ensure EF Core tracks the change
+        // The entity is already tracked from GetByKeyHashAsync, so we can modify it directly
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Detached)
+        {
+            // If entity is not tracked, attach it first
+            _context.Attach(entity);
+        }
+        
+        // Mark LastUsedAt as modified explicitly
+        entry.Property(e => e.LastUsedAt).IsModified = true;
+        
+        // Save changes
         await _unitOfWork.SaveChangesAsync();
 
         var dto = _mapper.Map<ApiKeyDto>(entity);
