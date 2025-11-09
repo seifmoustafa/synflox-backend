@@ -26,6 +26,8 @@ public class LicensingMappingProfile : Profile
             .ForMember(d => d.IsDeleted, opt => opt.Ignore());
 
         CreateMap<UpdateCompanyDto, Company>()
+            .ForMember(d => d.SubscriptionPlanId,
+                opt => opt.ConvertUsing<DecryptStringToGuidConverter, string?>(s => s.SubscriptionPlanId))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         CreateMap<Domain.Entities.Licensing.SubscriptionHistory, SubscriptionHistoryDto>()

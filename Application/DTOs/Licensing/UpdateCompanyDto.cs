@@ -17,5 +17,10 @@ public class UpdateCompanyDto
 
     [StringLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
     public string? Address { get; set; }
+
+    /// <summary>
+    /// Encrypted subscription plan ID (GUID as string)
+    /// </summary>
+    public string? SubscriptionPlanId { get; set; }
 }
 
