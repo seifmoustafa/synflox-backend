@@ -21,7 +21,8 @@ public interface ICompanyGroupService
     /// </summary>
     Task<(IEnumerable<CompanyGroupDto> Groups, PaginationMetadata Meta)> GetAllGroupsAsync(
         int page = 1,
-        int pageSize = 10);
+        int pageSize = 10,
+        string? search = null);
 
     /// <summary>
     /// Gets a company group by ID.

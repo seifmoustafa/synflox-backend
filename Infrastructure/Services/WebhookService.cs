@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
@@ -105,14 +106,22 @@ public class WebhookService : IWebhookService
     public async Task<(IEnumerable<WebhookDto> Webhooks, PaginationMetadata Meta)> GetAllWebhooksAsync(
         Guid? companyId = null,
         int page = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        string? search = null)
     {
         if (companyId.HasValue)
         {
             return await GetWebhooksByCompanyAsync(companyId.Value, page, pageSize);
         }
 
-        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, null, default);
+        Expression<Func<Webhook, object?>>[] searchColumns =
+        {
+            w => w.Url,
+            w => w.Company != null ? w.Company.Name : null,
+            w => w.Company != null ? w.Company.ContactEmail : null,
+        };
+
+        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, search, default, searchColumns);
         var dtos = _mapper.Map<IEnumerable<WebhookDto>>(entities);
         return (dtos, meta);
     }

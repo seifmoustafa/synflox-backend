@@ -57,11 +57,12 @@ public class CompanyGroupController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllGroups(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
     {
         try
         {
-            var (groups, meta) = await _groupService.GetAllGroupsAsync(page, pageSize);
+            var (groups, meta) = await _groupService.GetAllGroupsAsync(page, pageSize, search);
             return Ok(new ApiResponse<object>(200, string.Empty, new { groups, pagination = meta }));
         }
         catch (Exception ex)

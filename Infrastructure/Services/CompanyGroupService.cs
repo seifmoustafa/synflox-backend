@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Application.DTOs.Licensing;
 using Application.Services;
@@ -53,9 +54,15 @@ public class CompanyGroupService : ICompanyGroupService
     public async Task<(
         IEnumerable<CompanyGroupDto> Groups,
         PaginationMetadata Meta
-    )> GetAllGroupsAsync(int page = 1, int pageSize = 10)
+    )> GetAllGroupsAsync(int page = 1, int pageSize = 10, string? search = null)
     {
-        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, null, default);
+        Expression<Func<CompanyGroup, object?>>[] searchColumns =
+        {
+            g => g.Name,
+            g => g.Description,
+        };
+
+        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, search, default, searchColumns);
         var entitiesList = entities.ToList();
 
         // Get company counts for all groups in batch (before mapping to preserve entity IDs)

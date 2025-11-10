@@ -22,7 +22,8 @@ public interface ISubscriptionPlanService
     Task<(IEnumerable<SubscriptionPlanDto> Plans, PaginationMetadata Meta)> GetAllPlansAsync(
         bool? isActive = null,
         int page = 1,
-        int pageSize = 10);
+        int pageSize = 10,
+        string? search = null);
 
     /// <summary>
     /// Gets a subscription plan by ID.

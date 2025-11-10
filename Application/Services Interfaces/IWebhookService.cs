@@ -31,7 +31,8 @@ public interface IWebhookService
     Task<(IEnumerable<WebhookDto> Webhooks, PaginationMetadata Meta)> GetAllWebhooksAsync(
         Guid? companyId = null,
         int page = 1,
-        int pageSize = 10);
+        int pageSize = 10,
+        string? search = null);
 
     /// <summary>
     /// Deletes a webhook.

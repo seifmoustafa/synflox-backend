@@ -61,9 +61,16 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     public async Task<(IEnumerable<SubscriptionPlanDto> Plans, PaginationMetadata Meta)> GetAllPlansAsync(
         bool? isActive = null,
         int page = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        string? search = null)
     {
-        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, null, default);
+        Expression<Func<SubscriptionPlan, object?>>[] searchColumns =
+        {
+            p => p.Name,
+            p => p.Description,
+        };
+
+        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, search, default, searchColumns);
         var filtered = entities.AsQueryable();
 
         if (isActive.HasValue)

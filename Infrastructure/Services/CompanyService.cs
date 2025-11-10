@@ -94,7 +94,11 @@ public class CompanyService : ICompanyService
             c => c.Name,
             c => c.ContactEmail,
             c => c.ContactPhone,
-            c => c.Address
+            c => c.Address,
+            c => c.SubscriptionPlan != null ? c.SubscriptionPlan.Name : null,
+            c => c.SubscriptionPlan != null ? c.SubscriptionPlan.Description : null,
+            c => c.SubscriptionPlan != null ? c.SubscriptionPlan.Currency : null,
+            c => c.SubscriptionPlan != null ? c.SubscriptionPlan.BillingCycle.ToString() : null
         };
 
         var (entities, meta) = await _repository.GetAllAsync(

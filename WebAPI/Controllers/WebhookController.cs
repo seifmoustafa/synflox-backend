@@ -66,7 +66,8 @@ public class WebhookController : ControllerBase
     public async Task<IActionResult> GetAllWebhooks(
         [FromQuery] Guid? companyId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
     {
         try
         {
@@ -76,7 +77,7 @@ public class WebhookController : ControllerBase
                 decryptedCompanyId = _idEncryption.Decrypt(companyId.Value);
             }
 
-            var (webhooks, meta) = await _webhookService.GetAllWebhooksAsync(decryptedCompanyId, page, pageSize);
+            var (webhooks, meta) = await _webhookService.GetAllWebhooksAsync(decryptedCompanyId, page, pageSize, search);
             return Ok(new ApiResponse<object>(200, string.Empty, new { webhooks, pagination = meta }));
         }
         catch (Exception ex)

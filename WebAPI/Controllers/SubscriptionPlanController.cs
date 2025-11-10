@@ -55,11 +55,12 @@ public class SubscriptionPlanController : ControllerBase
     public async Task<IActionResult> GetAllPlans(
         [FromQuery] bool? isActive,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
     {
         try
         {
-            var (plans, meta) = await _planService.GetAllPlansAsync(isActive, page, pageSize);
+            var (plans, meta) = await _planService.GetAllPlansAsync(isActive, page, pageSize, search);
             return Ok(new ApiResponse<object>(200, string.Empty, new { plans, pagination = meta }));
         }
         catch (Exception ex)

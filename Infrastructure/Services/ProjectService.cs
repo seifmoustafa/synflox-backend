@@ -101,7 +101,20 @@ public class ProjectService : IProjectService
         Expression<Func<Project, bool>>? predicate = null;
         if (!string.IsNullOrWhiteSpace(search))
         {
-            predicate = p => !p.IsDeleted && (p.Name.Contains(search) || (p.Description != null && p.Description.Contains(search)));
+            predicate = p => !p.IsDeleted
+                             && (
+                                 // Self fields
+                                 p.Name.Contains(search)
+                                 || (p.Description != null && p.Description.Contains(search))
+                                 // Related: Modules via ProjectModules
+                                 || p.ProjectModules.Any(pm =>
+                                        !pm.IsDeleted
+                                        && pm.Module != null
+                                        && (
+                                            pm.Module.Name.Contains(search)
+                                            || (pm.Module.Description != null && pm.Module.Description.Contains(search))
+                                        ))
+                             );
         }
         else
         {

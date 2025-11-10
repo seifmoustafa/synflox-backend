@@ -30,7 +30,8 @@ public interface IApiKeyService
     Task<(IEnumerable<ApiKeyDto> ApiKeys, PaginationMetadata Meta)> GetAllApiKeysAsync(
         Guid? companyId = null,
         int page = 1,
-        int pageSize = 10);
+        int pageSize = 10,
+        string? search = null);
 
     /// <summary>
     /// Revokes (deactivates) an API key.

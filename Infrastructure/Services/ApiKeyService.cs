@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -101,7 +102,8 @@ public class ApiKeyService : IApiKeyService
     public async Task<(IEnumerable<ApiKeyDto> ApiKeys, PaginationMetadata Meta)> GetAllApiKeysAsync(
         Guid? companyId = null,
         int page = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        string? search = null)
     {
         // For simplicity, if companyId is provided, use GetApiKeysByCompanyAsync
         if (companyId.HasValue)
@@ -109,8 +111,16 @@ public class ApiKeyService : IApiKeyService
             return await GetApiKeysByCompanyAsync(companyId.Value, page, pageSize);
         }
 
+        Expression<Func<ApiKey, object?>>[] searchColumns =
+        {
+            k => k.Name,
+            k => k.KeyPrefix,
+            k => k.Company != null ? k.Company.Name : null,
+            k => k.Company != null ? k.Company.ContactEmail : null,
+        };
+
         // Otherwise, get all with pagination
-        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, null, default);
+        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, search, default, searchColumns);
         var dtos = _mapper.Map<IEnumerable<ApiKeyDto>>(entities);
         return (dtos, meta);
     }

@@ -62,7 +62,8 @@ public class ApiKeyController : ControllerBase
     public async Task<IActionResult> GetAllApiKeys(
         [FromQuery] Guid? companyId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
     {
         try
         {
@@ -72,7 +73,7 @@ public class ApiKeyController : ControllerBase
                 decryptedCompanyId = _idEncryption.Decrypt(companyId.Value);
             }
 
-            var (apiKeys, meta) = await _apiKeyService.GetAllApiKeysAsync(decryptedCompanyId, page, pageSize);
+            var (apiKeys, meta) = await _apiKeyService.GetAllApiKeysAsync(decryptedCompanyId, page, pageSize, search);
             return Ok(new ApiResponse<object>(200, string.Empty, new { apiKeys, pagination = meta }));
         }
         catch (Exception ex)

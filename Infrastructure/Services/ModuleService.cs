@@ -101,7 +101,20 @@ public class ModuleService : IModuleService
         Expression<Func<Module, bool>>? predicate = null;
         if (!string.IsNullOrWhiteSpace(search))
         {
-            predicate = m => !m.IsDeleted && (m.Name.Contains(search) || (m.Description != null && m.Description.Contains(search)));
+            predicate = m => !m.IsDeleted
+                             && (
+                                 // Self fields
+                                 m.Name.Contains(search)
+                                 || (m.Description != null && m.Description.Contains(search))
+                                 // Related: Projects via ProjectModules
+                                 || m.ProjectModules.Any(pm =>
+                                        !pm.IsDeleted
+                                        && pm.Project != null
+                                        && (
+                                            pm.Project.Name.Contains(search)
+                                            || (pm.Project.Description != null && pm.Project.Description.Contains(search))
+                                        ))
+                             );
         }
         else
         {
