@@ -27,6 +27,16 @@ public interface ICompanyGroupRepository : IBaseRepository<Guid, CompanyGroup>
     /// Gets groups for a company.
     /// </summary>
     Task<IEnumerable<CompanyGroup>> GetGroupsForCompanyAsync(Guid companyId);
+
+    /// <summary>
+    /// Gets the count of companies in a group.
+    /// </summary>
+    Task<int> GetCompanyCountInGroupAsync(Guid groupId);
+
+    /// <summary>
+    /// Gets the count of companies for multiple groups (batch query for efficiency).
+    /// </summary>
+    Task<Dictionary<Guid, int>> GetCompanyCountsForGroupsAsync(IEnumerable<Guid> groupIds);
 }
 
 

@@ -63,6 +63,39 @@ public class CompanyGroupRepository : BaseRepository<Guid, CompanyGroup>, ICompa
             .Select(m => m.CompanyGroup)
             .ToListAsync();
     }
+
+    public async Task<int> GetCompanyCountInGroupAsync(Guid groupId)
+    {
+        return await _context.Set<CompanyGroupMember>()
+            .Where(m => m.CompanyGroupId == groupId && !m.IsDeleted)
+            .Include(m => m.Company)
+            .Where(m => !m.Company.IsDeleted)
+            .CountAsync();
+    }
+
+    public async Task<Dictionary<Guid, int>> GetCompanyCountsForGroupsAsync(IEnumerable<Guid> groupIds)
+    {
+        var groupIdsList = groupIds.ToList();
+        if (!groupIdsList.Any())
+            return new Dictionary<Guid, int>();
+
+        var counts = await _context.Set<CompanyGroupMember>()
+            .Where(m => groupIdsList.Contains(m.CompanyGroupId) && !m.IsDeleted)
+            .Include(m => m.Company)
+            .Where(m => !m.Company.IsDeleted)
+            .GroupBy(m => m.CompanyGroupId)
+            .Select(g => new { GroupId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        // Create dictionary with all group IDs (0 for groups with no companies)
+        var result = groupIdsList.ToDictionary(id => id, id => 0);
+        foreach (var count in counts)
+        {
+            result[count.GroupId] = count.Count;
+        }
+
+        return result;
+    }
 }
 
 

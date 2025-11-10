@@ -29,7 +29,8 @@ public class CompanyGroupService : ICompanyGroupService
         ILicensingService licensingService,
         IMapper mapper,
         ILocalizationService localizer,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork
+    )
     {
         _repository = repository;
         _memberRepository = memberRepository;
@@ -49,12 +50,30 @@ public class CompanyGroupService : ICompanyGroupService
         return _mapper.Map<CompanyGroupDto>(created);
     }
 
-    public async Task<(IEnumerable<CompanyGroupDto> Groups, PaginationMetadata Meta)> GetAllGroupsAsync(
-        int page = 1,
-        int pageSize = 10)
+    public async Task<(
+        IEnumerable<CompanyGroupDto> Groups,
+        PaginationMetadata Meta
+    )> GetAllGroupsAsync(int page = 1, int pageSize = 10)
     {
         var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, null, default);
-        var dtos = _mapper.Map<IEnumerable<CompanyGroupDto>>(entities);
+        var entitiesList = entities.ToList();
+
+        // Get company counts for all groups in batch (before mapping to preserve entity IDs)
+        var groupIds = entitiesList.Select(e => e.Id).ToList();
+        var counts = await _repository.GetCompanyCountsForGroupsAsync(groupIds);
+
+        // Map entities to DTOs
+        var dtos = _mapper.Map<IEnumerable<CompanyGroupDto>>(entitiesList).ToList();
+
+        // Set counts for each DTO by matching with entity by index (order is preserved)
+        for (int i = 0; i < entitiesList.Count && i < dtos.Count; i++)
+        {
+            var entityId = entitiesList[i].Id;
+            if (counts.TryGetValue(entityId, out var count))
+            {
+                dtos[i].CompaniesCount = count;
+            }
+        }
 
         return (dtos, meta);
     }
@@ -65,7 +84,12 @@ public class CompanyGroupService : ICompanyGroupService
         if (group == null || group.IsDeleted)
             return null;
 
-        return _mapper.Map<CompanyGroupDto>(group);
+        var dto = _mapper.Map<CompanyGroupDto>(group);
+
+        // Get company count for this group
+        dto.CompaniesCount = await _repository.GetCompanyCountInGroupAsync(groupId);
+
+        return dto;
     }
 
     public async Task<CompanyGroupDto> UpdateGroupAsync(Guid groupId, UpdateCompanyGroupDto request)
@@ -112,7 +136,7 @@ public class CompanyGroupService : ICompanyGroupService
                 CompanyId = companyId,
                 CompanyGroupId = groupId,
                 IsActive = true,
-                IsDeleted = false
+                IsDeleted = false,
             };
 
             await _memberRepository.AddAsync(member);
@@ -131,12 +155,16 @@ public class CompanyGroupService : ICompanyGroupService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<(IEnumerable<CompanyDto> Companies, PaginationMetadata Meta)> GetCompaniesInGroupAsync(
-        Guid groupId,
-        int page = 1,
-        int pageSize = 10)
+    public async Task<(
+        IEnumerable<CompanyDto> Companies,
+        PaginationMetadata Meta
+    )> GetCompaniesInGroupAsync(Guid groupId, int page = 1, int pageSize = 10)
     {
-        var (companies, totalCount) = await _repository.GetCompaniesInGroupAsync(groupId, page, pageSize);
+        var (companies, totalCount) = await _repository.GetCompaniesInGroupAsync(
+            groupId,
+            page,
+            pageSize
+        );
         var dtos = _mapper.Map<IEnumerable<CompanyDto>>(companies);
         var meta = new PaginationMetadata(totalCount, pageSize, page);
 
@@ -185,5 +213,3 @@ public class CompanyGroupService : ICompanyGroupService
         }
     }
 }
-
-

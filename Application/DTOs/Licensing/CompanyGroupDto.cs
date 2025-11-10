@@ -11,8 +11,7 @@ public class CompanyGroupDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsActive { get; set; }
+    public int CompaniesCount { get; set; }
     public DateTime CreatedTimestamp { get; set; }
     public DateTime? UpdatedTimestamp { get; set; }
 }
-
-
