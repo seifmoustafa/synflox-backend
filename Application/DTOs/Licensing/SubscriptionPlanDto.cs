@@ -17,7 +17,7 @@ public class SubscriptionPlanDto
     public bool IsActive { get; set; }
     public string[]? Features { get; set; }
     public int? MaxCompanies { get; set; }
-    public int PlanTier { get; set; }
+    public PlanTier PlanTier { get; set; }
     public Guid? ParentPlanId { get; set; }
     public string? ParentPlanName { get; set; }
     public DateTime CreatedTimestamp { get; set; }

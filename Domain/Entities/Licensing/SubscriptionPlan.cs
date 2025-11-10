@@ -60,10 +60,10 @@ public class SubscriptionPlan : AuditEntity<Guid>
     public int? MaxCompanies { get; set; }
 
     /// <summary>
-    /// Plan hierarchy order (0 = Free, 1 = Basic, 2 = Pro, 3 = Enterprise, etc.)
-    /// Lower numbers inherit from higher numbers when displaying features.
+    /// Plan hierarchy tier (Free, Basic, Pro, Enterprise, Ultimate).
+    /// Lower tiers can inherit features from higher tiers.
     /// </summary>
-    public int PlanTier { get; set; } = 0;
+    public PlanTier PlanTier { get; set; } = PlanTier.Free;
 
     /// <summary>
     /// ID of the parent plan that this plan inherits features from.

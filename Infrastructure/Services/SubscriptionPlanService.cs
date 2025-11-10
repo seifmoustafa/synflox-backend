@@ -68,7 +68,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
             p => p.Description,
         };
 
-        var (entities, meta) = await _repository.GetAllAsync(null, page, pageSize, search, default, searchColumns);
+        var (entities, meta) = await _repository.GetAllAsync(new[] { "ParentPlan" }, page, pageSize, search, default, searchColumns);
         var filtered = entities.AsQueryable();
 
         if (isActive.HasValue)
@@ -83,7 +83,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<SubscriptionPlanDto?> GetPlanByIdAsync(Guid id)
     {
-        var plan = await _repository.GetByIdAsync(id, null);
+        var plan = await _repository.GetByIdAsync(id, new[] { "ParentPlan" });
         if (plan == null || plan.IsDeleted)
         {
             return null;
@@ -93,7 +93,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<SubscriptionPlanDto?> UpdatePlanAsync(Guid id, UpdateSubscriptionPlanRequest request)
     {
-        var plan = await _repository.GetByIdAsync(id, null);
+        var plan = await _repository.GetByIdAsync(id, new[] { "ParentPlan" });
         if (plan == null || plan.IsDeleted)
         {
             throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
@@ -131,7 +131,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<SubscriptionPlanDto> UpdatePlanProjectModulesAsync(Guid planId, UpdatePlanProjectModulesDto dto)
     {
-        var plan = await _repository.GetByIdAsync(planId, null);
+        var plan = await _repository.GetByIdAsync(planId, new[] { "ParentPlan" });
         if (plan == null || plan.IsDeleted)
         {
             throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
@@ -273,7 +273,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<SubscriptionPlanDto> SetPlanParentAsync(Guid planId, Guid? parentPlanId)
     {
-        var plan = await _repository.GetByIdAsync(planId, null, CancellationToken.None);
+        var plan = await _repository.GetByIdAsync(planId, new[] { "ParentPlan" }, CancellationToken.None);
         if (plan == null || plan.IsDeleted)
         {
             throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
@@ -282,7 +282,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         // Validate parent plan if provided
         if (parentPlanId.HasValue)
         {
-            var parentPlan = await _repository.GetByIdAsync(parentPlanId.Value, null, CancellationToken.None);
+            var parentPlan = await _repository.GetByIdAsync(parentPlanId.Value, new[] { "ParentPlan" }, CancellationToken.None);
             if (parentPlan == null || parentPlan.IsDeleted)
             {
                 throw new NotFoundException(_localizer["SubscriptionPlan.ParentNotFound"]);
