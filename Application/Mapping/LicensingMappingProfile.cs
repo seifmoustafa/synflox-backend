@@ -44,10 +44,18 @@ public class LicensingMappingProfile : Profile
         CreateMap<Domain.Entities.Licensing.Project, ProjectDto>()
             .ForMember(d => d.Id,
                 opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Features,
+                opt => opt.MapFrom(s => !string.IsNullOrEmpty(s.Features)
+                    ? System.Text.Json.JsonSerializer.Deserialize<string[]>(s.Features, new System.Text.Json.JsonSerializerOptions())
+                    : null))
             .ForMember(d => d.Modules, opt => opt.Ignore()); // Set manually in service
 
         CreateMap<CreateProjectDto, Domain.Entities.Licensing.Project>()
             .ForMember(d => d.Id, opt => opt.Ignore())
+            .ForMember(d => d.Features,
+                opt => opt.MapFrom(s => s.Features != null && s.Features.Length > 0
+                    ? System.Text.Json.JsonSerializer.Serialize(s.Features, new System.Text.Json.JsonSerializerOptions())
+                    : null))
             .ForMember(d => d.ProjectModules, opt => opt.Ignore())
             .ForMember(d => d.PlanProjectModules, opt => opt.Ignore())
             .ForMember(d => d.CreatedTimestamp, opt => opt.Ignore())
@@ -56,16 +64,28 @@ public class LicensingMappingProfile : Profile
             .ForMember(d => d.IsDeleted, opt => opt.Ignore());
 
         CreateMap<UpdateProjectDto, Domain.Entities.Licensing.Project>()
+            .ForMember(d => d.Features,
+                opt => opt.MapFrom(s => s.Features != null && s.Features.Length > 0
+                    ? System.Text.Json.JsonSerializer.Serialize(s.Features, new System.Text.Json.JsonSerializerOptions())
+                    : null))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // Module mappings
         CreateMap<Domain.Entities.Licensing.Module, ModuleDto>()
             .ForMember(d => d.Id,
                 opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Features,
+                opt => opt.MapFrom(s => !string.IsNullOrEmpty(s.Features)
+                    ? System.Text.Json.JsonSerializer.Deserialize<string[]>(s.Features, new System.Text.Json.JsonSerializerOptions())
+                    : null))
             .ForMember(d => d.Projects, opt => opt.Ignore()); // Set manually in service
 
         CreateMap<CreateModuleDto, Domain.Entities.Licensing.Module>()
             .ForMember(d => d.Id, opt => opt.Ignore())
+            .ForMember(d => d.Features,
+                opt => opt.MapFrom(s => s.Features != null && s.Features.Length > 0
+                    ? System.Text.Json.JsonSerializer.Serialize(s.Features, new System.Text.Json.JsonSerializerOptions())
+                    : null))
             .ForMember(d => d.ProjectModules, opt => opt.Ignore())
             .ForMember(d => d.PlanProjectModules, opt => opt.Ignore())
             .ForMember(d => d.CreatedTimestamp, opt => opt.Ignore())
@@ -74,6 +94,10 @@ public class LicensingMappingProfile : Profile
             .ForMember(d => d.IsDeleted, opt => opt.Ignore());
 
         CreateMap<UpdateModuleDto, Domain.Entities.Licensing.Module>()
+            .ForMember(d => d.Features,
+                opt => opt.MapFrom(s => s.Features != null && s.Features.Length > 0
+                    ? System.Text.Json.JsonSerializer.Serialize(s.Features, new System.Text.Json.JsonSerializerOptions())
+                    : null))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // ProjectModule mappings

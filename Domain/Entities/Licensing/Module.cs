@@ -27,5 +27,11 @@ public class Module : AuditEntity<Guid>
     public ICollection<PlanProjectModule> PlanProjectModules { get; set; } = new List<PlanProjectModule>();
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// JSON array of custom feature names for this module.
+    /// </summary>
+    [StringLength(2000)]
+    public string? Features { get; set; }
 }
 

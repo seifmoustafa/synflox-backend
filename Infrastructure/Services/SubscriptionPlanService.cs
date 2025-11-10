@@ -148,8 +148,31 @@ public class SubscriptionPlanService : ISubscriptionPlanService
             await _planProjectModuleRepository.DeleteAsync(ppm.Id);
         }
 
+        // Collect all project-module ids to add (from ProjectIds and explicit ProjectModuleIds)
+        var toAdd = new HashSet<Guid>();
+
+        // From complete projects: include all their modules
+        if (dto.ProjectIds != null && dto.ProjectIds.Count > 0)
+        {
+            foreach (var projectId in dto.ProjectIds)
+            {
+                var pms = await _projectModuleRepository.FindAsync(pm => pm.ProjectId == projectId && !pm.IsDeleted);
+                foreach (var pm in pms)
+                {
+                    toAdd.Add(pm.Id);
+                }
+            }
+        }
+
+        // From explicit project-module ids
+        if (dto.ProjectModuleIds != null && dto.ProjectModuleIds.Count > 0)
+        {
+            foreach (var id in dto.ProjectModuleIds)
+                toAdd.Add(id);
+        }
+
         // Add new relationships
-        foreach (var projectModuleId in dto.ProjectModuleIds)
+        foreach (var projectModuleId in toAdd)
         {
             // Verify project-module exists
             var projectModule = await _projectModuleRepository.GetByIdAsync(projectModuleId, null);

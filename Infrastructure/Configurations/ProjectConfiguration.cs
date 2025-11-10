@@ -20,6 +20,9 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.Description)
             .HasMaxLength(1000);
 
+        builder.Property(p => p.Features)
+            .HasMaxLength(2000);
+
         builder.HasIndex(p => p.IsActive)
             .HasDatabaseName("IX_Projects_IsActive");
     }

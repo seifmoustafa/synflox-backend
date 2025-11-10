@@ -9,7 +9,14 @@ namespace Application.DTOs.Licensing;
 /// </summary>
 public class UpdatePlanProjectModulesDto
 {
-    [Required(ErrorMessage = "Project module IDs are required")]
+    /// <summary>
+    /// Optional: Include complete projects (all their modules will be added to the plan).
+    /// </summary>
+    public List<Guid> ProjectIds { get; set; } = new List<Guid>();
+
+    /// <summary>
+    /// Optional: Include specific project-module links explicitly.
+    /// </summary>
     public List<Guid> ProjectModuleIds { get; set; } = new List<Guid>();
 }
 

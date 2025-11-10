@@ -20,6 +20,9 @@ public class ModuleConfiguration : IEntityTypeConfiguration<Module>
         builder.Property(m => m.Description)
             .HasMaxLength(1000);
 
+        builder.Property(m => m.Features)
+            .HasMaxLength(2000);
+
         builder.HasIndex(m => m.IsActive)
             .HasDatabaseName("IX_Modules_IsActive");
     }
