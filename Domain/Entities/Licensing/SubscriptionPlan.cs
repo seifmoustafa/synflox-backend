@@ -60,6 +60,28 @@ public class SubscriptionPlan : AuditEntity<Guid>
     public int? MaxCompanies { get; set; }
 
     /// <summary>
+    /// Plan hierarchy order (0 = Free, 1 = Basic, 2 = Pro, 3 = Enterprise, etc.)
+    /// Lower numbers inherit from higher numbers when displaying features.
+    /// </summary>
+    public int PlanTier { get; set; } = 0;
+
+    /// <summary>
+    /// ID of the parent plan that this plan inherits features from.
+    /// Used for upgrade paths (e.g., Pro inherits from Free).
+    /// </summary>
+    public Guid? ParentPlanId { get; set; }
+
+    /// <summary>
+    /// Navigation property to the parent plan.
+    /// </summary>
+    public SubscriptionPlan? ParentPlan { get; set; }
+
+    /// <summary>
+    /// Navigation property to child plans that inherit from this plan.
+    /// </summary>
+    public ICollection<SubscriptionPlan> ChildPlans { get; set; } = new List<SubscriptionPlan>();
+
+    /// <summary>
     /// Navigation property to the project-modules included in this plan.
     /// </summary>
     public ICollection<PlanProjectModule> PlanProjectModules { get; set; } = new List<PlanProjectModule>();

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Application.DTOs.Licensing;
 using Application.DTOs.Responses;
@@ -172,6 +174,67 @@ public class SubscriptionPlanController : ControllerBase
             var decryptedId = _idEncryption.Decrypt(id);
             var (planProjectModules, meta) = await _planService.GetPlanProjectModulesAsync(decryptedId, page, pageSize);
             return Ok(new ApiResponse<object>(200, string.Empty, new { planProjectModules, pagination = meta }));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Gets plan features with inheritance from parent plans.
+    /// </summary>
+    [HttpGet("{id}/features-with-inheritance")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> GetPlanFeaturesWithInheritance(Guid id)
+    {
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(id);
+            var result = await _planService.GetPlanFeaturesWithInheritanceAsync(decryptedId);
+            return Ok(new ApiResponse<PlanFeaturesDto>(200, string.Empty, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Gets the upgrade path for a plan (available upgrade options).
+    /// </summary>
+    [HttpGet("{id}/upgrade-path")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> GetUpgradePath(Guid id)
+    {
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(id);
+            var result = await _planService.GetUpgradePathAsync(decryptedId);
+            return Ok(new ApiResponse<IEnumerable<SubscriptionPlanDto>>(200, string.Empty, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Sets the parent plan for hierarchy (upgrade path).
+    /// </summary>
+    [HttpPut("{id}/parent")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> SetPlanParent(Guid id, [FromBody] SetPlanParentRequest request)
+    {
+        try
+        {
+            var decryptedId = _idEncryption.Decrypt(id);
+            var decryptedParentId = !string.IsNullOrEmpty(request.ParentPlanId) 
+                ? _idEncryption.Decrypt(request.ParentPlanId) 
+                : (Guid?)null;
+            
+            var result = await _planService.SetPlanParentAsync(decryptedId, decryptedParentId);
+            return Ok(new ApiResponse<SubscriptionPlanDto>(200, _localizer["SubscriptionPlan.ParentUpdated"], result));
         }
         catch (Exception ex)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.Licensing;
 using Application.Services;
@@ -22,7 +23,6 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IIdEncryptionService _idEncryption;
 
     public SubscriptionPlanService(
         ISubscriptionPlanRepository repository,
@@ -30,8 +30,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         IProjectModuleRepository projectModuleRepository,
         IMapper mapper,
         ILocalizationService localizer,
-        IUnitOfWork unitOfWork,
-        IIdEncryptionService idEncryption)
+        IUnitOfWork unitOfWork)
     {
         _repository = repository;
         _planProjectModuleRepository = planProjectModuleRepository;
@@ -39,7 +38,6 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
-        _idEncryption = idEncryption;
     }
 
     public async Task<SubscriptionPlanDto> CreatePlanAsync(CreateSubscriptionPlanRequest request)
@@ -213,6 +211,129 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         // All mapping is handled by AutoMapper now
         var dtos = _mapper.Map<List<PlanProjectModuleDto>>(entities);
         return (dtos, meta);
+    }
+
+    public async Task<PlanFeaturesDto> GetPlanFeaturesWithInheritanceAsync(Guid planId)
+    {
+        var plan = await _repository.GetByIdAsync(planId, new[] { "ParentPlan", "ChildPlans", "PlanProjectModules.ProjectModule.Project", "PlanProjectModules.ProjectModule.Module" });
+        if (plan == null || plan.IsDeleted)
+        {
+            throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
+        }
+
+        var result = _mapper.Map<PlanFeaturesDto>(plan);
+        result.OwnFeatures = GetPlanFeatures(plan);
+        result.ProjectModules = _mapper.Map<List<PlanProjectModuleDto>>(plan.PlanProjectModules.Where(ppm => !ppm.IsDeleted));
+
+        // Get inherited features from parent plans
+        var allFeatures = new List<string>(result.OwnFeatures);
+        var inheritedProjectModules = new List<PlanProjectModuleDto>();
+        
+        var currentPlan = plan.ParentPlan;
+        while (currentPlan != null && !currentPlan.IsDeleted)
+        {
+            // Add parent features
+            var parentFeatures = GetPlanFeatures(currentPlan);
+            allFeatures.AddRange(parentFeatures);
+            
+            // Add parent project modules
+            var (parentModules, _) = await _planProjectModuleRepository.GetAllAsync(
+                ppm => ppm.SubscriptionPlanId == currentPlan.Id && !ppm.IsDeleted,
+                new[] { "ProjectModule.Project", "ProjectModule.Module" },
+                1, int.MaxValue);
+            inheritedProjectModules.AddRange(_mapper.Map<List<PlanProjectModuleDto>>(parentModules));
+            
+            // Move to next parent
+            currentPlan = await _repository.GetByIdAsync(currentPlan.Id, new[] { "ParentPlan" }, CancellationToken.None);
+            currentPlan = currentPlan?.ParentPlan;
+        }
+
+        result.AllFeatures = allFeatures.Distinct().ToArray();
+        result.InheritedProjectModules = inheritedProjectModules;
+        result.ParentPlan = plan.ParentPlan != null ? _mapper.Map<SubscriptionPlanDto>(plan.ParentPlan) : null;
+        result.ChildPlans = _mapper.Map<List<SubscriptionPlanDto>>(plan.ChildPlans.Where(cp => !cp.IsDeleted));
+
+        return result;
+    }
+
+    public async Task<IEnumerable<SubscriptionPlanDto>> GetUpgradePathAsync(Guid planId)
+    {
+        var plan = await _repository.GetByIdAsync(planId, null, CancellationToken.None);
+        if (plan == null || plan.IsDeleted)
+        {
+            throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
+        }
+
+        // Get all plans with higher tiers that are active
+        var upgradePlans = await _repository.FindAsync(
+            p => p.PlanTier > plan.PlanTier && p.IsActive && !p.IsDeleted);
+
+        return _mapper.Map<List<SubscriptionPlanDto>>(upgradePlans.OrderBy(p => p.PlanTier));
+    }
+
+    public async Task<SubscriptionPlanDto> SetPlanParentAsync(Guid planId, Guid? parentPlanId)
+    {
+        var plan = await _repository.GetByIdAsync(planId, null, CancellationToken.None);
+        if (plan == null || plan.IsDeleted)
+        {
+            throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
+        }
+
+        // Validate parent plan if provided
+        if (parentPlanId.HasValue)
+        {
+            var parentPlan = await _repository.GetByIdAsync(parentPlanId.Value, null, CancellationToken.None);
+            if (parentPlan == null || parentPlan.IsDeleted)
+            {
+                throw new NotFoundException(_localizer["SubscriptionPlan.ParentNotFound"]);
+            }
+
+            // Prevent circular references
+            if (await WouldCreateCircularReference(planId, parentPlanId.Value))
+            {
+                throw new InvalidOperationException(_localizer["SubscriptionPlan.CircularReferenceError"]);
+            }
+        }
+
+        plan.ParentPlanId = parentPlanId;
+        await _repository.UpdateAsync(plan);
+        await _unitOfWork.SaveChangesAsync();
+
+        return await GetPlanByIdAsync(planId) ?? throw new NotFoundException(_localizer["SubscriptionPlan.NotFound"]);
+    }
+
+    private static string[] GetPlanFeatures(SubscriptionPlan plan)
+    {
+        if (string.IsNullOrEmpty(plan.Features))
+            return Array.Empty<string>();
+
+        try
+        {
+            return JsonSerializer.Deserialize<string[]>(plan.Features) ?? Array.Empty<string>();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private async Task<bool> WouldCreateCircularReference(Guid planId, Guid parentPlanId)
+    {
+        var visited = new HashSet<Guid>();
+        var currentId = parentPlanId;
+
+        while (currentId != Guid.Empty && !visited.Contains(currentId))
+        {
+            if (currentId == planId)
+                return true;
+
+            visited.Add(currentId);
+            
+            var currentPlan = await _repository.GetByIdAsync(currentId, null, CancellationToken.None);
+            currentId = currentPlan?.ParentPlanId ?? Guid.Empty;
+        }
+
+        return false;
     }
 }
 

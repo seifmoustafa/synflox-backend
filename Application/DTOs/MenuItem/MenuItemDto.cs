@@ -8,7 +8,7 @@ namespace Application.DTOs.MenuItems
     /// </summary>
     public class MenuItemsDto
     {
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Href { get; set; }
         public string Icon { get; set; } = string.Empty;
@@ -29,7 +29,7 @@ namespace Application.DTOs.MenuItems
     /// </summary>
     public class MenuItemsReferenceDto
     {
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
     }
 }

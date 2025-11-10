@@ -29,5 +29,10 @@ public class CreateSubscriptionPlanRequest
 
     [Range(1, int.MaxValue, ErrorMessage = "Max companies must be positive")]
     public int? MaxCompanies { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "Plan tier must be non-negative")]
+    public int PlanTier { get; set; } = 0;
+
+    public string? ParentPlanId { get; set; }
 }
 

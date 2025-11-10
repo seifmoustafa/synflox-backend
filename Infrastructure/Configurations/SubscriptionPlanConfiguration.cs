@@ -17,6 +17,14 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.HasIndex(p => new { p.IsActive, p.IsDeleted })
             .HasDatabaseName("IX_SubscriptionPlans_Active_Deleted");
 
+        // Index for plan tier ordering
+        builder.HasIndex(p => p.PlanTier)
+            .HasDatabaseName("IX_SubscriptionPlans_PlanTier");
+
+        // Index for parent plan relationships
+        builder.HasIndex(p => p.ParentPlanId)
+            .HasDatabaseName("IX_SubscriptionPlans_ParentPlanId");
+
         // Configure string lengths
         builder.Property(p => p.Name)
             .IsRequired()
@@ -31,6 +39,12 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
 
         builder.Property(p => p.Features)
             .HasMaxLength(2000);
+
+        // Configure self-referencing relationship for plan hierarchy
+        builder.HasOne(p => p.ParentPlan)
+            .WithMany(p => p.ChildPlans)
+            .HasForeignKey(p => p.ParentPlanId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
     }
 }
 

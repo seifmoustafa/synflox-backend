@@ -12,7 +12,7 @@ public class MenuItemsMappingProfile : Profile
     {
         CreateMap<MenuItems, MenuItemsDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidToStringConverter, Guid>(s => s.Id))
+                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
             .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children.OrderBy(c => c.Order)))
             .ForMember(d => d.ParentMenuItems, opt => opt.MapFrom(s => s.ParentMenuItems))
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom(s => 
@@ -22,7 +22,7 @@ public class MenuItemsMappingProfile : Profile
 
         CreateMap<MenuItems, MenuItemsReferenceDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidToStringConverter, Guid>(s => s.Id));
+                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
 
         CreateMap<CreateMenuItemsDto, MenuItems>()
             .ForMember(d => d.Id, opt => opt.Ignore())

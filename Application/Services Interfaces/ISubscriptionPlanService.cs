@@ -52,5 +52,20 @@ public interface ISubscriptionPlanService
         Guid planId,
         int page = 1,
         int pageSize = 10);
+
+    /// <summary>
+    /// Gets all features for a plan including inherited features from parent plans.
+    /// </summary>
+    Task<PlanFeaturesDto> GetPlanFeaturesWithInheritanceAsync(Guid planId);
+
+    /// <summary>
+    /// Gets the upgrade path for a plan (what plans can be upgraded to).
+    /// </summary>
+    Task<IEnumerable<SubscriptionPlanDto>> GetUpgradePathAsync(Guid planId);
+
+    /// <summary>
+    /// Sets the parent plan for hierarchy (upgrade path).
+    /// </summary>
+    Task<SubscriptionPlanDto> SetPlanParentAsync(Guid planId, Guid? parentPlanId);
 }
 

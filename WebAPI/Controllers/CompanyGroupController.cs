@@ -75,11 +75,11 @@ public class CompanyGroupController : ControllerBase
     /// Gets a company group by ID.
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetGroupById(string id)
+        public async Task<IActionResult> GetGroupById(Guid id)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             var group = await _groupService.GetGroupByIdAsync(decryptedId);
             if (group == null)
             {
@@ -98,13 +98,13 @@ public class CompanyGroupController : ControllerBase
     /// Updates a company group.
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateGroup(string id, [FromBody] UpdateCompanyGroupDto request)
+    public async Task<IActionResult> UpdateGroup(Guid id, [FromBody] UpdateCompanyGroupDto request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             var result = await _groupService.UpdateGroupAsync(decryptedId, request);
             return Ok(new ApiResponse<CompanyGroupDto>(200, _localizer["CompanyGroup.Updated"], result));
         }
@@ -118,11 +118,11 @@ public class CompanyGroupController : ControllerBase
     /// Deletes a company group.
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteGroup(string id)
+    public async Task<IActionResult> DeleteGroup(Guid id)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             await _groupService.DeleteGroupAsync(decryptedId);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.Deleted"]));
         }
@@ -136,11 +136,11 @@ public class CompanyGroupController : ControllerBase
     /// Adds companies to a group.
     /// </summary>
     [HttpPost("{id}/companies")]
-    public async Task<IActionResult> AddCompaniesToGroup(string id, [FromBody] List<Guid> companyIds)
+    public async Task<IActionResult> AddCompaniesToGroup(Guid id, [FromBody] List<Guid> companyIds)
     {
         try
         {
-            var decryptedGroupId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedGroupId = _idEncryption.Decrypt(id);
             var decryptedCompanyIds = companyIds.Select(c => _idEncryption.Decrypt(c)).ToList();
             await _groupService.AddCompaniesToGroupAsync(decryptedGroupId, decryptedCompanyIds);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.CompaniesAdded"]));
@@ -155,11 +155,11 @@ public class CompanyGroupController : ControllerBase
     /// Removes companies from a group.
     /// </summary>
     [HttpDelete("{id}/companies")]
-    public async Task<IActionResult> RemoveCompaniesFromGroup(string id, [FromBody] List<Guid> companyIds)
+    public async Task<IActionResult> RemoveCompaniesFromGroup(Guid id, [FromBody] List<Guid> companyIds)
     {
         try
         {
-            var decryptedGroupId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedGroupId = _idEncryption.Decrypt(id);
             var decryptedCompanyIds = companyIds.Select(c => _idEncryption.Decrypt(c)).ToList();
             await _groupService.RemoveCompaniesFromGroupAsync(decryptedGroupId, decryptedCompanyIds);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.CompaniesRemoved"]));
@@ -175,13 +175,13 @@ public class CompanyGroupController : ControllerBase
     /// </summary>
     [HttpGet("{id}/companies")]
     public async Task<IActionResult> GetCompaniesInGroup(
-        string id,
+        Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             var (companies, meta) = await _groupService.GetCompaniesInGroupAsync(decryptedId, page, pageSize);
             return Ok(new ApiResponse<object>(200, string.Empty, new { companies, pagination = meta }));
         }
@@ -213,11 +213,11 @@ public class CompanyGroupController : ControllerBase
     /// Activates all companies in a group.
     /// </summary>
     [HttpPost("{id}/bulk-activate")]
-    public async Task<IActionResult> BulkActivate(string id)
+    public async Task<IActionResult> BulkActivate(Guid id)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             await _groupService.BulkActivateByGroupAsync(decryptedId);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.BulkActivated"]));
         }
@@ -231,11 +231,11 @@ public class CompanyGroupController : ControllerBase
     /// Suspends all companies in a group.
     /// </summary>
     [HttpPost("{id}/bulk-suspend")]
-    public async Task<IActionResult> BulkSuspend(string id)
+    public async Task<IActionResult> BulkSuspend(Guid id)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             await _groupService.BulkSuspendByGroupAsync(decryptedId);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.BulkSuspended"]));
         }
@@ -249,11 +249,11 @@ public class CompanyGroupController : ControllerBase
     /// Resumes all companies in a group.
     /// </summary>
     [HttpPost("{id}/bulk-resume")]
-    public async Task<IActionResult> BulkResume(string id)
+    public async Task<IActionResult> BulkResume(Guid id)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             await _groupService.BulkResumeByGroupAsync(decryptedId);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.BulkResumed"]));
         }
@@ -267,11 +267,11 @@ public class CompanyGroupController : ControllerBase
     /// Extends all companies in a group.
     /// </summary>
     [HttpPost("{id}/bulk-extend")]
-    public async Task<IActionResult> BulkExtend(string id, [FromBody] DateTime expiryDate)
+    public async Task<IActionResult> BulkExtend(Guid id, [FromBody] DateTime expiryDate)
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(Guid.Parse(id));
+            var decryptedId = _idEncryption.Decrypt(id);
             await _groupService.BulkExtendByGroupAsync(decryptedId, expiryDate);
             return Ok(new ApiResponse<string>(200, _localizer["CompanyGroup.BulkExtended"]));
         }
