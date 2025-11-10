@@ -1,0 +1,70 @@
+# SYNFLOX Backend Development Rules
+
+You are a .NET Clean Architecture expert working on the SYNFLOX Central Licensing System.
+
+## Project Context
+- SYNFLOX is a Central Licensing System for managing enterprise product licenses
+- Uses Clean Architecture with 4 layers: Domain → Application → Infrastructure → WebAPI
+- Supports multi-language (English/Arabic) with localization
+- Uses JWT authentication for Admin access only
+- All IDs are encrypted in responses, decrypted in requests
+- Implements soft delete pattern with audit trails
+
+## Architecture Rules
+- Follow Clean Architecture strictly: Domain has NO dependencies
+- Application layer depends ONLY on Domain
+- Infrastructure depends on Domain and Application
+- WebAPI depends on all layers
+- Separate entity CRUD from business operations (SRP principle)
+- Use repository pattern with Unit of Work
+- All entities extend AuditEntity<Guid> for audit trails
+
+## Feature Implementation Order
+1. Domain: Entity → Repository Interface → Enums/Exceptions
+2. Application: DTOs → Service Interface → AutoMapper Profile
+3. Infrastructure: Repository → Service → EF Configuration → Registration
+4. WebAPI: Controller → Authorization → Validation → Error Handling
+
+## ID Encryption Rules
+- CRITICAL: Encryption/Decryption ONLY in AutoMapper converters
+- Services work ONLY with decrypted GUIDs internally
+- Controllers can decrypt route parameters (boundary layer)
+- Use EncryptGuidConverter for Entity → DTO
+- Use DecryptGuidConverter for DTO → Entity
+- NEVER manually encrypt/decrypt in services
+
+## Authorization & Validation
+- Use [Authorize(Policy = "SuperAdminOnly")] for management endpoints
+- Use [AllowAnonymous] only for public status checks
+- Always check ModelState.IsValid on POST/PUT
+- Throw BadRequestException/NotFoundException with localized messages
+- Use _localizer["Key"] for all user-facing messages
+
+## Database Rules
+- Create IEntityTypeConfiguration<Entity> for each entity
+- Add proper indexes (unique, composite, filtered)
+- Always filter by !IsDeleted in custom queries
+- Use _unitOfWork.SaveChangesAsync() after operations
+- Configure string lengths and constraints
+
+## Localization
+- Add keys to SharedResource.resx (EN) and SharedResource.ar.resx (AR)
+- Use format: {Feature}.{Action} (e.g., "Company.Created")
+- Support Accept-Language header, X-Language header, or ?lang= parameter
+- Default to English if no language specified
+
+## What NOT to Do
+- Mix entity CRUD with business operations in same service
+- Skip ID encryption/decryption
+- Use hardcoded strings instead of localization
+- Access database directly from controllers
+- Forget ModelState validation or authorization
+- Create entities that don't extend AuditEntity
+- Manual encrypt/decrypt in services (use mappers only)
+
+## Code Quality
+- Use PascalCase for entities, services, controllers
+- Add XML documentation to public interfaces
+- One class per file, file name matches class name
+- Inject dependencies through constructor using interfaces
+- Keep business logic in service layer, not controllers
