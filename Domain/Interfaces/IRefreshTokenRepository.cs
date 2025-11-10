@@ -11,5 +11,6 @@ namespace Domain.Interfaces
     {
         Task<RefreshToken?> GetByTokenAndAdminId(Guid adminId, string token);
         Task<RefreshToken?> GetByAdminId(Guid adminId);
+        Task<RefreshToken?> GetByToken(string token);
     }
 }

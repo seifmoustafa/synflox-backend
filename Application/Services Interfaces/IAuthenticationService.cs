@@ -23,6 +23,11 @@ namespace Application.Services
         Task<AuthenticationResponse> RegenerateAccessToken(Guid adminId);
 
         /// <summary>
+        /// Regenerates access token using a refresh token string (no access token required).
+        /// </summary>
+        Task<AuthenticationResponse> RefreshWithTokenAsync(string refreshToken);
+
+        /// <summary>
         /// Logs out an admin by revoking refresh token.
         /// </summary>
         Task Logout(Guid adminId);

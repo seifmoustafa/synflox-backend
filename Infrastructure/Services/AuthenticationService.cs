@@ -220,6 +220,57 @@ namespace Infrastructure.Services
             };
         }
 
+        public async Task<AuthenticationResponse> RefreshWithTokenAsync(string refreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["Unauthorized"]
+                };
+            }
+
+            var tokenEntity = await _refreshTokenRepo.GetByToken(refreshToken);
+            if (tokenEntity == null || !tokenEntity.IsActive || tokenEntity.IsExpired || tokenEntity.AdminId == null)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["Unauthorized"]
+                };
+            }
+
+            var admin = await _adminRepository.GetByIdAsync(tokenEntity.AdminId.Value, null);
+            if (admin == null || admin.IsDeleted == true)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["Unauthorized"]
+                };
+            }
+
+            admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
+                ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
+
+            // Rotate refresh token: deactivate old, issue new
+            tokenEntity.IsActive = false;
+            await _refreshTokenRepo.UpdateAsync(tokenEntity);
+
+            var newAccessToken = _jwtTokenGenerator.GenerateToken(admin);
+            var newRefreshToken = _jwtTokenGenerator.GenerateRefreshToken(admin);
+            await _refreshTokenRepo.AddAsync(newRefreshToken);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new AuthenticationResponse
+            {
+                Success = true,
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken.Token
+            };
+        }
+
         public async Task Logout(Guid adminId)
         {
             var refreshedToken = await _refreshTokenRepo.GetByAdminId(adminId);

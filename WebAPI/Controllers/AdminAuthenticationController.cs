@@ -42,15 +42,19 @@ public class AdminAuthenticationController : ControllerBase
             response.ErrorMessage));
     }
 
-    [HttpPost("refresh-token")]
-    [Authorize]
-    public async Task<IActionResult> RefreshToken()
+    public class RefreshTokenRequest
     {
-        Guid accountId = _currentUserService.UserId;
+        public string RefreshToken { get; set; } = string.Empty;
+    }
 
-        if (accountId == Guid.Empty) return BadRequest();
+    [HttpPost("refresh-token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
+            return BadRequest(new ApiResponse<string>(400, "Refresh token is required"));
 
-        var response = await _authenticationService.RegenerateAccessToken(accountId);
+        var response = await _authenticationService.RefreshWithTokenAsync(request.RefreshToken);
 
         if (response.Success)
         {

@@ -25,6 +25,11 @@ namespace Infrastructure.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(d => d.AdminId == adminId && d.IsActive);
         }
+
+        public async Task<RefreshToken?> GetByToken(string token)
+        {
+            return await _dbSet.FirstOrDefaultAsync(d => d.Token == token && d.IsActive);
+        }
     }
 
 }
