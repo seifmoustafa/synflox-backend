@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.Company;
 
 public class UpdateCompanyDto
 {

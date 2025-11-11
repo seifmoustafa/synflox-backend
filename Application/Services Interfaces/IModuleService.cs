@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Application.DTOs.Licensing;
+using Application.DTOs.Module;
 using Domain.Entities.Common;
 
 namespace Application.Services;

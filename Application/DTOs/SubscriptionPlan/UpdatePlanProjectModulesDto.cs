@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.SubscriptionPlan;
 
 /// <summary>
 /// DTO for updating the project-modules included in a subscription plan.

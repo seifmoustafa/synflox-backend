@@ -1,4 +1,4 @@
-using Application.DTOs.Licensing;
+using Application.DTOs.Company;
 using Application.DTOs.Responses;
 using Domain.Entities.Common;
 

@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.Project;
 
-public class CreateModuleDto
+public class CreateProjectDto
 {
-    [Required(ErrorMessage = "Module name is required")]
-    [StringLength(200, ErrorMessage = "Module name cannot exceed 200 characters")]
+    [Required(ErrorMessage = "Project name is required")]
+    [StringLength(200, ErrorMessage = "Project name cannot exceed 200 characters")]
     public required string Name { get; set; }
 
     [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]

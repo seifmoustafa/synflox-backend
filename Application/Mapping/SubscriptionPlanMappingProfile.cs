@@ -1,8 +1,8 @@
 using AutoMapper;
 using Domain.Entities.Licensing;
-using Application.DTOs.Licensing;
 using Application.Services;
 using System.Text.Json;
+using Application.DTOs.SubscriptionPlan;
 
 namespace Application.Mapping;
 

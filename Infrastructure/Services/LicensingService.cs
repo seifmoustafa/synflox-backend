@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Application.DTOs.Company;
 using Application.DTOs.Licensing;
 using Application.Services;
 using AutoMapper;

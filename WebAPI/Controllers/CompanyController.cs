@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.DTOs.Company;
+using Application.DTOs.CompanyCustomField;
 using Application.DTOs.Licensing;
 using Application.DTOs.Responses;
 using Application.Services;

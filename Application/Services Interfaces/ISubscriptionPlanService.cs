@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Application.DTOs.Licensing;
+using Application.DTOs.PlanProjectModule;
+using Application.DTOs.SubscriptionPlan;
 using Domain.Entities.Common;
 
 namespace Application.Services;

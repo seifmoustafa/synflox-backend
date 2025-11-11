@@ -1,4 +1,4 @@
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.Company;
 
 /// <summary>
 /// Response DTO for export file generation.

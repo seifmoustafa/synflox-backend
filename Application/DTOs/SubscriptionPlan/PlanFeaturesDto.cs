@@ -1,7 +1,8 @@
+using Application.DTOs.PlanProjectModule;
 using System;
 using System.Collections.Generic;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.SubscriptionPlan;
 
 /// <summary>
 /// DTO for plan features including inherited features from parent plans.

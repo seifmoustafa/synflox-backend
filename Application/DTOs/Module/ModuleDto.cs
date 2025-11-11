@@ -1,7 +1,8 @@
+using Application.DTOs.Project;
 using System;
 using System.Collections.Generic;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.Module;
 
 public class ModuleDto
 {

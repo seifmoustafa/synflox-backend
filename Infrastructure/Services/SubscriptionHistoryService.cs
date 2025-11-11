@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Application.DTOs.Licensing;
+using Application.DTOs.SubscriptionHistory;
 using Application.Services;
 using AutoMapper;
 using Domain.Entities.Common;

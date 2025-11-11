@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Domain.Enums;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.SubscriptionPlan;
 
 /// <summary>
 /// Request DTO for creating a subscription plan.

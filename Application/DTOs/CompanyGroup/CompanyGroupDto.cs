@@ -1,6 +1,6 @@
 using System;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.CompanyGroup;
 
 /// <summary>
 /// DTO for company group information.

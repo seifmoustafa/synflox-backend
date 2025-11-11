@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.SubscriptionPlan;
 
 /// <summary>
 /// Request DTO for setting a subscription plan's parent.

@@ -1,19 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.CompanyGroup;
 
 /// <summary>
-/// DTO for updating a company group.
+/// DTO for creating a company group.
 /// </summary>
-public class UpdateCompanyGroupDto
+public class CreateCompanyGroupDto
 {
+    [Required(ErrorMessage = "Name is required")]
     [StringLength(200, ErrorMessage = "Name cannot exceed 200 characters")]
-    public string? Name { get; set; }
+    public required string Name { get; set; }
 
     [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
     public string? Description { get; set; }
-
-    public bool? IsActive { get; set; }
 }
 
 

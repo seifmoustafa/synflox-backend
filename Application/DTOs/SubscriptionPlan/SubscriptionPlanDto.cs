@@ -1,7 +1,7 @@
 using System;
 using Domain.Enums;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.SubscriptionPlan;
 
 /// <summary>
 /// DTO for subscription plan information.

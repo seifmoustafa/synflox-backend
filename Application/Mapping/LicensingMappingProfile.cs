@@ -1,7 +1,14 @@
 using AutoMapper;
 using Domain.Entities.Licensing;
-using Application.DTOs.Licensing;
 using Application.Services;
+using Application.DTOs.Company;
+using Application.DTOs.CompanyGroup;
+using Application.DTOs.CompanyCustomField;
+using Application.DTOs.Project;
+using Application.DTOs.Module;
+using Application.DTOs.ProjectModule;
+using Application.DTOs.PlanProjectModule;
+using Application.DTOs.SubscriptionHistory;
 
 namespace Application.Mapping;
 

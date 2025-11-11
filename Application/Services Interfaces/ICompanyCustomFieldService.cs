@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Application.DTOs.Licensing;
+using Application.DTOs.CompanyCustomField;
 
 namespace Application.Services;
 

@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Application.DTOs.Licensing;
+using Application.DTOs.ProjectModule;
 using Application.DTOs.Responses;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;

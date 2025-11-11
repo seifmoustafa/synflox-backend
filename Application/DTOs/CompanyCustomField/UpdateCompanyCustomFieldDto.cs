@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Domain.Enums;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.CompanyCustomField;
 
 /// <summary>
 /// DTO for updating a company custom field.

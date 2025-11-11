@@ -1,6 +1,6 @@
 using System;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.CompanyCustomField;
 
 /// <summary>
 /// DTO for company custom field information.

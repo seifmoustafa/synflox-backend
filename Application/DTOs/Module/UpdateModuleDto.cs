@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Licensing;
+namespace Application.DTOs.Module;
 
-public class UpdateProjectDto
+public class UpdateModuleDto
 {
-    [StringLength(200, ErrorMessage = "Project name cannot exceed 200 characters")]
+    [StringLength(200, ErrorMessage = "Module name cannot exceed 200 characters")]
     public string? Name { get; set; }
 
     [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]

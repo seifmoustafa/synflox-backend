@@ -1,4 +1,4 @@
-using Application.DTOs.Licensing;
+using Application.DTOs.Company;
 using Application.DTOs.Responses;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;

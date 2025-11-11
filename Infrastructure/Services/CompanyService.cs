@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Application.DTOs.Company;
 using Application.DTOs.Licensing;
 using Application.Services;
 using AutoMapper;
