@@ -1,6 +1,6 @@
 using AutoMapper;
 using Domain.Entities.Licensing;
-using Application.DTOs.Licensing;
+using Application.DTOs.Company;
 
 namespace Application.Mapping;
 

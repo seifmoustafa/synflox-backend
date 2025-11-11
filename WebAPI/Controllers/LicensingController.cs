@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Application.DTOs.Company;
 using Application.DTOs.Licensing;
 using Application.DTOs.Responses;
 using Application.Services;

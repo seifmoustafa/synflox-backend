@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Application.DTOs.Company;
 using Application.DTOs.Licensing;
 using Domain.Entities.Common;
 
