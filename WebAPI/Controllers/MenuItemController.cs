@@ -14,16 +14,13 @@ public class MenuItemsController : ControllerBase
 {
     private readonly IMenuItemsService _MenuItemsService;
     private readonly ILocalizationService _localizer;
-    private readonly IIdEncryptionService _idEncryption;
 
     public MenuItemsController(
         IMenuItemsService MenuItemsService,
-        ILocalizationService localizer,
-        IIdEncryptionService idEncryption)
+        ILocalizationService localizer)
     {
         _MenuItemsService = MenuItemsService;
         _localizer = localizer;
-        _idEncryption = idEncryption;
     }
 
     /// <summary>
@@ -61,8 +58,8 @@ public class MenuItemsController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _MenuItemsService.GetMenuItemsByIdAsync(decryptedId);
+            var request = new GetMenuItemByIdRequest { MenuItemId = id };
+            var result = await _MenuItemsService.GetMenuItemsByIdAsync(request);
             if (result == null)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["MenuItems.NotFound"]));
@@ -101,15 +98,15 @@ public class MenuItemsController : ControllerBase
     /// </summary>
     [HttpPut("{id}")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> UpdateMenuItems(Guid id, [FromBody] UpdateMenuItemsDto request)
+    public async Task<IActionResult> UpdateMenuItems(Guid id, [FromBody] UpdateMenuItemsDto updateData)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        if (request == null) return BadRequest();
+        if (updateData == null) return BadRequest();
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _MenuItemsService.UpdateMenuItemsAsync(decryptedId, request);
+            var request = new UpdateMenuItemByIdRequest { MenuItemId = id, UpdateData = updateData };
+            var result = await _MenuItemsService.UpdateMenuItemsAsync(request);
             if (result == null)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["MenuItems.NotFound"]));
@@ -131,8 +128,8 @@ public class MenuItemsController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            await _MenuItemsService.DeleteMenuItemsAsync(decryptedId);
+            var request = new DeleteMenuItemRequest { MenuItemId = id };
+            await _MenuItemsService.DeleteMenuItemsAsync(request);
             return Ok(new ApiResponse<string>(200, _localizer["MenuItems.Deleted"], null));
         }
         catch (Exception ex)

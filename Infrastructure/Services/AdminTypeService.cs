@@ -27,9 +27,12 @@ public class AdminTypeService : IAdminTypeService
         return _mapper.Map<IEnumerable<AdminTypeDto>>(entities);
     }
 
-    public async Task<AdminTypeDto?> GetByIdAsync(Guid id)
+    public async Task<AdminTypeDto?> GetByIdAsync(GetAdminTypeByIdRequest request)
     {
-        var entity = await _repo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var entity = await _repo.GetByIdAsync(decryptedId, null);
         return entity is null ? null : _mapper.Map<AdminTypeDto>(entity);
     }
 
@@ -41,11 +44,14 @@ public class AdminTypeService : IAdminTypeService
         return _mapper.Map<AdminTypeDto>(created);
     }
 
-    public async Task<AdminTypeDto?> UpdateAsync(Guid id, UpdateAdminTypeDto dto)
+    public async Task<AdminTypeDto?> UpdateAsync(UpdateAdminTypeByIdRequest request)
     {
-        var entity = await _repo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var entity = await _repo.GetByIdAsync(decryptedId, null);
         if (entity is null) return null;
-        _mapper.Map(dto, entity);
+        _mapper.Map(request.UpdateData, entity);
         await _repo.UpdateAsync(entity);
         await _unitOfWork.SaveChangesAsync();
         return _mapper.Map<AdminTypeDto>(entity);

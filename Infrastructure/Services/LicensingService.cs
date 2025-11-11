@@ -28,7 +28,6 @@ namespace Infrastructure.Services
         private readonly ILocalizationService _localizer;
         private readonly IUnitOfWork _unitOfWork;
         private readonly LicenseKeySettings _licenseKeySettings;
-        private readonly IIdEncryptionService _idEncryption;
         private readonly ICurrentUserService _currentUserService;
 
         public LicensingService(
@@ -38,7 +37,6 @@ namespace Infrastructure.Services
             ILocalizationService localizer,
             IUnitOfWork unitOfWork,
             IOptions<LicenseKeySettings> licenseKeySettings,
-            IIdEncryptionService idEncryption,
             ICurrentUserService currentUserService)
         {
             _repository = repository;
@@ -47,7 +45,6 @@ namespace Infrastructure.Services
             _localizer = localizer;
             _unitOfWork = unitOfWork;
             _licenseKeySettings = licenseKeySettings.Value;
-            _idEncryption = idEncryption;
             _currentUserService = currentUserService;
         }
 
@@ -79,9 +76,12 @@ namespace Infrastructure.Services
             return dto;
         }
 
-        public async Task<CompanyDto> SuspendCompanyAsync(Guid id)
+        public async Task<CompanyDto> SuspendCompanyAsync(SuspendCompanyRequest request)
         {
-            var company = await _repository.GetByIdAsync(id, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
@@ -101,9 +101,12 @@ namespace Infrastructure.Services
             return dto;
         }
 
-        public async Task<CompanyDto> ResumeCompanyAsync(Guid id)
+        public async Task<CompanyDto> ResumeCompanyAsync(ResumeCompanyRequest request)
         {
-            var company = await _repository.GetByIdAsync(id, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
@@ -123,20 +126,23 @@ namespace Infrastructure.Services
             return dto;
         }
 
-        public async Task<CompanyDto> ExtendCompanyAsync(Guid id, DateTime newExpiryDate)
+        public async Task<CompanyDto> ExtendCompanyAsync(ExtendCompanyRequest request)
         {
-            if (newExpiryDate <= DateTime.UtcNow)
+            if (request.NewExpiryDate <= DateTime.UtcNow)
             {
                 throw new BadRequestException(_localizer["Licensing.InvalidExpiryDate"]);
             }
 
-            var company = await _repository.GetByIdAsync(id, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
             }
 
-            company.ExpiryDate = newExpiryDate;
+            company.ExpiryDate = request.NewExpiryDate;
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
 
@@ -145,10 +151,13 @@ namespace Infrastructure.Services
             return dto;
         }
 
-        public async Task<CompanyStatusResponse> CheckCompanyStatusAsync(Guid id)
+        public async Task<CompanyStatusResponse> CheckCompanyStatusAsync(GetCompanyStatusRequest request)
         {
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
             // Get company entity for status calculation (need entity, not DTO)
-            var company = await _repository.GetByIdAsync(id, null);
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
@@ -166,9 +175,12 @@ namespace Infrastructure.Services
             };
         }
 
-        public async Task<string> GenerateLicenseKeyAsync(Guid companyId)
+        public async Task<string> GenerateLicenseKeyAsync(GenerateLicenseKeyRequest request)
         {
-            var company = await _repository.GetByIdAsync(companyId, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
@@ -182,9 +194,12 @@ namespace Infrastructure.Services
             return licenseKey;
         }
 
-        public async Task<string> RegenerateLicenseKeyAsync(Guid companyId)
+        public async Task<string> RegenerateLicenseKeyAsync(GenerateLicenseKeyRequest request)
         {
-            var company = await _repository.GetByIdAsync(companyId, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
@@ -233,18 +248,16 @@ namespace Infrastructure.Services
                 // Calculate status
                 var status = CalculateStatus(company);
 
-                return new LicenseKeyValidationResponse
-                {
-                    IsValid = status == LicenseStatus.Active && !clockTampered,
-                    Status = status,
-                    ExpiryDate = company.ExpiryDate,
-                    IsActive = company.IsActive,
-                    ClockTampered = clockTampered,
-                    CompanyId = _idEncryption.Encrypt(company.Id),
-                    Message = clockTampered 
-                        ? _localizer["Licensing.SystemClockTampered"]
-                        : GetStatusMessage(status, _localizer)
-                };
+                // Use AutoMapper to create response with encrypted CompanyId
+                var response = _mapper.Map<LicenseKeyValidationResponse>(company);
+                response.IsValid = status == LicenseStatus.Active && !clockTampered;
+                response.Status = status;
+                response.ClockTampered = clockTampered;
+                response.Message = clockTampered 
+                    ? _localizer["Licensing.SystemClockTampered"]
+                    : GetStatusMessage(status, _localizer);
+                
+                return response;
             }
             catch
             {

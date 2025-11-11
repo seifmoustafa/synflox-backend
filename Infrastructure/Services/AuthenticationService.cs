@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Application.DTOs.Authentication;
@@ -20,7 +20,6 @@ namespace Infrastructure.Services
         private readonly IBaseRepository<Guid, AdminType> _adminTypeRepository;
         private readonly IMapper _mapper;
         private readonly ILocalizationService _localizer;
-        private readonly IIdEncryptionService _idEncryption;
         private readonly IUnitOfWork _unitOfWork;
 
         public AuthenticationService(
@@ -31,7 +30,6 @@ namespace Infrastructure.Services
             IBaseRepository<Guid, AdminType> adminTypeRepository,
             IMapper mapper,
             ILocalizationService localizer,
-            IIdEncryptionService idEncryption,
             IUnitOfWork unitOfWork)
         {
             _adminRepository = adminRepository;
@@ -41,15 +39,11 @@ namespace Infrastructure.Services
             _adminTypeRepository = adminTypeRepository;
             _mapper = mapper;
             _localizer = localizer;
-            _idEncryption = idEncryption;
             _unitOfWork = unitOfWork;
         }
 
         public async Task<AdminDto> RegisterAdminAsync(CreateAdminDto request)
         {
-            if (request.AdminTypeId.HasValue)
-                request.AdminTypeId = _idEncryption.Decrypt(request.AdminTypeId.Value);
-
             var admin = _mapper.Map<Admin>(request);
             admin.Password = _passwordHasher.HashPassword(request.Password);
 
@@ -152,9 +146,12 @@ namespace Infrastructure.Services
             }
         }
 
-        public async Task ChangeAdminPasswordAsync(Guid adminId, string newPassword)
+        public async Task ChangeAdminPasswordAsync(ChangePasswordByIdRequest request)
         {
-            var admin = await _adminRepository.GetByIdAsync(adminId, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var admin = await _adminRepository.GetByIdAsync(decryptedId, null);
             if (admin == null)
             {
                 throw new NotFoundException(_localizer["UserNotFound"]);
@@ -166,7 +163,7 @@ namespace Infrastructure.Services
                 throw new BadRequestException(_localizer["TargetNotAdmin"]);
             }
 
-            admin.Password = _passwordHasher.HashPassword(newPassword);
+            admin.Password = _passwordHasher.HashPassword(request.NewPassword);
             await _adminRepository.UpdateAsync(admin);
             await _unitOfWork.SaveChangesAsync();
         }

@@ -27,16 +27,16 @@ public interface ICompanyService
     /// <summary>
     /// Gets a company by ID.
     /// </summary>
-    Task<CompanyDto?> GetCompanyByIdAsync(Guid id);
+    Task<CompanyDto?> GetCompanyByIdAsync(GetCompanyByIdRequest request);
 
     /// <summary>
     /// Updates a company.
     /// </summary>
-    Task<CompanyDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto);
+    Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request);
 
     /// <summary>
     /// Deletes a company (soft delete).
     /// </summary>
-    Task<bool> DeleteCompanyAsync(Guid id);
+    Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request);
 }
 

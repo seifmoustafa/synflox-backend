@@ -15,16 +15,11 @@ public class CompanyController : ControllerBase
 {
     private readonly ICompanyService _companyService;
     private readonly ILocalizationService _localizer;
-    private readonly IIdEncryptionService _idEncryption;
 
-    public CompanyController(
-        ICompanyService companyService,
-        ILocalizationService localizer,
-        IIdEncryptionService idEncryption)
+    public CompanyController(ICompanyService companyService, ILocalizationService localizer)
     {
         _companyService = companyService;
         _localizer = localizer;
-        _idEncryption = idEncryption;
     }
 
     [HttpPost]
@@ -56,8 +51,8 @@ public class CompanyController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCompany(Guid id)
     {
-        var decryptedId = _idEncryption.Decrypt(id);
-        var company = await _companyService.GetCompanyByIdAsync(decryptedId);
+        var request = new GetCompanyByIdRequest { CompanyId = id };
+        var company = await _companyService.GetCompanyByIdAsync(request);
         if (company == null)
         {
             return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
@@ -67,15 +62,15 @@ public class CompanyController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyDto request)
+    public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyDto updateData)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        if (request == null) return BadRequest();
+        if (updateData == null) return BadRequest();
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _companyService.UpdateCompanyAsync(decryptedId, request);
+            var request = new UpdateCompanyByIdRequest { CompanyId = id, UpdateData = updateData };
+            var result = await _companyService.UpdateCompanyAsync(request);
             if (result == null)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
@@ -94,8 +89,8 @@ public class CompanyController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var deleted = await _companyService.DeleteCompanyAsync(decryptedId);
+            var request = new DeleteCompanyRequest { CompanyId = id };
+            var deleted = await _companyService.DeleteCompanyAsync(request);
             if (!deleted)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));

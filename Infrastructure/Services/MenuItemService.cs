@@ -18,7 +18,6 @@ public class MenuItemsService : IMenuItemsService
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IIdEncryptionService _idEncryption;
     private readonly ICurrentUserService _currentUserService;
 
     public MenuItemsService(
@@ -26,14 +25,12 @@ public class MenuItemsService : IMenuItemsService
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
-        IIdEncryptionService idEncryption,
         ICurrentUserService currentUserService)
     {
         _repository = repository;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
-        _idEncryption = idEncryption;
         _currentUserService = currentUserService;
     }
 
@@ -80,24 +77,8 @@ public class MenuItemsService : IMenuItemsService
     {
         var MenuItems = _mapper.Map<MenuItems>(dto);
 
-        // Handle parent menu item ID if provided
-        if (!string.IsNullOrEmpty(dto.ParentMenuItemsId))
-        {
-            try
-            {
-                var parentId = _idEncryption.Decrypt(dto.ParentMenuItemsId);
-                var parent = await _repository.GetByIdAsync(parentId, null);
-                if (parent == null || parent.IsDeleted)
-                {
-                    throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
-                }
-                MenuItems.ParentMenuItemsId = parentId;
-            }
-            catch (Exception)
-            {
-                throw new BadRequestException(_localizer["MenuItems.InvalidParentId"]);
-            }
-        }
+        // Parent menu item ID is handled by AutoMapper via DecryptNullableGuidConverter
+        // No manual decryption needed here
 
         var created = await _repository.AddAsync(MenuItems);
         await _unitOfWork.SaveChangesAsync();
@@ -113,43 +94,25 @@ public class MenuItemsService : IMenuItemsService
             throw new NotFoundException(_localizer["MenuItems.NotFound"]);
         }
 
-        // Prevent circular reference
-        if (!string.IsNullOrEmpty(dto.ParentMenuItemsId))
+        // Parent menu item ID validation and circular reference prevention
+        if (dto.ParentMenuItemsId.HasValue)
         {
-            try
+            if (dto.ParentMenuItemsId.Value == id)
             {
-                var parentId = _idEncryption.Decrypt(dto.ParentMenuItemsId);
-                if (parentId == id)
-                {
-                    throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
-                }
+                throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
+            }
 
-                // Check if the parent is a descendant (would create circular reference)
-                if (await IsDescendantAsync(MenuItems, parentId))
-                {
-                    throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
-                }
+            // Check if the parent is a descendant (would create circular reference)
+            if (await IsDescendantAsync(MenuItems, dto.ParentMenuItemsId.Value))
+            {
+                throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
+            }
 
-                var parent = await _repository.GetByIdAsync(parentId, null);
-                if (parent == null || parent.IsDeleted)
-                {
-                    throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
-                }
-                MenuItems.ParentMenuItemsId = parentId;
-            }
-            catch (BadRequestException)
+            var parent = await _repository.GetByIdAsync(dto.ParentMenuItemsId.Value, null);
+            if (parent == null || parent.IsDeleted)
             {
-                throw;
+                throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
             }
-            catch (Exception)
-            {
-                throw new BadRequestException(_localizer["MenuItems.InvalidParentId"]);
-            }
-        }
-        else if (dto.ParentMenuItemsId == string.Empty)
-        {
-            // Empty string means remove parent
-            MenuItems.ParentMenuItemsId = null;
         }
 
         _mapper.Map(dto, MenuItems);

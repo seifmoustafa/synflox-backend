@@ -6,18 +6,18 @@ namespace Application.Services;
 public interface IAdminService
 {
     Task<(IEnumerable<AdminDto> Admins, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search);
-    Task<AdminDto?> GetByIdAsync(Guid id);
+    Task<AdminDto?> GetByIdAsync(GetAdminByIdRequest request);
     Task<AdminDto> CreateAsync(CreateAdminDto dto);
-    Task<AdminDto?> UpdateAsync(Guid id, UpdateAdminRequest dto);
-    Task<bool> DeleteAsync(Guid id);
+    Task<AdminDto?> UpdateAsync(UpdateAdminByIdRequest request);
+    Task<bool> DeleteAsync(GetAdminByIdRequest request);
     Task ChangePasswordAsync(Guid id, string currentPassword, string newPassword);
-    Task ResetPasswordAsync(Guid id, string newPassword);
-    Task<bool> ActivateAsync(Guid id);
-    Task<bool> DeactivateAsync(Guid id);
-    Task<int> ActivateSelectedAsync(IEnumerable<Guid> ids);
-    Task<int> DeactivateSelectedAsync(IEnumerable<Guid> ids);
+    Task ResetPasswordAsync(ChangePasswordByIdRequest request);
+    Task<bool> ActivateAsync(GetAdminByIdRequest request);
+    Task<bool> DeactivateAsync(GetAdminByIdRequest request);
+    Task<int> ActivateSelectedAsync(AdminIdsRequest request);
+    Task<int> DeactivateSelectedAsync(AdminIdsRequest request);
     Task<int> ActivateAllAsync();
     Task<int> DeactivateAllAsync();
-    Task<int> DeleteSelectedAsync(IEnumerable<Guid> ids);
+    Task<int> DeleteSelectedAsync(AdminIdsRequest request);
     Task<int> DeleteAllExceptAsync(Guid exceptId);
 }

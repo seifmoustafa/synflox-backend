@@ -88,34 +88,40 @@ public class CompanyService : ICompanyService
         return (dtos, meta);
     }
 
-    public async Task<CompanyDto?> GetCompanyByIdAsync(Guid id)
+    public async Task<CompanyDto?> GetCompanyByIdAsync(GetCompanyByIdRequest request)
     {
-        var company = await _repository.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var company = await _repository.GetByIdAsync(decryptedId, null);
         if (company == null) return null;
         var dto = _mapper.Map<CompanyDto>(company);
         SetLicenseKeyIfSuperAdmin(dto, company);
         return dto;
     }
 
-    public async Task<CompanyDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto)
+    public async Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request)
     {
-        var company = await _repository.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var company = await _repository.GetByIdAsync(decryptedId, null);
         if (company == null)
         {
             throw new NotFoundException(_localizer["Company.CompanyNotFound"]);
         }
 
         // Check name uniqueness if name is being updated
-        if (!string.IsNullOrEmpty(dto.Name) && dto.Name != company.Name)
+        if (!string.IsNullOrEmpty(request.UpdateData.Name) && request.UpdateData.Name != company.Name)
         {
-            var existing = await _repository.GetByNameAsync(dto.Name);
-            if (existing != null && existing.Id != id)
+            var existing = await _repository.GetByNameAsync(request.UpdateData.Name);
+            if (existing != null && existing.Id != decryptedId)
             {
                 throw new BadRequestException(_localizer["Company.CompanyNameExists"]);
             }
         }
 
-        _mapper.Map(dto, company);
+        _mapper.Map(request.UpdateData, company);
         await _repository.UpdateAsync(company);
         await _unitOfWork.SaveChangesAsync();
 
@@ -124,15 +130,18 @@ public class CompanyService : ICompanyService
         return result;
     }
 
-    public async Task<bool> DeleteCompanyAsync(Guid id)
+    public async Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request)
     {
-        var company = await _repository.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var company = await _repository.GetByIdAsync(decryptedId, null);
         if (company == null)
         {
             throw new NotFoundException(_localizer["Company.CompanyNotFound"]);
         }
 
-        await _repository.DeleteAsync(id);
+        await _repository.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

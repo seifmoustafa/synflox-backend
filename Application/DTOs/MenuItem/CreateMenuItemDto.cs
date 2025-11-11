@@ -25,7 +25,7 @@ namespace Application.DTOs.MenuItems
         /// <summary>
         /// Parent menu item ID (encrypted). Null for top-level items.
         /// </summary>
-        public string? ParentMenuItemsId { get; set; }
+        public Guid? ParentMenuItemsId { get; set; }
 
         /// <summary>
         /// List of user types that can see this menu item.

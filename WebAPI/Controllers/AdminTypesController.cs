@@ -13,12 +13,10 @@ namespace WebAPI.Controllers;
 public class AdminTypesController : ControllerBase
 {
     private readonly IAdminTypeService _service;
-    private readonly IIdEncryptionService _idEncryption;
 
-    public AdminTypesController(IAdminTypeService service, IIdEncryptionService idEncryption)
+    public AdminTypesController(IAdminTypeService service)
     {
         _service = service;
-        _idEncryption = idEncryption;
     }
 
     [HttpGet]
@@ -31,7 +29,8 @@ public class AdminTypesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var type = await _service.GetByIdAsync(_idEncryption.Decrypt(id));
+        var request = new GetAdminTypeByIdRequest { AdminTypeId = id };
+        var type = await _service.GetByIdAsync(request);
         return type is null ? NotFound() : Ok(type);
     }
 
@@ -44,9 +43,10 @@ public class AdminTypesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAdminTypeDto dto)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAdminTypeDto updateData)
     {
-        var updated = await _service.UpdateAsync(_idEncryption.Decrypt(id), dto);
+        var request = new UpdateAdminTypeByIdRequest { AdminTypeId = id, UpdateData = updateData };
+        var updated = await _service.UpdateAsync(request);
         return updated is null ? NotFound() : Ok(updated);
     }
 }

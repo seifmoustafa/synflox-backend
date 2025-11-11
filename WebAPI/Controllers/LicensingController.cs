@@ -15,16 +15,13 @@ public class LicensingController : ControllerBase
 {
     private readonly ILicensingService _licensingService;
     private readonly ILocalizationService _localizer;
-    private readonly IIdEncryptionService _idEncryption;
 
     public LicensingController(
         ILicensingService licensingService, 
-        ILocalizationService localizer,
-        IIdEncryptionService idEncryption)
+        ILocalizationService localizer)
     {
         _licensingService = licensingService;
         _localizer = localizer;
-        _idEncryption = idEncryption;
     }
 
     [HttpPut("{id}/activate")]
@@ -36,8 +33,9 @@ public class LicensingController : ControllerBase
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _licensingService.ActivateCompanyAsync(decryptedId, request.ExpiryDate);
+            // Set the encrypted ID from route parameter
+            request.CompanyId = id;
+            var result = await _licensingService.ActivateCompanyAsync(request);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanyActivated"], result));
         }
         catch (Exception ex)
@@ -52,8 +50,8 @@ public class LicensingController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _licensingService.SuspendCompanyAsync(decryptedId);
+            var request = new SuspendCompanyRequest { CompanyId = id };
+            var result = await _licensingService.SuspendCompanyAsync(request);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanySuspended"], result));
         }
         catch (Exception ex)
@@ -68,8 +66,8 @@ public class LicensingController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _licensingService.ResumeCompanyAsync(decryptedId);
+            var request = new ResumeCompanyRequest { CompanyId = id };
+            var result = await _licensingService.ResumeCompanyAsync(request);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanyResumed"], result));
         }
         catch (Exception ex)
@@ -87,8 +85,9 @@ public class LicensingController : ControllerBase
 
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _licensingService.ExtendCompanyAsync(decryptedId, request.NewExpiryDate);
+            // Set the encrypted ID from route parameter
+            request.CompanyId = id;
+            var result = await _licensingService.ExtendCompanyAsync(request);
             return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.SubscriptionExtended"], result));
         }
         catch (Exception ex)
@@ -103,8 +102,8 @@ public class LicensingController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var result = await _licensingService.CheckCompanyStatusAsync(decryptedId);
+            var request = new GetCompanyStatusRequest { CompanyId = id };
+            var result = await _licensingService.CheckCompanyStatusAsync(request);
             return Ok(new ApiResponse<CompanyStatusResponse>(200, result.StatusMessage, result));
         }
         catch (Exception ex)
@@ -119,8 +118,8 @@ public class LicensingController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var licenseKey = await _licensingService.GenerateLicenseKeyAsync(decryptedId);
+            var request = new GenerateLicenseKeyRequest { CompanyId = id };
+            var licenseKey = await _licensingService.GenerateLicenseKeyAsync(request);
             return Ok(new ApiResponse<GenerateLicenseKeyResponse>(200, _localizer["Licensing.LicenseKeyGenerated"], 
                 new GenerateLicenseKeyResponse { LicenseKey = licenseKey, Message = _localizer["Licensing.LicenseKeyGenerated"] }));
         }
@@ -136,8 +135,8 @@ public class LicensingController : ControllerBase
     {
         try
         {
-            var decryptedId = _idEncryption.Decrypt(id);
-            var licenseKey = await _licensingService.RegenerateLicenseKeyAsync(decryptedId);
+            var request = new GenerateLicenseKeyRequest { CompanyId = id };
+            var licenseKey = await _licensingService.RegenerateLicenseKeyAsync(request);
             return Ok(new ApiResponse<GenerateLicenseKeyResponse>(200, _localizer["Licensing.LicenseKeyRegenerated"], 
                 new GenerateLicenseKeyResponse { LicenseKey = licenseKey, Message = _localizer["Licensing.LicenseKeyRegenerated"] }));
         }

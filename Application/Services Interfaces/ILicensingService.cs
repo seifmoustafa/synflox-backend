@@ -17,37 +17,37 @@ public interface ILicensingService
     /// <summary>
     /// Activates a company subscription with the specified expiry date.
     /// </summary>
-    Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate);
+    Task<CompanyDto> ActivateCompanyAsync(ActivateCompanyRequest request);
 
     /// <summary>
     /// Suspends a company subscription.
     /// </summary>
-    Task<CompanyDto> SuspendCompanyAsync(Guid id);
+    Task<CompanyDto> SuspendCompanyAsync(SuspendCompanyRequest request);
 
     /// <summary>
     /// Resumes a suspended company subscription.
     /// </summary>
-    Task<CompanyDto> ResumeCompanyAsync(Guid id);
+    Task<CompanyDto> ResumeCompanyAsync(ResumeCompanyRequest request);
 
     /// <summary>
     /// Extends the subscription expiry date for a company.
     /// </summary>
-    Task<CompanyDto> ExtendCompanyAsync(Guid id, DateTime newExpiryDate);
+    Task<CompanyDto> ExtendCompanyAsync(ExtendCompanyRequest request);
 
     /// <summary>
     /// Checks the current status of a company subscription.
     /// </summary>
-    Task<CompanyStatusResponse> CheckCompanyStatusAsync(Guid id);
+    Task<CompanyStatusResponse> CheckCompanyStatusAsync(GetCompanyStatusRequest request);
 
     /// <summary>
     /// Generates a license key for a company (for offline systems).
     /// </summary>
-    Task<string> GenerateLicenseKeyAsync(Guid companyId);
+    Task<string> GenerateLicenseKeyAsync(GenerateLicenseKeyRequest request);
 
     /// <summary>
     /// Regenerates a license key for a company.
     /// </summary>
-    Task<string> RegenerateLicenseKeyAsync(Guid companyId);
+    Task<string> RegenerateLicenseKeyAsync(GenerateLicenseKeyRequest request);
 
     /// <summary>
     /// Validates a license key and returns the validation result.

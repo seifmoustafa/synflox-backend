@@ -12,7 +12,7 @@ public class MenuItemsMappingProfile : Profile
     {
         CreateMap<MenuItems, MenuItemsDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidToStringConverter, Guid>(s => s.Id))
+                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
             .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children.OrderBy(c => c.Order)))
             .ForMember(d => d.ParentMenuItems, opt => opt.MapFrom(s => s.ParentMenuItems))
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom(s => 
@@ -22,11 +22,12 @@ public class MenuItemsMappingProfile : Profile
 
         CreateMap<MenuItems, MenuItemsReferenceDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidToStringConverter, Guid>(s => s.Id));
+                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
 
         CreateMap<CreateMenuItemsDto, MenuItems>()
             .ForMember(d => d.Id, opt => opt.Ignore())
-            .ForMember(d => d.ParentMenuItemsId, opt => opt.Ignore()) // Will be set manually
+            .ForMember(d => d.ParentMenuItemsId, 
+                opt => opt.ConvertUsing<DecryptNullableGuidConverter, Guid?>(s => s.ParentMenuItemsId))
             .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.IsActive, opt => opt.MapFrom(s => true))
@@ -40,7 +41,8 @@ public class MenuItemsMappingProfile : Profile
             .ForMember(d => d.IsDeleted, opt => opt.Ignore());
 
         CreateMap<UpdateMenuItemsDto, MenuItems>()
-            .ForMember(d => d.ParentMenuItemsId, opt => opt.Ignore()) // Will be set manually
+            .ForMember(d => d.ParentMenuItemsId, 
+                opt => opt.ConvertUsing<DecryptNullableGuidConverter, Guid?>(s => s.ParentMenuItemsId))
             .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom((src, dest) => 
@@ -48,6 +50,16 @@ public class MenuItemsMappingProfile : Profile
                     ? dest.AllowedUserTypes 
                     : (src.AllowedUserTypes.Count == 0 ? null : JsonSerializer.Serialize(src.AllowedUserTypes, (JsonSerializerOptions)null!))))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // MenuItem request DTOs - decrypt MenuItemId
+        CreateMap<GetMenuItemByIdRequest, Guid>()
+            .ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId);
+            
+        CreateMap<UpdateMenuItemByIdRequest, Guid>()
+            .ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId);
+            
+        CreateMap<DeleteMenuItemRequest, Guid>()
+            .ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId);
     }
 }
 

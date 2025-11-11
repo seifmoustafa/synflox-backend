@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Application.DTOs.Authentication;
 using Application.DTOs.Admin;
@@ -30,6 +30,6 @@ namespace Application.Services
         /// <summary>
         /// Changes the password of another administrator.
         /// </summary>
-        Task ChangeAdminPasswordAsync(Guid adminId, string newPassword);
+        Task ChangeAdminPasswordAsync(ChangePasswordByIdRequest request);
     }
 }

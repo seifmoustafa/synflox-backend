@@ -18,18 +18,16 @@ public class AdminsController : ControllerBase
     private readonly IAdminService _adminService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILocalizationService _localizer;
-    private readonly IIdEncryptionService _idEncryption;
     private readonly IUploadService _uploadService;
 
     public AdminsController(IAuthenticationService authService, IAdminService adminService,
         ICurrentUserService currentUserService, ILocalizationService localizer,
-        IIdEncryptionService idEncryption, IUploadService uploadService)
+        IUploadService uploadService)
     {
         _authService = authService;
         _adminService = adminService;
         _currentUserService = currentUserService;
         _localizer = localizer;
-        _idEncryption = idEncryption;
         _uploadService = uploadService;
     }
 
@@ -78,7 +76,8 @@ public class AdminsController : ControllerBase
     {
         if (request == null || string.IsNullOrEmpty(request.NewPassword)) return BadRequest();
 
-        await _authService.ChangeAdminPasswordAsync(_idEncryption.Decrypt(id), request.NewPassword);
+        var changeRequest = new ChangePasswordByIdRequest { AdminId = id, NewPassword = request.NewPassword };
+        await _authService.ChangeAdminPasswordAsync(changeRequest);
         return NoContent();
     }
 
@@ -97,15 +96,17 @@ public class AdminsController : ControllerBase
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var admin = await _adminService.GetByIdAsync(_idEncryption.Decrypt(id));
+        var request = new GetAdminByIdRequest { AdminId = id };
+        var admin = await _adminService.GetByIdAsync(request);
         return admin is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(admin);
     }
 
     [HttpPut("{id}")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAdminRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAdminRequest updateData)
     {
-        var updated = await _adminService.UpdateAsync(_idEncryption.Decrypt(id), request);
+        var request = new UpdateAdminByIdRequest { AdminId = id, UpdateData = updateData };
+        var updated = await _adminService.UpdateAsync(request);
         return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
     }
 
@@ -114,7 +115,8 @@ public class AdminsController : ControllerBase
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> Activate(Guid id)
     {
-        await _adminService.ActivateAsync(_idEncryption.Decrypt(id));
+        var request = new GetAdminByIdRequest { AdminId = id };
+        await _adminService.ActivateAsync(request);
         return NoContent();
     }
 
@@ -122,7 +124,8 @@ public class AdminsController : ControllerBase
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> Deactivate(Guid id)
     {
-        await _adminService.DeactivateAsync(_idEncryption.Decrypt(id));
+        var request = new GetAdminByIdRequest { AdminId = id };
+        await _adminService.DeactivateAsync(request);
         return NoContent();
     }
 
@@ -131,8 +134,7 @@ public class AdminsController : ControllerBase
     public async Task<IActionResult> ActivateSelected([FromBody] AdminIdsRequest request)
     {
         if (request?.AdminIds == null || !request.AdminIds.Any()) return BadRequest();
-        var ids = request.AdminIds.Select(_idEncryption.Decrypt);
-        int count = await _adminService.ActivateSelectedAsync(ids);
+        int count = await _adminService.ActivateSelectedAsync(request);
         return Ok(new { count });
     }
 
@@ -141,8 +143,7 @@ public class AdminsController : ControllerBase
     public async Task<IActionResult> DeactivateSelected([FromBody] AdminIdsRequest request)
     {
         if (request?.AdminIds == null || !request.AdminIds.Any()) return BadRequest();
-        var ids = request.AdminIds.Select(_idEncryption.Decrypt);
-        int count = await _adminService.DeactivateSelectedAsync(ids);
+        int count = await _adminService.DeactivateSelectedAsync(request);
         return Ok(new { count });
     }
 
@@ -166,7 +167,8 @@ public class AdminsController : ControllerBase
     [Authorize(Policy = "SuperAdminOnly")]
     public async Task<IActionResult> ResetPassword(Guid id)
     {
-        await _adminService.ResetPasswordAsync(_idEncryption.Decrypt(id), "P@ssw0rd");
+        var request = new ChangePasswordByIdRequest { AdminId = id, NewPassword = "P@ssw0rd" };
+        await _adminService.ResetPasswordAsync(request);
         return NoContent();
     }
 
@@ -175,9 +177,7 @@ public class AdminsController : ControllerBase
     public async Task<IActionResult> DeleteSelected([FromBody] AdminIdsRequest request)
     {
         if (request?.AdminIds == null || !request.AdminIds.Any()) return BadRequest();
-        var ids = request.AdminIds.Select(_idEncryption.Decrypt)
-            .Where(g => g != _currentUserService.UserId);
-        int count = await _adminService.DeleteSelectedAsync(ids);
+        int count = await _adminService.DeleteSelectedAsync(request);
         return Ok(new { count });
     }
 
