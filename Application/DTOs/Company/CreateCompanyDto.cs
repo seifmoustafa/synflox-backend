@@ -9,8 +9,6 @@ public class CreateCompanyDto
     [StringLength(200, ErrorMessage = "Company name cannot exceed 200 characters")]
     public required string Name { get; set; }
 
-    public DateTime? ExpiryDate { get; set; }
-
     [EmailAddress(ErrorMessage = "Invalid email address")]
     [StringLength(200, ErrorMessage = "Email cannot exceed 200 characters")]
     public string? ContactEmail { get; set; }
