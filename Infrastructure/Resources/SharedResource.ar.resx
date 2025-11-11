@@ -204,4 +204,10 @@
   <data name="MenuItems.HasChildren" xml:space="preserve">
     <value>لا يمكن حذف عنصر القائمة: لديه عناصر قائمة فرعية</value>
   </data>
+  <data name="InvalidRefreshToken" xml:space="preserve">
+    <value>رمز التحديث غير صالح</value>
+  </data>
+  <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
+    <value>رمز التحديث غير صالح أو منتهي الصلاحية</value>
+  </data>
 </root>

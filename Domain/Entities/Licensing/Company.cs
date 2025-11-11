@@ -13,14 +13,6 @@ namespace Domain.Entities.Licensing
         [StringLength(200)]
         public required string Name { get; set; }
 
-
-
-        /// <summary>
-        /// The date when the subscription expires.
-        /// Null means the subscription never expires.
-        /// </summary>
-        public DateTime? ExpiryDate { get; set; }
-
         [StringLength(200)]
         public string? ContactEmail { get; set; }
 

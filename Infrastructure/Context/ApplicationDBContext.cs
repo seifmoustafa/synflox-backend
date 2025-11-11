@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,6 +30,18 @@ namespace Infrastructure.Context
 
         #region Licensing
         public DbSet<Company> Companies { get; set; }
+        #endregion
+
+        #region Subscriptions (Phase 1)
+        public DbSet<Domain.Entities.Subscriptions.Project> Projects { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.Module> Modules { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.Subscription> Subscriptions { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.PlanPrice> PlanPrices { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.ProjectModule> ProjectModules { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.PlanProject> PlanProjects { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.PlanModule> PlanModules { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.OutboxEvent> OutboxEvents { get; set; }
         #endregion
 
         #region Navigation

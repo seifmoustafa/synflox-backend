@@ -18,11 +18,7 @@ namespace Infrastructure.Configurations
                 .HasDatabaseName("IX_Companies_LicenseKey")
                 .HasFilter("[LicenseKey] IS NOT NULL");
 
-            // Composite index for status queries (ExpiryDate, IsActive)
-            builder.HasIndex(c => new { c.ExpiryDate, c.IsActive, c.IsDeleted })
-                .HasDatabaseName("IX_Companies_Status");
-
-            // Index for active companies
+            // Index for active companies (ExpiryDate removed - now in Subscription entity)
             builder.HasIndex(c => new { c.IsActive, c.IsDeleted })
                 .HasDatabaseName("IX_Companies_Active_Deleted");
 

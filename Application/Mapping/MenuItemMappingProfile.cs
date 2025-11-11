@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Entities.Navigation;
 using Application.DTOs.MenuItems;
+using Application.Services;
 using System.Linq;
 using System.Text.Json;
 
@@ -51,18 +52,15 @@ public class MenuItemsMappingProfile : Profile
                     : (src.AllowedUserTypes.Count == 0 ? null : JsonSerializer.Serialize(src.AllowedUserTypes, (JsonSerializerOptions)null!))))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-        // MenuItem request DTOs - decrypt MenuItemId
+        // MenuItem request DTOs - decrypt MenuItemId (using universal converter)
         CreateMap<GetMenuItemByIdRequest, Guid>()
-            .ForMember(d=> d,
-                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId));
+            .ConvertUsing<RequestToGuidConverter<GetMenuItemByIdRequest>>();
 
         CreateMap<UpdateMenuItemByIdRequest, Guid>()
-            .ForMember(d=> d,
-                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId));
+            .ConvertUsing<RequestToGuidConverter<UpdateMenuItemByIdRequest>>();
 
         CreateMap<DeleteMenuItemRequest, Guid>()
-            .ForMember(d=> d,
-                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId));
+            .ConvertUsing<RequestToGuidConverter<DeleteMenuItemRequest>>();
     }
 }
 

@@ -18,9 +18,9 @@ namespace Application.Services
         Task<AdminDto> RegisterAdminAsync(CreateAdminDto request);
 
         /// <summary>
-        /// Regenerates access token using refresh token (for Admin).
+        /// Regenerates access token using refresh token.
         /// </summary>
-        Task<AuthenticationResponse> RegenerateAccessToken(Guid adminId);
+        Task<AuthenticationResponse> RegenerateAccessToken(RefreshTokenRequest request);
 
         /// <summary>
         /// Logs out an admin by revoking refresh token.

@@ -1,4 +1,4 @@
-﻿using Application.Services;
+using Application.Services;
 using Domain.Interfaces;
 using Infrastructure.Authentication;
 using Infrastructure.Resources;
@@ -24,6 +24,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Application.Services_Interfaces;
+using Infrastructure.BackgroundJobs;
+using Application.Mapping;
 
 namespace Infrastructure;
 
@@ -108,9 +111,10 @@ public static class InfrastructureServiceRegistration
 
         #region Services
         // register AutoMapper using profiles defined in the Application layer
-        services.AddAutoMapper(typeof(Application.Mapping.AdminMappingProfile).Assembly);
-        services.AddAutoMapper(typeof(Application.Mapping.LicensingMappingProfile).Assembly);
-        services.AddAutoMapper(typeof(Application.Mapping.MenuItemsMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(AdminMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(MenuItemsMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(SubscriptionMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(CompanyMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -161,13 +165,19 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
-        services.AddScoped<ILicensingService, LicensingService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IFileService, FileService>();
-        services.AddScoped<Application.Services_Interfaces.ISearchService, SearchService>();
+        services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        
+        // Subscription Engine Services (Phase 1)
+        services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<IModuleService, ModuleService>();
+        services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
+        services.AddScoped<ISubscriptionService, SubscriptionService>();
+        services.AddScoped<IEmailService, EmailService>();
         
         // Download service with shared dictionary
         var downloadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<string, DownloadSession>();
@@ -194,6 +204,10 @@ public static class InfrastructureServiceRegistration
         });
         
         services.AddHostedService<UploadCleanupWorker>();
+        
+        // Subscription Engine Background Jobs (Phase 1)
+        services.AddHostedService<SubscriptionStatusBackgroundJob>();
+        services.AddHostedService<OutboxProcessorBackgroundJob>();
         #endregion
 
         #region Repositories Registration
@@ -206,6 +220,14 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IMenuItemsRepository, MenuItemsRepository>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        
+        // Subscription Engine Repositories (Phase 1)
+        services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IModuleRepository, ModuleRepository>();
+        services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+        services.AddScoped<IOutboxEventRepository, OutboxEventRepository>();
+        
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion
 

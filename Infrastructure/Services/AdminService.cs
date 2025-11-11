@@ -48,6 +48,17 @@ public class AdminService : IAdminService
         return _mapper.Map<AdminDto>(admin);
     }
 
+    /// <summary>
+    /// Direct overload for internal calls (from JWT) - accepts decrypted Guid
+    /// NO DECRYPTION NEEDED - ID is already decrypted from JWT
+    /// </summary>
+    public async Task<AdminDto?> GetByIdAsync(Guid id)
+    {
+        var admin = await _repo.GetByIdAsync(id, ["AdminType"]);
+        if (admin is null) return null;
+        return _mapper.Map<AdminDto>(admin);
+    }
+
     public async Task<AdminDto> CreateAsync(CreateAdminDto dto)
     {
         var admin = _mapper.Map<Admin>(dto);
@@ -85,15 +96,34 @@ public class AdminService : IAdminService
         return _mapper.Map<AdminDto>(admin);
     }
 
+    /// <summary>
+    /// Direct overload for internal calls (from JWT) - accepts decrypted Guid
+    /// NO DECRYPTION NEEDED - ID is already decrypted from JWT
+    /// </summary>
+    public async Task<AdminDto?> UpdateAsync(Guid id, UpdateAdminRequest data)
+    {
+        var entity = await _repo.GetByIdAsync(id, ["AdminType"]);
+        if (entity is null) return null;
+
+        if (!string.IsNullOrEmpty(data.Username) && data.Username != entity.Username)
+        {
+            var existing = await _repo.GetByUserNameAsync(data.Username);
+            if (existing != null && existing.Id != id)
+                throw new BadRequestException(_localizer["UsernameTaken"]);
+        }
+
+        _mapper.Map(data, entity);
+        await _repo.UpdateAsync(entity);
+        await _unitOfWork.SaveChangesAsync();
+        entity = await _repo.GetByIdAsync(id, ["AdminType"]);
+        return _mapper.Map<AdminDto>(entity);
+    }
+
     public async Task<bool> DeleteAsync(GetAdminByIdRequest request)
     {
         // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
         
-        var admin = await _repo.GetByIdAsync(decryptedId, null);
-        if (admin is null)
-            throw new NotFoundException(_localizer["UserNotFound"]);
-
         await _repo.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;

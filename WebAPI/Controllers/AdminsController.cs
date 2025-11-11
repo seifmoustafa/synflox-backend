@@ -44,16 +44,16 @@ public class AdminsController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {
-        var request = new GetAdminByIdRequest { AdminId = _currentUserService.UserId };
-        var admin = await _adminService.GetByIdAsync(request);
+        // Use decrypted ID directly - bypass request DTO mapping for internal calls
+        var admin = await _adminService.GetByIdAsync(_currentUserService.UserId);
         return admin is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(admin);
     }
 
     [HttpPut("me")]
     public async Task<IActionResult> UpdateMe([FromBody] UpdateAdminRequest updateData)
     {
-        var request = new UpdateAdminByIdRequest { AdminId = _currentUserService.UserId, UpdateData = updateData };
-        var updated = await _adminService.UpdateAsync(request);
+        // Use decrypted ID directly - bypass request DTO mapping for internal calls
+        var updated = await _adminService.UpdateAsync(_currentUserService.UserId, updateData);
         return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
     }
 

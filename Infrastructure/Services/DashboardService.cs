@@ -25,19 +25,22 @@ public class DashboardService : IDashboardService
     private readonly ICompanyRepository _companyRepository;
     private readonly IAdminRepository _adminRepository;
     private readonly IBaseRepository<Guid, AdminType> _adminTypeRepository;
+    private readonly ISubscriptionRepository _subscriptionRepository;
 
     public DashboardService(
         IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
         EndpointDataSource endpointDataSource,
         ICompanyRepository companyRepository,
         IAdminRepository adminRepository,
-        IBaseRepository<Guid, AdminType> adminTypeRepository)
+        IBaseRepository<Guid, AdminType> adminTypeRepository,
+        ISubscriptionRepository subscriptionRepository)
     {
         _actionDescriptorCollectionProvider = actionDescriptorCollectionProvider;
         _endpointDataSource = endpointDataSource;
         _companyRepository = companyRepository;
         _adminRepository = adminRepository;
         _adminTypeRepository = adminTypeRepository;
+        _subscriptionRepository = subscriptionRepository;
     }
 
     public Task<DashboardResponseDto> GetAllEndpointsAsync()
@@ -260,7 +263,10 @@ public class DashboardService : IDashboardService
 
         foreach (var company in companies)
         {
-            var status = CalculateLicenseStatus(company);
+            // Get active subscription for this company
+            var activeSubscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            
+            var status = CalculateLicenseStatus(company, activeSubscription);
             switch (status)
             {
                 case LicenseStatus.Active:
@@ -275,9 +281,9 @@ public class DashboardService : IDashboardService
             }
 
             // Check if expiring soon (within 30 days)
-            if (company.ExpiryDate.HasValue && 
-                company.ExpiryDate.Value >= now && 
-                company.ExpiryDate.Value <= thirtyDaysFromNow)
+            if (activeSubscription != null && 
+                activeSubscription.ExpiryDateUtc >= now && 
+                activeSubscription.ExpiryDateUtc <= thirtyDaysFromNow)
             {
                 expiringSoonCount++;
             }
@@ -333,20 +339,26 @@ public class DashboardService : IDashboardService
         };
     }
 
-    private LicenseStatus CalculateLicenseStatus(Company company)
+    private LicenseStatus CalculateLicenseStatus(Company company, Domain.Entities.Subscriptions.Subscription? subscription)
     {
         var now = DateTime.UtcNow;
 
-        // Expired takes precedence - if expiry date has passed, it's expired
-        if (company.ExpiryDate.HasValue && company.ExpiryDate.Value < now)
+        // If no active subscription, company is expired
+        if (subscription == null || subscription.IsExpired)
         {
             return LicenseStatus.Expired;
         }
 
-        // If not active, it's suspended
-        if (!company.IsActive)
+        // If subscription is not active (suspended/canceled), company is suspended
+        if (!subscription.IsActive)
         {
             return LicenseStatus.Suspended;
+        }
+
+        // If subscription expiry + grace period has passed, it's expired
+        if (subscription.ExpiryDateUtc.AddDays(subscription.Plan?.GracePeriodDays ?? 0) < now)
+        {
+            return LicenseStatus.Expired;
         }
 
         // Otherwise, it's active

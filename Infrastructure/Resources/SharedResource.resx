@@ -204,4 +204,10 @@
   <data name="MenuItems.HasChildren" xml:space="preserve">
     <value>Cannot delete menu item: it has child menu items</value>
   </data>
+  <data name="InvalidRefreshToken" xml:space="preserve">
+    <value>Invalid refresh token</value>
+  </data>
+  <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
+    <value>Invalid or expired refresh token</value>
+  </data>
 </root>

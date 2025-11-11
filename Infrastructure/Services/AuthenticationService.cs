@@ -93,45 +93,70 @@ namespace Infrastructure.Services
                 _jwtTokenGenerator.GenerateRefreshToken);
         }
 
-        public async Task<AuthenticationResponse> RegenerateAccessToken(Guid adminId)
+        public async Task<AuthenticationResponse> RegenerateAccessToken(RefreshTokenRequest request)
         {
-            var refreshedToken = await _refreshTokenRepo.GetByAdminId(adminId);
-
-            if (refreshedToken != null && refreshedToken.IsActive && !refreshedToken.IsExpired)
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
             {
-                var admin = await _adminRepository.GetByIdAsync(adminId, null);
-                if (admin == null)
-                {
-                    return new AuthenticationResponse
-                    {
-                        Success = false,
-                        ErrorMessage = _localizer["UserNotFound"]
-                    };
-                }
-
-                admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
-                    ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
-
-                refreshedToken.IsActive = false;
-                await _refreshTokenRepo.UpdateAsync(refreshedToken);
-
-                var token = _jwtTokenGenerator.GenerateToken(admin);
-                var newRefreshToken = _jwtTokenGenerator.GenerateRefreshToken(admin);
-                await _refreshTokenRepo.AddAsync(newRefreshToken);
-                await _unitOfWork.SaveChangesAsync();
-
                 return new AuthenticationResponse
                 {
-                    AccessToken = token,
-                    Success = true,
-                    RefreshToken = newRefreshToken.Token
+                    Success = false,
+                    ErrorMessage = _localizer["InvalidRefreshToken"]
                 };
             }
 
+            // Find refresh token in database
+            var refreshedToken = (await _refreshTokenRepo.FindAsync(rt => 
+                rt.Token == request.RefreshToken && 
+                rt.IsActive && 
+                !rt.IsDeleted)).FirstOrDefault();
+
+            if (refreshedToken == null || refreshedToken.IsExpired)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["InvalidOrExpiredRefreshToken"]
+                };
+            }
+
+            // Get admin associated with this refresh token
+            if (refreshedToken.AdminId == null)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["InvalidRefreshToken"]
+                };
+            }
+
+            var admin = await _adminRepository.GetByIdAsync(refreshedToken.AdminId.Value, null);
+            if (admin == null)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["UserNotFound"]
+                };
+            }
+
+            admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
+                ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
+
+            // Revoke old refresh token
+            refreshedToken.IsActive = false;
+            await _refreshTokenRepo.UpdateAsync(refreshedToken);
+
+            // Generate new tokens
+            var token = _jwtTokenGenerator.GenerateToken(admin);
+            var newRefreshToken = _jwtTokenGenerator.GenerateRefreshToken(admin);
+            await _refreshTokenRepo.AddAsync(newRefreshToken);
+            await _unitOfWork.SaveChangesAsync();
+
             return new AuthenticationResponse
             {
-                Success = false,
-                ErrorMessage = _localizer["Unauthorized"]
+                AccessToken = token,
+                Success = true,
+                RefreshToken = newRefreshToken.Token
             };
         }
 
