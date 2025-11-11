@@ -19,7 +19,7 @@ namespace Application.Services
         /// <summary>
         /// Gets a menu item by ID.
         /// </summary>
-        Task<MenuItemsDto?> GetMenuItemsByIdAsync(Guid id);
+        Task<MenuItemsDto?> GetMenuItemsByIdAsync(GetMenuItemByIdRequest request);
 
         /// <summary>
         /// Creates a new menu item.
@@ -29,12 +29,12 @@ namespace Application.Services
         /// <summary>
         /// Updates an existing menu item.
         /// </summary>
-        Task<MenuItemsDto?> UpdateMenuItemsAsync(Guid id, UpdateMenuItemsDto dto);
+        Task<MenuItemsDto?> UpdateMenuItemsAsync(UpdateMenuItemByIdRequest request);
 
         /// <summary>
         /// Deletes a menu item (soft delete).
         /// </summary>
-        Task<bool> DeleteMenuItemsAsync(Guid id);
+        Task<bool> DeleteMenuItemsAsync(DeleteMenuItemRequest request);
     }
 }
 

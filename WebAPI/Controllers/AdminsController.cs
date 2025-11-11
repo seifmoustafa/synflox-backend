@@ -44,14 +44,16 @@ public class AdminsController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {
-        var admin = await _adminService.GetByIdAsync(_currentUserService.UserId);
+        var request = new GetAdminByIdRequest { AdminId = _currentUserService.UserId };
+        var admin = await _adminService.GetByIdAsync(request);
         return admin is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(admin);
     }
 
     [HttpPut("me")]
-    public async Task<IActionResult> UpdateMe([FromBody] UpdateAdminRequest request)
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateAdminRequest updateData)
     {
-        var updated = await _adminService.UpdateAsync(_currentUserService.UserId, request);
+        var request = new UpdateAdminByIdRequest { AdminId = _currentUserService.UserId, UpdateData = updateData };
+        var updated = await _adminService.UpdateAsync(request);
         return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
     }
 
@@ -66,7 +68,8 @@ public class AdminsController : ControllerBase
     [HttpDelete("me")]
     public async Task<IActionResult> DeleteMe()
     {
-        await _adminService.DeleteAsync(_currentUserService.UserId);
+        var request = new GetAdminByIdRequest { AdminId = _currentUserService.UserId };
+        await _adminService.DeleteAsync(request);
         return NoContent();
     }
 

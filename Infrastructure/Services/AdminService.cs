@@ -85,13 +85,16 @@ public class AdminService : IAdminService
         return _mapper.Map<AdminDto>(admin);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(GetAdminByIdRequest request)
     {
-        var admin = await _repo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var admin = await _repo.GetByIdAsync(decryptedId, null);
         if (admin is null)
             throw new NotFoundException(_localizer["UserNotFound"]);
 
-        await _repo.DeleteAsync(id);
+        await _repo.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }
@@ -110,19 +113,25 @@ public class AdminService : IAdminService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task ResetPasswordAsync(Guid id, string newPassword)
+    public async Task ResetPasswordAsync(ChangePasswordByIdRequest request)
     {
-        var admin = await _repo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var admin = await _repo.GetByIdAsync(decryptedId, null);
         if (admin is null)
             throw new NotFoundException(_localizer["UserNotFound"]);
-        admin.Password = _hasher.HashPassword(newPassword);
+        admin.Password = _hasher.HashPassword(request.NewPassword);
         await _repo.UpdateAsync(admin);
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<bool> ActivateAsync(Guid id)
+    public async Task<bool> ActivateAsync(GetAdminByIdRequest request)
     {
-        var admin = await _repo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var admin = await _repo.GetByIdAsync(decryptedId, null);
         if (admin is null)
             throw new NotFoundException(_localizer["UserNotFound"]);
         if (!admin.IsActive)
@@ -134,9 +143,12 @@ public class AdminService : IAdminService
         return true;
     }
 
-    public async Task<bool> DeactivateAsync(Guid id)
+    public async Task<bool> DeactivateAsync(GetAdminByIdRequest request)
     {
-        var admin = await _repo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var admin = await _repo.GetByIdAsync(decryptedId, null);
         if (admin is null)
             throw new NotFoundException(_localizer["UserNotFound"]);
         if (admin.IsActive)
@@ -148,12 +160,15 @@ public class AdminService : IAdminService
         return true;
     }
 
-    public async Task<int> ActivateSelectedAsync(IEnumerable<Guid> ids)
+    public async Task<int> ActivateSelectedAsync(AdminIdsRequest request)
     {
+        // Use AutoMapper to decrypt the IDs
+        var decryptedIds = _mapper.Map<IEnumerable<Guid>>(request);
+        
         int affected = 0;
         await _unitOfWork.ExecuteAsync(async ct =>
         {
-            var admins = await _repo.FindAsync(a => ids.Contains(a.Id), ct);
+            var admins = await _repo.FindAsync(a => decryptedIds.Contains(a.Id), ct);
             var toActivate = admins.Where(a => !a.IsActive).ToList();
             foreach (var admin in toActivate)
             {
@@ -166,12 +181,15 @@ public class AdminService : IAdminService
         return affected;
     }
 
-    public async Task<int> DeactivateSelectedAsync(IEnumerable<Guid> ids)
+    public async Task<int> DeactivateSelectedAsync(AdminIdsRequest request)
     {
+        // Use AutoMapper to decrypt the IDs
+        var decryptedIds = _mapper.Map<IEnumerable<Guid>>(request);
+        
         int affected = 0;
         await _unitOfWork.ExecuteAsync(async ct =>
         {
-            var admins = await _repo.FindAsync(a => ids.Contains(a.Id), ct);
+            var admins = await _repo.FindAsync(a => decryptedIds.Contains(a.Id), ct);
             var toDeactivate = admins.Where(a => a.IsActive).ToList();
             foreach (var admin in toDeactivate)
             {
@@ -220,12 +238,15 @@ public class AdminService : IAdminService
         return affected;
     }
 
-    public async Task<int> DeleteSelectedAsync(IEnumerable<Guid> ids)
+    public async Task<int> DeleteSelectedAsync(AdminIdsRequest request)
     {
+        // Use AutoMapper to decrypt the IDs
+        var decryptedIds = _mapper.Map<IEnumerable<Guid>>(request);
+        
         int deleted = 0;
         await _unitOfWork.ExecuteAsync(async ct =>
         {
-            var admins = await _repo.FindAsync(a => ids.Contains(a.Id), ct);
+            var admins = await _repo.FindAsync(a => decryptedIds.Contains(a.Id), ct);
             var deleteIds = admins.Select(a => a.Id).ToList();
             if (deleteIds.Any())
                 await _repo.DeleteRangeAsync(deleteIds, ct);

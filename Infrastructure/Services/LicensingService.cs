@@ -48,14 +48,17 @@ namespace Infrastructure.Services
             _currentUserService = currentUserService;
         }
 
-        public async Task<CompanyDto> ActivateCompanyAsync(Guid id, DateTime expiryDate)
+        public async Task<CompanyDto> ActivateCompanyAsync(ActivateCompanyRequest request)
         {
-            if (expiryDate <= DateTime.UtcNow)
+            if (request.ExpiryDate <= DateTime.UtcNow)
             {
                 throw new BadRequestException(_localizer["Licensing.InvalidExpiryDate"]);
             }
 
-            var company = await _repository.GetByIdAsync(id, null);
+            // Use AutoMapper to decrypt the ID
+            var decryptedId = _mapper.Map<Guid>(request);
+            
+            var company = await _repository.GetByIdAsync(decryptedId, null);
             if (company == null)
             {
                 throw new NotFoundException(_localizer["Licensing.CompanyNotFound"]);
@@ -67,7 +70,7 @@ namespace Infrastructure.Services
             }
 
             company.IsActive = true;
-            company.ExpiryDate = expiryDate;
+            company.ExpiryDate = request.ExpiryDate;
             await _repository.UpdateAsync(company);
             await _unitOfWork.SaveChangesAsync();
 

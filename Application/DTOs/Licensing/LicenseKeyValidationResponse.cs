@@ -11,6 +11,6 @@ public class LicenseKeyValidationResponse
     public bool IsActive { get; set; }
     public string Message { get; set; } = string.Empty;
     public bool ClockTampered { get; set; }
-    public Guid? CompanyId { get; set; }
+    public Guid CompanyId { get; set; }
 }
 

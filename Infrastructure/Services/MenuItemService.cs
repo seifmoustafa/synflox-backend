@@ -65,9 +65,12 @@ public class MenuItemsService : IMenuItemsService
         };
     }
 
-    public async Task<MenuItemsDto?> GetMenuItemsByIdAsync(Guid id)
+    public async Task<MenuItemsDto?> GetMenuItemsByIdAsync(GetMenuItemByIdRequest request)
     {
-        var MenuItems = await _repository.GetByIdAsync(id, new[] { "Children", "ParentMenuItems" });
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var MenuItems = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "ParentMenuItems" });
         if (MenuItems == null || MenuItems.IsDeleted) return null;
 
         return MapMenuItemsWithChildren(MenuItems, _currentUserService.AdminTypeName);
@@ -86,41 +89,44 @@ public class MenuItemsService : IMenuItemsService
         return MapMenuItemsWithChildren(created, _currentUserService.AdminTypeName);
     }
 
-    public async Task<MenuItemsDto?> UpdateMenuItemsAsync(Guid id, UpdateMenuItemsDto dto)
+    public async Task<MenuItemsDto?> UpdateMenuItemsAsync(UpdateMenuItemByIdRequest request)
     {
-        var MenuItems = await _repository.GetByIdAsync(id, new[] { "Children", "ParentMenuItems" });
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var MenuItems = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "ParentMenuItems" });
         if (MenuItems == null || MenuItems.IsDeleted)
         {
             throw new NotFoundException(_localizer["MenuItems.NotFound"]);
         }
 
         // Parent menu item ID validation and circular reference prevention
-        if (dto.ParentMenuItemsId.HasValue)
+        if (request.UpdateData.ParentMenuItemsId.HasValue)
         {
-            if (dto.ParentMenuItemsId.Value == id)
+            if (request.UpdateData.ParentMenuItemsId.Value == decryptedId)
             {
                 throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
             }
 
             // Check if the parent is a descendant (would create circular reference)
-            if (await IsDescendantAsync(MenuItems, dto.ParentMenuItemsId.Value))
+            if (await IsDescendantAsync(MenuItems, request.UpdateData.ParentMenuItemsId.Value))
             {
                 throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
             }
 
-            var parent = await _repository.GetByIdAsync(dto.ParentMenuItemsId.Value, null);
+            var parent = await _repository.GetByIdAsync(request.UpdateData.ParentMenuItemsId.Value, null);
             if (parent == null || parent.IsDeleted)
             {
                 throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
             }
         }
 
-        _mapper.Map(dto, MenuItems);
+        _mapper.Map(request.UpdateData, MenuItems);
         await _repository.UpdateAsync(MenuItems);
         await _unitOfWork.SaveChangesAsync();
 
         // Reload with children to get full hierarchy
-        var updated = await _repository.GetByIdAsync(id, new[] { "Children", "ParentMenuItems" });
+        var updated = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "ParentMenuItems" });
         if (updated == null)
         {
             throw new NotFoundException(_localizer["MenuItems.NotFound"]);
@@ -129,9 +135,12 @@ public class MenuItemsService : IMenuItemsService
         return MapMenuItemsWithChildren(updated, _currentUserService.AdminTypeName);
     }
 
-    public async Task<bool> DeleteMenuItemsAsync(Guid id)
+    public async Task<bool> DeleteMenuItemsAsync(DeleteMenuItemRequest request)
     {
-        var MenuItems = await _repository.GetByIdAsync(id, new[] { "Children" });
+        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var MenuItems = await _repository.GetByIdAsync(decryptedId, new[] { "Children" });
         if (MenuItems == null || MenuItems.IsDeleted)
         {
             throw new NotFoundException(_localizer["MenuItems.NotFound"]);
@@ -143,7 +152,7 @@ public class MenuItemsService : IMenuItemsService
             throw new BadRequestException(_localizer["MenuItems.HasChildren"]);
         }
 
-        await _repository.DeleteAsync(id);
+        await _repository.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

@@ -53,13 +53,16 @@ public class MenuItemsMappingProfile : Profile
 
         // MenuItem request DTOs - decrypt MenuItemId
         CreateMap<GetMenuItemByIdRequest, Guid>()
-            .ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId);
-            
+            .ForMember(d=> d,
+                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId));
+
         CreateMap<UpdateMenuItemByIdRequest, Guid>()
-            .ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId);
-            
+            .ForMember(d=> d,
+                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId));
+
         CreateMap<DeleteMenuItemRequest, Guid>()
-            .ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId);
+            .ForMember(d=> d,
+                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(src => src.MenuItemId));
     }
 }
 
