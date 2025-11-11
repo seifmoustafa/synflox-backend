@@ -1,55 +1,146 @@
-# SYNFLOX - Central Licensing System
+# SYNFLOX Backend - Central Licensing System API
 
-## Overview
+## Business Overview
 
-**SYNFLOX** is a **Central Licensing System** (activation control system) designed to manage and control licensing for multiple external enterprise products including ERP, CRM, POS, HR, Inventory systems, and more.
+**SYNFLOX** is an enterprise-grade **Central Licensing System** that serves as the authoritative control center for managing software licenses across multiple external enterprise applications (ERP, CRM, POS, HR, Inventory systems, etc.).
 
-SYNFLOX acts as the central authority that:
-- Creates and manages companies (tenants)
-- Controls subscription activation status (Active / Suspended)
-- Manages subscription expiration dates
-- Allows subscription extension
-- Provides real-time license validation for external products
-- Supports both **online** and **offline** system licensing
+### Business Purpose
+SYNFLOX solves the critical business problem of **centralized license management** for software vendors who distribute multiple enterprise products. Instead of each product managing its own licensing, SYNFLOX provides:
 
-## Architecture
+- **Unified License Control**: Single source of truth for all product licenses
+- **Multi-Tenant Management**: Manage thousands of companies and their subscriptions
+- **Flexible Licensing Models**: Support for both online and offline licensing scenarios
+- **Real-Time Validation**: Instant license status checks for connected systems
+- **Secure Offline Keys**: Encrypted license keys for air-gapped environments
+- **Administrative Control**: Complete subscription lifecycle management
 
-SYNFLOX follows **Clean Architecture** principles with a 4-layer structure:
+### Core Business Functions
+
+#### 1. **Company (Tenant) Management**
+- Create and manage customer companies
+- Track contact information and subscription details
+- Maintain audit trails for all changes
+- Support for soft deletion and data retention
+
+#### 2. **Subscription Lifecycle Control**
+- **Activate**: Enable company subscriptions with expiry dates
+- **Suspend**: Temporarily disable access (manual control)
+- **Resume**: Reactivate suspended subscriptions
+- **Extend**: Modify expiration dates for renewals
+- **Status Checking**: Real-time validation of subscription state
+
+#### 3. **License Key Management**
+- Generate secure, encrypted license keys for offline systems
+- Support key regeneration for security updates
+- Tamper-proof validation with clock detection
+- AES-256 encryption with HMAC SHA256 signatures
+
+#### 4. **Multi-Product Integration**
+- RESTful API for online product integration
+- Standardized response formats for all products
+- Support for different integration patterns
+- Comprehensive error handling and messaging
+
+## Technical Architecture
+
+SYNFLOX implements **Clean Architecture** principles with strict layer separation and dependency inversion:
 
 ```
-┌─────────────────────────────────────┐
-│         WebAPI (Presentation)        │  ← Controllers, Middleware, Configuration
-├─────────────────────────────────────┤
-│      Application (Business Logic)   │  ← DTOs, Service Interfaces, Mappings
-├─────────────────────────────────────┤
-│      Domain (Core Business)         │  ← Entities, Interfaces, Enums, Exceptions
-├─────────────────────────────────────┤
-│   Infrastructure (External Concerns)│  ← EF Core, Repositories, Services, Auth
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    WebAPI Layer                          │
+│  Controllers • Middleware • Authentication • CORS       │
+│  Authorization Policies • Exception Handling            │
+└─────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────┐
+│                 Application Layer                        │
+│  Service Interfaces • DTOs • AutoMapper Profiles        │
+│  Business Logic Contracts • Request/Response Models     │
+└─────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────┐
+│                   Domain Layer                           │
+│  Entities • Enums • Interfaces • Business Rules         │
+│  NO EXTERNAL DEPENDENCIES (Pure Business Logic)         │
+└─────────────────────────────────────────────────────────┘
+                            ↑
+┌─────────────────────────────────────────────────────────┐
+│               Infrastructure Layer                       │
+│  EF Core • Repositories • External Services • Auth      │
+│  Database Context • File Storage • Email/SMS            │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Key Components
+### Layer Responsibilities
 
-#### **Domain Layer**
-- **Company Entity**: Represents a tenant with subscription information
-- **LicenseStatus Enum**: Active, Expired, Suspended
-- **Repository Interfaces**: Data access contracts
+#### **1. Domain Layer** (Core Business)
+- **Entities**: `Company`, `Admin`, `AdminType`, `RefreshToken`, `MenuItems`
+- **Enums**: `LicenseStatus` (Active, Expired, Suspended), `AuthProvider`, `Gender`
+- **Base Classes**: `AuditEntity<TKey>`, `BaseEntity<TKey>` with soft delete support
+- **Interfaces**: Repository contracts (`ICompanyRepository`, `IAdminRepository`, `IUnitOfWork`)
+- **Business Rules**: Status calculation logic, validation rules
+- **Zero Dependencies**: Pure business logic with no external references
 
-#### **Application Layer**
-- **DTOs**: Data transfer objects for API communication
-- **ILicensingService**: Business logic interface
-- **AutoMapper Profiles**: Entity to DTO mapping
+#### **2. Application Layer** (Use Cases)
+- **Service Interfaces**: `ILicensingService`, `ICompanyService`, `IAuthenticationService`
+- **DTOs**: Complete data transfer object structure for all entities
+- **AutoMapper Profiles**: Entity ↔ DTO mapping with encryption/decryption
+- **Request/Response Models**: API contract definitions
+- **Business Logic Orchestration**: Coordinates between domain and infrastructure
+- **Separation of Concerns**: CRUD operations separate from business operations
 
-#### **Infrastructure Layer**
-- **CompanyRepository**: Data access implementation
-- **LicensingService**: Core licensing business logic
-- **License Key Generation**: Secure encrypted license key creation
-- **License Key Validation**: Tamper-proof validation with clock detection
+#### **3. Infrastructure Layer** (External Concerns)
+- **Services**: `LicensingService`, `CompanyService`, `AuthenticationService`
+- **Repositories**: `BaseRepository<T>`, entity-specific repositories
+- **Database Context**: `ApplicationDBContext` with SQL Server/Oracle support
+- **Authentication**: JWT token generation, password hashing, claims management
+- **External Services**: Email, SMS, file storage, caching (Redis)
+- **Settings & Configuration**: Encryption, license keys, file uploads
 
-#### **WebAPI Layer**
-- **LicensingController**: REST API endpoints
-- **Authentication**: JWT-based admin authentication
-- **Localization**: Multi-language support (English/Arabic)
+#### **4. WebAPI Layer** (Presentation)
+- **Controllers**: RESTful endpoints with proper HTTP status codes
+- **Authorization**: Role-based policies (`SuperAdminOnly`, `AdminOrSuperAdmin`)
+- **Middleware Pipeline**: Exception handling, localization, rate limiting, caching
+- **API Documentation**: Swagger/OpenAPI integration
+- **CORS Configuration**: Cross-origin resource sharing setup
+- **Request/Response Handling**: Model validation, error responses
+
+### Key Architectural Patterns
+
+#### **ID Encryption Pattern**
+```csharp
+// All entity IDs are encrypted in API responses and decrypted in requests
+// Uses AutoMapper converters for seamless transformation
+CreateMap<Company, CompanyDto>()
+    .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+```
+
+#### **Soft Delete Pattern**
+```csharp
+// All entities support soft deletion with audit trails
+public class AuditEntity<TKey> : BaseEntity<TKey>
+{
+    public DateTime CreatedTimestamp { get; set; }
+    public DateTime? UpdatedTimestamp { get; set; }
+    public DateTime? DeletedTimestamp { get; set; }
+}
+```
+
+#### **Repository Pattern with Unit of Work**
+```csharp
+// Centralized data access with transaction support
+public interface IUnitOfWork
+{
+    ICompanyRepository Companies { get; }
+    IAdminRepository Admins { get; }
+    Task<int> SaveChangesAsync();
+}
+```
+
+#### **Service Layer Separation**
+- **CRUD Services**: Handle basic entity operations (`ICompanyService`)
+- **Business Services**: Handle complex business logic (`ILicensingService`)
+- **Clear Boundaries**: Each service has a single responsibility
 
 ## How It Works
 
@@ -675,39 +766,84 @@ Accept-Language: ar
 }
 ```
 
-## License Key Security
+## Security Architecture
 
-### Encryption & Signing
+### Multi-Layer Security Model
 
-License keys use multiple layers of security:
+SYNFLOX implements enterprise-grade security across all layers:
 
-1. **HMAC SHA256 Signature**: Prevents tampering
-2. **AES-256 Encryption**: Protects key content
-3. **Clock Tampering Detection**: Detects system date manipulation
-4. **Version Control**: Supports future key format updates
-
-### Key Structure
-
-```
-License Key = Base64(AES-256_Encrypt(JSON({
-    Payload: {
-        CompanyId: Guid,
-        ExpiryDate: DateTime,
-        IssuedDate: DateTime,
-        Version: int
-    },
-    Signature: HMAC_SHA256(Payload)
-})))
+#### **1. Authentication & Authorization**
+```csharp
+// JWT-based authentication with role-based authorization
+[Authorize(Policy = "SuperAdminOnly")]
+public async Task<IActionResult> ActivateCompany(Guid id, [FromBody] ActivateCompanyRequest request)
+{
+    var decryptedId = _idEncryption.Decrypt(id); // ID decryption at boundary
+    var result = await _licensingService.ActivateCompanyAsync(decryptedId, request.ExpiryDate);
+    return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanyActivated"], result));
+}
 ```
 
-### Validation Process
+#### **2. ID Encryption System**
+- **Boundary Encryption**: All entity IDs encrypted at API boundaries
+- **AutoMapper Integration**: Seamless encryption/decryption via converters
+- **Security by Design**: Internal services work with plain GUIDs
+- **Tamper Protection**: Encrypted IDs prevent enumeration attacks
 
-1. Decode from Base64
-2. Decrypt with AES-256
-3. Verify HMAC signature
-4. Check expiry date
-5. Detect clock tampering (current time >= issued time)
-6. Return validation result
+#### **3. License Key Security**
+```
+License Key Structure:
+┌─────────────────────────────────────────────────────────┐
+│  Base64(AES-256_Encrypt(JSON({                          │
+│    Payload: {                                           │
+│      CompanyId: Guid,                                   │
+│      ExpiryDate: DateTime,                              │
+│      IssuedDate: DateTime,                              │
+│      Version: int                                       │
+│    },                                                   │
+│    Signature: HMAC_SHA256(Payload)                      │
+│  })))                                                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Security Features**:
+- **AES-256 Encryption**: Military-grade encryption
+- **HMAC SHA256 Signature**: Tamper-proof validation
+- **Clock Tampering Detection**: Prevents system time manipulation
+- **Version Control**: Future-proof key format evolution
+
+#### **4. Validation Process**
+1. **Decode**: Base64 → Encrypted JSON
+2. **Decrypt**: AES-256 → Plain JSON
+3. **Verify**: HMAC signature validation
+4. **Check Expiry**: Date validation
+5. **Clock Detection**: Time manipulation check
+6. **Result**: Secure validation response
+
+### Database Security
+
+#### **Soft Delete Protection**
+```csharp
+// All queries automatically filter deleted records
+public async Task<IEnumerable<Company>> GetActiveCompaniesAsync()
+{
+    return await _context.Companies
+        .Where(c => !c.IsDeleted && c.IsActive) // Automatic soft delete filter
+        .ToListAsync();
+}
+```
+
+#### **Audit Trail System**
+- **Automatic Timestamps**: Created, Updated, Deleted timestamps
+- **Change Tracking**: Entity Framework change detection
+- **Data Retention**: Soft delete preserves historical data
+- **Compliance Ready**: Audit trails for regulatory requirements
+
+#### **Database Encryption**
+- **Connection String Security**: Encrypted configuration
+- **Column-Level Encryption**: Sensitive data protection
+- **Index Optimization**: Secure, performant queries
+- **Multi-Database Support**: SQL Server + Oracle compatibility
 
 ## Configuration
 
@@ -779,14 +915,255 @@ SYNFLOX supports:
 6. **Soft Delete**: Companies are soft-deleted, not permanently removed
 7. **Audit Trail**: Automatic timestamp tracking
 
+## Database Schema
+
+### Core Entities
+
+#### **Companies Table**
+```sql
+CREATE TABLE Companies (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    Name NVARCHAR(200) NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1,
+    ExpiryDate DATETIME2 NULL,
+    ContactEmail NVARCHAR(200) NULL,
+    ContactPhone NVARCHAR(50) NULL,
+    Address NVARCHAR(500) NULL,
+    LicenseKey NVARCHAR(1000) NULL,
+    CreatedTimestamp DATETIME2 NOT NULL,
+    UpdatedTimestamp DATETIME2 NULL,
+    DeletedTimestamp DATETIME2 NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0
+);
+
+-- Indexes for optimal performance
+CREATE UNIQUE INDEX IX_Companies_Name ON Companies (Name) WHERE IsDeleted = 0;
+CREATE INDEX IX_Companies_LicenseKey ON Companies (LicenseKey) WHERE LicenseKey IS NOT NULL;
+CREATE INDEX IX_Companies_Status ON Companies (ExpiryDate, IsActive, IsDeleted);
+```
+
+#### **Admins Table**
+```sql
+CREATE TABLE Admins (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    FirstName NVARCHAR(100) NULL,
+    LastName NVARCHAR(100) NULL,
+    PhoneNumber NVARCHAR(20) NULL,
+    Username NVARCHAR(100) NOT NULL,
+    Password NVARCHAR(100) NOT NULL, -- Hashed
+    AdminTypeId UNIQUEIDENTIFIER NOT NULL,
+    CreatedTimestamp DATETIME2 NOT NULL,
+    UpdatedTimestamp DATETIME2 NULL,
+    DeletedTimestamp DATETIME2 NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    FOREIGN KEY (AdminTypeId) REFERENCES AdminTypes(Id)
+);
+```
+
+#### **AdminTypes Table**
+```sql
+CREATE TABLE AdminTypes (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    AdminTypeName NVARCHAR(50) NOT NULL, -- 'SuperAdmin', 'Admin'
+    CreatedTimestamp DATETIME2 NOT NULL,
+    UpdatedTimestamp DATETIME2 NULL,
+    DeletedTimestamp DATETIME2 NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0
+);
+```
+
+### Database Features
+- **Audit Trails**: All tables include Created/Updated/Deleted timestamps
+- **Soft Delete**: Logical deletion with `IsDeleted` flag
+- **Optimized Indexes**: Performance-tuned for common queries
+- **Referential Integrity**: Foreign key constraints
+- **Multi-Database**: SQL Server (primary) and Oracle (secondary) support
+
+## Deployment Architecture
+
+### Environment Configuration
+
+#### **Development Environment**
+```json
+{
+  "ConnectionStrings": {
+    "SqlServerConnection": "Server=.\\SQLEXPRESS;Database=SYNFLOX_Dev;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "JwtSettings": {
+    "Issuer": "localhost",
+    "Audience": "localhost",
+    "SecretKey": "development-secret-key",
+    "Lifetime": 30
+  }
+}
+```
+
+#### **Production Environment**
+```json
+{
+  "ConnectionStrings": {
+    "SqlServerConnection": "Server=prod-server;Database=SYNFLOX_Prod;User Id=synflox_user;Password=***;Encrypt=True;"
+  },
+  "JwtSettings": {
+    "Issuer": "api.synflox.com",
+    "Audience": "synflox-clients",
+    "SecretKey": "production-secure-key-256-bits",
+    "Lifetime": 15
+  },
+  "CacheSettings": {
+    "UseRedis": true,
+    "RedisConnection": "prod-redis:6379"
+  }
+}
+```
+
+### Docker Deployment
+
+#### **Dockerfile**
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["WebAPI/WebAPI.csproj", "WebAPI/"]
+COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
+COPY ["Application/Application.csproj", "Application/"]
+COPY ["Domain/Domain.csproj", "Domain/"]
+RUN dotnet restore "WebAPI/WebAPI.csproj"
+COPY . .
+WORKDIR "/src/WebAPI"
+RUN dotnet build "WebAPI.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "WebAPI.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "WebAPI.dll"]
+```
+
+#### **Docker Compose**
+```yaml
+version: '3.8'
+services:
+  synflox-api:
+    build: .
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__SqlServerConnection=Server=db;Database=SYNFLOX;User Id=sa;Password=YourPassword123;
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  sqlserver_data:
+  redis_data:
+```
+
 ## Getting Started
 
-1. **Configure Database**: Update connection string in `appsettings.json`
-2. **Configure License Keys**: Update `LicenseKeySettings` in `appsettings.json`
-3. **Run Migrations**: Database will be created automatically
-4. **Create SuperAdmin**: Use database initializer or create manually
-5. **Start API**: Run the WebAPI project
-6. **Access Swagger**: Navigate to `/swagger` for API documentation
+### Prerequisites
+- **.NET 8.0 SDK** or later
+- **SQL Server** (LocalDB, Express, or Full)
+- **Visual Studio 2022** or **VS Code** with C# extension
+- **Redis** (optional, for caching)
+
+### Quick Start
+
+#### **1. Clone and Setup**
+```bash
+git clone <repository-url>
+cd SYNFLOX
+dotnet restore
+```
+
+#### **2. Database Configuration**
+Update `appsettings.json` in WebAPI project:
+```json
+{
+  "ConnectionStrings": {
+    "SqlServerConnection": "Server=.\\SQLEXPRESS;Database=SYNFLOX;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}
+```
+
+#### **3. Run Database Migrations**
+```bash
+cd WebAPI
+dotnet ef database update
+# Database will be created automatically with initial data
+```
+
+#### **4. Start the API**
+```bash
+dotnet run --project WebAPI
+```
+
+#### **5. Access the API**
+- **Swagger UI**: `https://localhost:5001/swagger`
+- **API Base URL**: `https://localhost:5001/api`
+
+### Initial Login Credentials
+- **Username**: `superadmin`
+- **Password**: `password`
+- **Role**: `SuperAdmin`
+
+### Development Workflow
+
+#### **1. Add New Entity**
+1. Create entity in `Domain/Entities`
+2. Add repository interface in `Domain/Interfaces`
+3. Create DTOs in `Application/DTOs`
+4. Add AutoMapper profile in `Application/Mapping`
+5. Implement repository in `Infrastructure/Repositories`
+6. Create service interface and implementation
+7. Add controller in `WebAPI/Controllers`
+8. Create database migration
+
+#### **2. Testing**
+```bash
+# Run unit tests
+dotnet test
+
+# Run integration tests
+dotnet test --filter Category=Integration
+
+# Generate test coverage
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+#### **3. Code Quality**
+```bash
+# Format code
+dotnet format
+
+# Analyze code
+dotnet build --verbosity normal
+```
 
 ## API Documentation
 
