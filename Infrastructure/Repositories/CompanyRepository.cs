@@ -18,10 +18,6 @@ namespace Infrastructure.Repositories
             return await _dbSet.FirstOrDefaultAsync(c => c.Name == name && !c.IsDeleted);
         }
 
-        public async Task<Company?> GetByLicenseKeyAsync(string licenseKey)
-        {
-            return await _dbSet.FirstOrDefaultAsync(c => c.LicenseKey == licenseKey && !c.IsDeleted);
-        }
     }
 }
 

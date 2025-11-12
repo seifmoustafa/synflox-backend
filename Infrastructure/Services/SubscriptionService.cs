@@ -26,6 +26,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
 
     public SubscriptionService(
         ISubscriptionRepository subscriptionRepo,
@@ -34,7 +35,8 @@ public class SubscriptionService : ISubscriptionService
         IOutboxEventRepository outboxRepo,
         IMapper mapper,
         ILocalizationService localizer,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService)
     {
         _subscriptionRepo = subscriptionRepo;
         _planRepo = planRepo;
@@ -43,6 +45,7 @@ public class SubscriptionService : ISubscriptionService
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
     }
 
     public async Task<SubscriptionDto> CreateSubscriptionAsync(CreateSubscriptionDto dto)
@@ -138,25 +141,43 @@ public class SubscriptionService : ISubscriptionService
             });
 
         var result = await _subscriptionRepo.GetWithDetailsAsync(subscription.Id);
-        return _mapper.Map<SubscriptionDto>(result!);
+        var subscriptionDto = _mapper.Map<SubscriptionDto>(result!);
+        SetLicenseKeyIfSuperAdmin(subscriptionDto, result!);
+        return subscriptionDto;
     }
 
     public async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid id)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(id);
-        return subscription == null ? null : _mapper.Map<SubscriptionDto>(subscription);
+        if (subscription == null) return null;
+        
+        var dto = _mapper.Map<SubscriptionDto>(subscription);
+        SetLicenseKeyIfSuperAdmin(dto, subscription);
+        return dto;
     }
 
     public async Task<SubscriptionDto?> GetActiveSubscriptionAsync(Guid companyId)
     {
         var subscription = await _subscriptionRepo.GetActiveByCompanyIdAsync(companyId);
-        return subscription == null ? null : _mapper.Map<SubscriptionDto>(subscription);
+        if (subscription == null) return null;
+        
+        var dto = _mapper.Map<SubscriptionDto>(subscription);
+        SetLicenseKeyIfSuperAdmin(dto, subscription);
+        return dto;
     }
 
     public async Task<IEnumerable<SubscriptionDto>> GetCompanySubscriptionsAsync(Guid companyId)
     {
         var subscriptions = await _subscriptionRepo.GetAllByCompanyIdAsync(companyId);
-        return _mapper.Map<IEnumerable<SubscriptionDto>>(subscriptions);
+        var dtos = _mapper.Map<IEnumerable<SubscriptionDto>>(subscriptions).ToList();
+        
+        // Set license key visibility for each subscription
+        for (int i = 0; i < dtos.Count; i++)
+        {
+            SetLicenseKeyIfSuperAdmin(dtos[i], subscriptions.ElementAt(i));
+        }
+        
+        return dtos;
     }
 
     public async Task<SubscriptionStatusDto?> GetSubscriptionStatusAsync(Guid subscriptionId)
@@ -247,7 +268,9 @@ public class SubscriptionService : ISubscriptionService
             });
 
         var result = await _subscriptionRepo.GetWithDetailsAsync(newSubscription.Id);
-        return _mapper.Map<SubscriptionDto>(result!);
+        var renewedDto = _mapper.Map<SubscriptionDto>(result!);
+        SetLicenseKeyIfSuperAdmin(renewedDto, result!);
+        return renewedDto;
     }
 
     public async Task<UpgradeResponseDto> UpgradeSubscriptionAsync(Guid subscriptionId, UpgradeSubscriptionDto dto)
@@ -404,7 +427,7 @@ public class SubscriptionService : ISubscriptionService
                 DurationDays = (newSubscription.ExpiryDateUtc - newSubscription.StartDateUtc).Days
             } : null,
             ProrationSuggestion = proration,
-            NewSubscription = newSubscription != null ? _mapper.Map<SubscriptionDto>(newSubscription) : null
+            NewSubscription = GetMappedSubscriptionDto(newSubscription)
         };
 
         return response;
@@ -491,6 +514,30 @@ public class SubscriptionService : ISubscriptionService
         };
 
         await _outboxRepo.AddAsync(outboxEvent);
+    }
+
+    /// <summary>
+    /// Sets license key visibility in DTO based on user role
+    /// Only SuperAdmin can see license keys
+    /// </summary>
+    private void SetLicenseKeyIfSuperAdmin(SubscriptionDto dto, Subscription subscription)
+    {
+        if (_currentUserService.AdminTypeName == "SuperAdmin")
+        {
+            dto.OfflineLicenseKey = subscription.OfflineLicenseKey;
+        }
+    }
+
+    /// <summary>
+    /// Helper method to map subscription to DTO with license key visibility
+    /// </summary>
+    private SubscriptionDto? GetMappedSubscriptionDto(Subscription? subscription)
+    {
+        if (subscription == null) return null;
+        
+        var dto = _mapper.Map<SubscriptionDto>(subscription);
+        SetLicenseKeyIfSuperAdmin(dto, subscription);
+        return dto;
     }
 
     #endregion

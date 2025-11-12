@@ -21,4 +21,10 @@ public class SubscriptionDto
     public Guid? NextPlanId { get; set; }
     public string? NextPlanName { get; set; }
     public DateTime? NextPlanStartDateUtc { get; set; }
+    
+    // Offline License Key Management
+    public string? OfflineLicenseKey { get; set; }
+    public DateTime? LicenseKeyGeneratedAt { get; set; }
+    public int LicenseKeyVersion { get; set; }
+    public bool HasLicenseKey => !string.IsNullOrEmpty(OfflineLicenseKey);
 }

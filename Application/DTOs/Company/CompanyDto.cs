@@ -10,7 +10,6 @@ public class CompanyDto
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
     public string? Address { get; set; }
-    public string? LicenseKey { get; set; }
     public DateTime CreatedTimestamp { get; set; }
     public DateTime? UpdatedTimestamp { get; set; }
 }

@@ -49,7 +49,6 @@ public class CompanyService : ICompanyService
         await _unitOfWork.SaveChangesAsync();
 
         var result = _mapper.Map<CompanyDto>(created);
-        SetLicenseKeyIfSuperAdmin(result, created);
         return result;
     }
 
@@ -75,15 +74,7 @@ public class CompanyService : ICompanyService
             searchColumns: searchColumns);
 
         var companyList = entities.ToList();
-        var dtos = new List<CompanyDto>();
-        
-        // Map each company and conditionally set LicenseKey based on user role
-        foreach (var company in companyList)
-        {
-            var dto = _mapper.Map<CompanyDto>(company);
-            SetLicenseKeyIfSuperAdmin(dto, company);
-            dtos.Add(dto);
-        }
+        var dtos = companyList.Select(company => _mapper.Map<CompanyDto>(company)).ToList();
         
         return (dtos, meta);
     }
@@ -96,7 +87,6 @@ public class CompanyService : ICompanyService
         var company = await _repository.GetByIdAsync(decryptedId, null);
         if (company == null) return null;
         var dto = _mapper.Map<CompanyDto>(company);
-        SetLicenseKeyIfSuperAdmin(dto, company);
         return dto;
     }
 
@@ -126,7 +116,6 @@ public class CompanyService : ICompanyService
         await _unitOfWork.SaveChangesAsync();
 
         var result = _mapper.Map<CompanyDto>(company);
-        SetLicenseKeyIfSuperAdmin(result, company);
         return result;
     }
 
@@ -144,17 +133,6 @@ public class CompanyService : ICompanyService
         await _repository.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;
-    }
-
-    /// <summary>
-    /// Sets LicenseKey in the DTO only if the current user is SuperAdmin.
-    /// </summary>
-    private void SetLicenseKeyIfSuperAdmin(CompanyDto dto, Company company)
-    {
-        if (_currentUserService.AdminTypeName == "SuperAdmin")
-        {
-            dto.LicenseKey = company.LicenseKey;
-        }
     }
 }
 

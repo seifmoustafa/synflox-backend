@@ -165,6 +165,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
+        services.AddScoped<ILicenseService, LicenseService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

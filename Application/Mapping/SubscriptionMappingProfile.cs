@@ -75,7 +75,10 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.PlanId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.PlanId))
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
             .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<EncryptNullableGuidConverter, Guid?>(s => s.NextPlanId))
-            .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null));
+            .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
+            .ForMember(d => d.OfflineLicenseKey, opt => opt.Ignore()) // Set manually based on user role
+            .ForMember(d => d.LicenseKeyGeneratedAt, opt => opt.MapFrom(s => s.LicenseKeyGeneratedAt))
+            .ForMember(d => d.LicenseKeyVersion, opt => opt.MapFrom(s => s.LicenseKeyVersion));
 
         CreateMap<Subscription, SubscriptionStatusDto>()
             .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))

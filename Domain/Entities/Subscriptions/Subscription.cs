@@ -93,6 +93,24 @@ public class Subscription : AuditEntity<Guid>
     /// </summary>
     public decimal Amount { get; set; }
 
+    /// <summary>
+    /// Encrypted offline license key for this specific subscription
+    /// Contains: CompanyId, PlanId, ExpiryDate, Features, Modules, Signature
+    /// Used by client applications for offline validation
+    /// </summary>
+    [StringLength(2000)]
+    public string? OfflineLicenseKey { get; set; }
+
+    /// <summary>
+    /// When the offline license key was generated (UTC)
+    /// </summary>
+    public DateTime? LicenseKeyGeneratedAt { get; set; }
+
+    /// <summary>
+    /// Version of the license key format for future compatibility
+    /// </summary>
+    public int LicenseKeyVersion { get; set; } = 1;
+
     // Navigation properties
     public Company Company { get; set; } = null!;
     public SubscriptionPlan Plan { get; set; } = null!;

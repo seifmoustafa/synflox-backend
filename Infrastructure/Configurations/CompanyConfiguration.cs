@@ -13,12 +13,7 @@ namespace Infrastructure.Configurations
                 .IsUnique()
                 .HasDatabaseName("IX_Companies_Name");
 
-            // Index for license key lookups
-            builder.HasIndex(c => c.LicenseKey)
-                .HasDatabaseName("IX_Companies_LicenseKey")
-                .HasFilter("[LicenseKey] IS NOT NULL");
-
-            // Index for active companies (ExpiryDate removed - now in Subscription entity)
+            // Index for active companies (ExpiryDate and LicenseKey removed - now in Subscription entity)
             builder.HasIndex(c => new { c.IsActive, c.IsDeleted })
                 .HasDatabaseName("IX_Companies_Active_Deleted");
 
@@ -35,9 +30,6 @@ namespace Infrastructure.Configurations
 
             builder.Property(c => c.Address)
                 .HasMaxLength(500);
-
-            builder.Property(c => c.LicenseKey)
-                .HasMaxLength(1000);
         }
     }
 }

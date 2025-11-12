@@ -210,4 +210,33 @@
   <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
     <value>رمز التحديث غير صالح أو منتهي الصلاحية</value>
   </data>
+  
+  <!-- إدارة مفاتيح الترخيص -->
+  <data name="License.KeyGeneratedSuccessfully" xml:space="preserve">
+    <value>تم إنشاء مفتاح الترخيص بنجاح</value>
+  </data>
+  <data name="License.KeyRevokedSuccessfully" xml:space="preserve">
+    <value>تم إلغاء مفتاح الترخيص بنجاح</value>
+  </data>
+  <data name="License.InvalidKey" xml:space="preserve">
+    <value>مفتاح ترخيص غير صالح</value>
+  </data>
+  <data name="License.Expired" xml:space="preserve">
+    <value>انتهت صلاحية مفتاح الترخيص</value>
+  </data>
+  <data name="License.SubscriptionInactive" xml:space="preserve">
+    <value>الاشتراك غير نشط</value>
+  </data>
+  <data name="License.Valid" xml:space="preserve">
+    <value>مفتاح الترخيص صالح</value>
+  </data>
+  <data name="License.ValidationError" xml:space="preserve">
+    <value>خطأ في التحقق من مفتاح الترخيص</value>
+  </data>
+  <data name="License.CannotGenerateForInactiveSubscription" xml:space="preserve">
+    <value>لا يمكن إنشاء مفتاح ترخيص لاشتراك غير نشط</value>
+  </data>
+  <data name="Subscription.NotFound" xml:space="preserve">
+    <value>الاشتراك غير موجود</value>
+  </data>
 </root>

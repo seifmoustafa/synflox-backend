@@ -22,12 +22,8 @@ namespace Domain.Entities.Licensing
         [StringLength(500)]
         public string? Address { get; set; }
 
-        /// <summary>
-        /// Encrypted license key for offline systems.
-        /// Stored encrypted in the database.
-        /// </summary>
-        [StringLength(1000)]
-        public string? LicenseKey { get; set; }
+        // License keys are now managed per subscription, not per company
+        // See Subscription.OfflineLicenseKey for offline license key management
     }
 }
 

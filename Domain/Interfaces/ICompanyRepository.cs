@@ -13,11 +13,6 @@ namespace Domain.Interfaces
         /// Gets a company by its name.
         /// </summary>
         Task<Company?> GetByNameAsync(string name);
-
-        /// <summary>
-        /// Gets a company by its license key.
-        /// </summary>
-        Task<Company?> GetByLicenseKeyAsync(string licenseKey);
     }
 }
 

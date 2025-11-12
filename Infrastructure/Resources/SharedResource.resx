@@ -210,4 +210,33 @@
   <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
     <value>Invalid or expired refresh token</value>
   </data>
+  
+  <!-- License Key Management -->
+  <data name="License.KeyGeneratedSuccessfully" xml:space="preserve">
+    <value>License key generated successfully</value>
+  </data>
+  <data name="License.KeyRevokedSuccessfully" xml:space="preserve">
+    <value>License key revoked successfully</value>
+  </data>
+  <data name="License.InvalidKey" xml:space="preserve">
+    <value>Invalid license key</value>
+  </data>
+  <data name="License.Expired" xml:space="preserve">
+    <value>License key has expired</value>
+  </data>
+  <data name="License.SubscriptionInactive" xml:space="preserve">
+    <value>Subscription is inactive</value>
+  </data>
+  <data name="License.Valid" xml:space="preserve">
+    <value>License key is valid</value>
+  </data>
+  <data name="License.ValidationError" xml:space="preserve">
+    <value>License key validation error</value>
+  </data>
+  <data name="License.CannotGenerateForInactiveSubscription" xml:space="preserve">
+    <value>Cannot generate license key for inactive subscription</value>
+  </data>
+  <data name="Subscription.NotFound" xml:space="preserve">
+    <value>Subscription not found</value>
+  </data>
 </root>
