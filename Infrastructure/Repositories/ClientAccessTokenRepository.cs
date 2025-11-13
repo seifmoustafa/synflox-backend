@@ -154,8 +154,8 @@ public class ClientAccessTokenRepository : BaseRepository<Guid, ClientAccessToke
         return new Dictionary<string, int>
         {
             ["TotalRequests"] = usageLogs.Count,
-            ["SuccessfulRequests"] = usageLogs.Count(log => log.IsSuccessful),
-            ["FailedRequests"] = usageLogs.Count(log => !log.IsSuccessful),
+            ["SuccessfulRequests"] = usageLogs.Count(log => log.ResponseStatusCode >= 200 && log.ResponseStatusCode < 300),
+            ["FailedRequests"] = usageLogs.Count(log => log.ResponseStatusCode < 200 || log.ResponseStatusCode >= 300),
             ["UniqueEndpoints"] = usageLogs.Select(log => log.Endpoint).Distinct().Count(),
             ["UniqueIPs"] = usageLogs.Where(log => !string.IsNullOrEmpty(log.ClientIpAddress))
                                    .Select(log => log.ClientIpAddress).Distinct().Count()

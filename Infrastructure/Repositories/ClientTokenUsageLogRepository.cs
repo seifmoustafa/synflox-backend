@@ -67,7 +67,7 @@ public class ClientTokenUsageLogRepository : BaseRepository<Guid, ClientTokenUsa
             .Where(log => log.ClientTokenId == tokenId && 
                          log.RequestTimestampUtc >= fromDate && 
                          log.RequestTimestampUtc <= toDate &&
-                         !log.IsSuccessful)
+                         (log.ResponseStatusCode < 200 || log.ResponseStatusCode >= 300))
             .OrderByDescending(log => log.RequestTimestampUtc)
             .ToListAsync();
     }
@@ -92,7 +92,7 @@ public class ClientTokenUsageLogRepository : BaseRepository<Guid, ClientTokenUsa
             .Where(log => log.ClientTokenId == tokenId && 
                          log.RequestTimestampUtc >= fromDate && 
                          log.RequestTimestampUtc <= toDate &&
-                         log.IsSuccessful)
+                         log.ResponseStatusCode >= 200 && log.ResponseStatusCode < 300)
             .Select(log => log.ResponseTimeMs)
             .ToListAsync();
 

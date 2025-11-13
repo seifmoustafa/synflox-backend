@@ -6,6 +6,11 @@ namespace Domain.Enums;
 public enum ClientTokenStatus
 {
     /// <summary>
+    /// Default/uninitialized status
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// Token is active and can be used
     /// </summary>
     Active = 1,
