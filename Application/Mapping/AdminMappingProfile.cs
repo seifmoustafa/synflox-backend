@@ -12,25 +12,25 @@ public class AdminMappingProfile : Profile
     {
         CreateMap<Admin, AdminDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.AdminTypeId,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.AdminTypeId))
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.AdminTypeId))
             .ForMember(d => d.AdminTypeName,
                 opt => opt.MapFrom(s => s.AdminType.AdminTypeName));
 
         CreateMap<CreateAdminDto, Admin>()
             .ForMember(d => d.Password, opt => opt.Ignore())
             .ForMember(d => d.AdminTypeId, 
-                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.AdminTypeId));
+                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.AdminTypeId));
 
         CreateMap<UpdateAdminRequest, Admin>()
             .ForMember(d => d.AdminTypeId, 
-                opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.AdminTypeId))
+                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.AdminTypeId))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         CreateMap<AdminType, AdminTypeDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
 
         CreateMap<CreateAdminTypeDto, AdminType>();
         
@@ -39,24 +39,24 @@ public class AdminMappingProfile : Profile
 
         // AdminType request DTOs - decrypt AdminTypeId (using universal converter)
         CreateMap<GetAdminTypeByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<GetAdminTypeByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         CreateMap<UpdateAdminTypeByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<UpdateAdminTypeByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         // Admin request DTOs - decrypt AdminId (using universal converter)
         CreateMap<GetAdminByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<GetAdminByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         CreateMap<UpdateAdminByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<UpdateAdminByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         CreateMap<ChangePasswordByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<ChangePasswordByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         // Admin bulk operations - decrypt AdminIds collection (using universal converter)
         CreateMap<AdminIdsRequest, IEnumerable<Guid>>()
-            .ConvertUsing<RequestToGuidCollectionConverter<AdminIdsRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
     }
 }
 

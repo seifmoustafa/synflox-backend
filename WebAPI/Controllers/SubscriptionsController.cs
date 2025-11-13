@@ -1,7 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using Application.DTOs.ClientAccess;
 using Application.DTOs.Subscriptions;
 using Application.Services;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +15,13 @@ namespace WebAPI.Controllers;
 public class SubscriptionsController : ControllerBase
 {
     private readonly ISubscriptionService _subscriptionService;
+    private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
 
-    public SubscriptionsController(ISubscriptionService subscriptionService, ILocalizationService localizer)
+    public SubscriptionsController(ISubscriptionService subscriptionService, IMapper mapper, ILocalizationService localizer)
     {
         _subscriptionService = subscriptionService;
+        _mapper = mapper;
         _localizer = localizer;
     }
 
@@ -40,7 +44,11 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var subscription = await _subscriptionService.GetSubscriptionByIdAsync(id);
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+        
+        var subscription = await _subscriptionService.GetSubscriptionByIdAsync(decryptedSubscriptionId);
         if (subscription == null)
             return NotFound(new { message = _localizer["Subscription.NotFound"] });
 
@@ -53,7 +61,11 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("company/{companyId}/active")]
     public async Task<IActionResult> GetActiveByCompany(Guid companyId)
     {
-        var subscription = await _subscriptionService.GetActiveSubscriptionAsync(companyId);
+        // Decrypt company ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var companyIdRequest = new CompanyIdRequest { CompanyId = companyId };
+        var decryptedCompanyId = _mapper.Map<Guid>(companyIdRequest);
+        
+        var subscription = await _subscriptionService.GetActiveSubscriptionAsync(decryptedCompanyId);
         if (subscription == null)
             return NotFound(new { message = _localizer["Subscription.NoActiveSubscription"] });
 
@@ -66,7 +78,11 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("company/{companyId}/all")]
     public async Task<IActionResult> GetByCompany(Guid companyId)
     {
-        var subscriptions = await _subscriptionService.GetCompanySubscriptionsAsync(companyId);
+        // Decrypt company ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var companyIdRequest = new CompanyIdRequest { CompanyId = companyId };
+        var decryptedCompanyId = _mapper.Map<Guid>(companyIdRequest);
+        
+        var subscriptions = await _subscriptionService.GetCompanySubscriptionsAsync(decryptedCompanyId);
         return Ok(new { data = subscriptions });
     }
 
@@ -77,7 +93,11 @@ public class SubscriptionsController : ControllerBase
     [AllowAnonymous] // Allow companies to check their own status
     public async Task<IActionResult> GetStatus(Guid id)
     {
-        var status = await _subscriptionService.GetSubscriptionStatusAsync(id);
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+        
+        var status = await _subscriptionService.GetSubscriptionStatusAsync(decryptedSubscriptionId);
         if (status == null)
             return NotFound(new { message = _localizer["Subscription.NotFound"] });
 

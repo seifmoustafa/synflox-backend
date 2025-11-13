@@ -10,6 +10,7 @@ using Domain.Entities.Subscriptions;
 using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
@@ -27,6 +28,8 @@ public class SubscriptionService : ISubscriptionService
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IClientTokenService _clientTokenService;
+    private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
         ISubscriptionRepository subscriptionRepo,
@@ -36,7 +39,9 @@ public class SubscriptionService : ISubscriptionService
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IClientTokenService clientTokenService,
+        ILogger<SubscriptionService> logger)
     {
         _subscriptionRepo = subscriptionRepo;
         _planRepo = planRepo;
@@ -46,17 +51,22 @@ public class SubscriptionService : ISubscriptionService
         _localizer = localizer;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _clientTokenService = clientTokenService;
+        _logger = logger;
     }
 
     public async Task<SubscriptionDto> CreateSubscriptionAsync(CreateSubscriptionDto dto)
     {
-        // Validate company exists
-        var company = await _companyRepo.GetByIdAsync(dto.CompanyId, null);
+        // Use AutoMapper to convert DTO to entity (handles ID decryption automatically)
+        var subscription = _mapper.Map<Subscription>(dto);
+        
+        // Validate company exists (using decrypted ID from mapping)
+        var company = await _companyRepo.GetByIdAsync(subscription.CompanyId, null);
         if (company == null)
             throw new NotFoundException(_localizer["Company.NotFound"]);
 
-        // Validate plan exists and get details
-        var plan = await _planRepo.GetWithDetailsAsync(dto.PlanId);
+        // Validate plan exists and get details (using decrypted ID from mapping)
+        var plan = await _planRepo.GetWithDetailsAsync(subscription.PlanId);
         if (plan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
 
@@ -65,26 +75,21 @@ public class SubscriptionService : ISubscriptionService
             throw new PlanTrialNotAllowedException(_localizer["Plan.TrialNotAllowed"]);
 
         // Get price for selected currency
-        var price = await _planRepo.GetPriceAsync(dto.PlanId, dto.Currency);
+        var price = await _planRepo.GetPriceAsync(subscription.PlanId, dto.Currency);
         if (!price.HasValue)
             throw new BadRequestException(_localizer["Plan.PriceNotAvailableForCurrency"]);
 
-        // Calculate subscription dates
+        // Set additional properties not handled by AutoMapper
         var now = DateTime.UtcNow;
-        var subscription = new Subscription
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = dto.CompanyId,
-            PlanId = dto.PlanId,
-            StartDateUtc = now,
-            IsTrial = dto.StartWithTrial,
-            IsActive = true,
-            IsExpired = false,
-            AutoRenew = dto.AutoRenew ?? plan.AutoRenew,
-            Currency = dto.Currency,
-            Amount = price.Value,
-            StatusReason = dto.StartWithTrial ? "Trial started" : "Subscription activated"
-        };
+        subscription.Id = Guid.NewGuid();
+        subscription.StartDateUtc = now;
+        subscription.IsTrial = dto.StartWithTrial;
+        subscription.IsActive = true;
+        subscription.IsExpired = false;
+        subscription.AutoRenew = dto.AutoRenew ?? plan.AutoRenew;
+        subscription.Currency = dto.Currency;
+        subscription.Amount = price.Value;
+        subscription.StatusReason = dto.StartWithTrial ? "Trial started" : "Subscription activated";
 
         // Calculate expiry based on trial or paid
         if (dto.StartWithTrial)
@@ -96,14 +101,13 @@ public class SubscriptionService : ISubscriptionService
             subscription.ExpiryDateUtc = now.AddMonths(plan.DurationMonths);
         }
 
-        // Handle scheduled next plan (deferred upgrade)
-        if (dto.NextPlanId.HasValue)
+        // Handle scheduled next plan (deferred upgrade) - NextPlanId already decrypted by AutoMapper
+        if (subscription.NextPlanId.HasValue)
         {
-            var nextPlan = await _planRepo.GetByIdAsync(dto.NextPlanId.Value, null);
+            var nextPlan = await _planRepo.GetByIdAsync(subscription.NextPlanId.Value, null);
             if (nextPlan == null)
                 throw new NotFoundException(_localizer["Plan.NotFound"]);
 
-            subscription.NextPlanId = dto.NextPlanId;
             subscription.NextPlanStartDateUtc = dto.NextPlanStartDateUtc ?? subscription.ExpiryDateUtc.AddSeconds(1);
 
             if (subscription.NextPlanStartDateUtc < subscription.ExpiryDateUtc)
@@ -143,6 +147,19 @@ public class SubscriptionService : ISubscriptionService
         var result = await _subscriptionRepo.GetWithDetailsAsync(subscription.Id);
         var subscriptionDto = _mapper.Map<SubscriptionDto>(result!);
         SetLicenseKeyIfSuperAdmin(subscriptionDto, result!);
+        
+        // Auto-generate client access token for new subscription
+        try
+        {
+            await _clientTokenService.AutoGenerateTokenForSubscriptionAsync(subscription.Id);
+            _logger.LogInformation("Auto-generated client access token for subscription {SubscriptionId}", subscription.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to auto-generate client token for subscription {SubscriptionId}", subscription.Id);
+            // Don't fail the subscription creation if token generation fails
+        }
+        
         return subscriptionDto;
     }
 

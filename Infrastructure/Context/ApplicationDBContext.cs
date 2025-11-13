@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Entities.Authentication;
+using Domain.Entities.ClientAccess;
 using Domain.Entities.Common;
 using Domain.Entities.Licensing;
 using Domain.Entities.Navigation;
@@ -46,6 +47,11 @@ namespace Infrastructure.Context
 
         #region Navigation
         public DbSet<Domain.Entities.Navigation.MenuItems> MenuItems { get; set; }
+        #endregion
+
+        #region Client Access
+        public DbSet<ClientAccessToken> ClientAccessTokens { get; set; }
+        public DbSet<ClientTokenUsageLog> ClientTokenUsageLogs { get; set; }
         #endregion
 
         #region References

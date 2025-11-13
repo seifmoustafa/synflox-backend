@@ -10,7 +10,7 @@ public class CompanyMappingProfile : Profile
     {
         CreateMap<Company, CompanyDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
 
         CreateMap<CreateCompanyDto, Company>()
             .ForMember(d => d.Id, opt => opt.Ignore())
@@ -24,12 +24,12 @@ public class CompanyMappingProfile : Profile
 
         // Company request DTOs - decrypt CompanyId (using universal converter)
         CreateMap<GetCompanyByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<GetCompanyByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
             
         CreateMap<DeleteCompanyRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<DeleteCompanyRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
             
         CreateMap<UpdateCompanyByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<UpdateCompanyByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
     }
 }

@@ -10,7 +10,7 @@ public class SubscriptionMappingProfile : Profile
     {
         // ========== Project Mappings ==========
         CreateMap<Project, ProjectDto>()
-            .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
                 s.ProjectModules.Select(pm => pm.Module)));
 
@@ -21,17 +21,17 @@ public class SubscriptionMappingProfile : Profile
         CreateMap<UpdateProjectDto, Project>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         
-        // Decrypt ModuleIds collection using request wrapper - returns IEnumerable, will be converted to List
+        // Decrypt ModuleIds collection using universal converter - returns IEnumerable, will be converted to List
         CreateMap<ModuleIdsRequest, IEnumerable<Guid>>()
-            .ConvertUsing<RequestToGuidCollectionConverter<ModuleIdsRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
         
-        // Decrypt ProjectIds collection using request wrapper - returns IEnumerable, will be converted to List
+        // Decrypt ProjectIds collection using universal converter - returns IEnumerable, will be converted to List
         CreateMap<ProjectIdsRequest, IEnumerable<Guid>>()
-            .ConvertUsing<RequestToGuidCollectionConverter<ProjectIdsRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         // ========== Module Mappings ==========
         CreateMap<Module, ModuleDto>()
-            .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
 
         CreateMap<CreateModuleDto, Module>()
             .ForMember(d => d.Id, opt => opt.Ignore())
@@ -47,11 +47,11 @@ public class SubscriptionMappingProfile : Profile
 
         // ========== Subscription Plan Mappings ==========
         CreateMap<SubscriptionPlan, SubscriptionPlanDto>()
-            .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices));
 
         CreateMap<SubscriptionPlan, PlanDetailsDto>()
-            .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
             .ForMember(d => d.Projects, opt => opt.MapFrom(s => 
                 s.PlanProjects.Select(pp => pp.Project)))
@@ -70,32 +70,32 @@ public class SubscriptionMappingProfile : Profile
 
         // ========== Subscription Mappings ==========
         CreateMap<Subscription, SubscriptionDto>()
-            .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
-            .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.CompanyId))
-            .ForMember(d => d.PlanId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.PlanId))
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
+            .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.CompanyId))
+            .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.PlanId))
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
-            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<EncryptNullableGuidConverter, Guid?>(s => s.NextPlanId))
+            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextPlanId))
             .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
             .ForMember(d => d.OfflineLicenseKey, opt => opt.Ignore()) // Set manually based on user role
             .ForMember(d => d.LicenseKeyGeneratedAt, opt => opt.MapFrom(s => s.LicenseKeyGeneratedAt))
             .ForMember(d => d.LicenseKeyVersion, opt => opt.MapFrom(s => s.LicenseKeyVersion));
 
         CreateMap<Subscription, SubscriptionStatusDto>()
-            .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
-            .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.CompanyId))
-            .ForMember(d => d.PlanId, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.PlanId))
+            .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
+            .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.CompanyId))
+            .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.PlanId))
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
             .ForMember(d => d.GracePeriodDays, opt => opt.MapFrom(s => s.Plan.GracePeriodDays))
             .ForMember(d => d.GraceEndDateUtc, opt => opt.MapFrom(s => s.ExpiryDateUtc.AddDays(s.Plan.GracePeriodDays)))
-            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<EncryptNullableGuidConverter, Guid?>(s => s.NextPlanId))
+            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextPlanId))
             .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
             .ForMember(d => d.StatusMessage, opt => opt.Ignore()); // Set by service with localization
 
         CreateMap<CreateSubscriptionDto, Subscription>()
             .ForMember(d => d.Id, opt => opt.Ignore())
-            .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.CompanyId))
-            .ForMember(d => d.PlanId, opt => opt.ConvertUsing<DecryptGuidConverter, Guid>(s => s.PlanId))
-            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<DecryptNullableGuidConverter, Guid?>(s => s.NextPlanId))
+            .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.CompanyId))
+            .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.PlanId))
+            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.NextPlanId))
             .ForMember(d => d.Company, opt => opt.Ignore())
             .ForMember(d => d.Plan, opt => opt.Ignore())
             .ForMember(d => d.NextPlan, opt => opt.Ignore())

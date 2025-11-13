@@ -148,6 +148,7 @@ app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/authentication"), b
 
 app.UseAuthentication();
 app.UseMiddleware<CustomClaimsPrincipalMiddleware>();
+app.UseMiddleware<ClientAuthenticationMiddleware>();
 
 app.UseResponseCaching();
 app.UseMiddleware<ETagMiddleware>();

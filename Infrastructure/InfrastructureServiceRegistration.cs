@@ -59,6 +59,10 @@ public static class InfrastructureServiceRegistration
             .Bind(configuration.GetSection("LicenseKeySettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services.AddOptions<ClientTokenSettings>()
+            .Bind(configuration.GetSection("ClientTokenSettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Bind named schemes for file uploads/downloads (using lowercase for consistency)
         services.Configure<FileSettings>("image", configuration.GetSection("ImageSettings"));
@@ -105,6 +109,28 @@ public static class InfrastructureServiceRegistration
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(jwtoptions.SecretKey))
             };
+        })
+        .AddJwtBearer("ClientToken", options =>
+        {
+            var clientTokenSettings = configuration.GetSection("ClientTokenSettings").Get<ClientTokenSettings>();
+            if (clientTokenSettings != null)
+            {
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = clientTokenSettings.ValidateIssuer,
+                    ValidIssuer = clientTokenSettings.Issuer,
+                    ValidateAudience = clientTokenSettings.ValidateAudience,
+                    ValidAudience = clientTokenSettings.Audience,
+                    ValidateIssuerSigningKey = clientTokenSettings.ValidateIssuerSigningKey,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(clientTokenSettings.SigningKey)),
+                    ValidateLifetime = clientTokenSettings.ValidateLifetime,
+                    ClockSkew = TimeSpan.FromMinutes(5),
+                    RequireExpirationTime = true,
+                    RequireSignedTokens = true
+                };
+            }
         });
         #endregion
 
@@ -115,6 +141,7 @@ public static class InfrastructureServiceRegistration
         services.AddAutoMapper(typeof(MenuItemsMappingProfile).Assembly);
         services.AddAutoMapper(typeof(SubscriptionMappingProfile).Assembly);
         services.AddAutoMapper(typeof(CompanyMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(ClientTokenMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -180,6 +207,11 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddScoped<IEmailService, EmailService>();
         
+        // Client Token Services (Phase 2)
+        services.AddScoped<IClientTokenService, ClientTokenService>();
+        services.AddScoped<IClientApiService, ClientApiService>();
+        services.AddSingleton<ClientJwtService>(); // Singleton because JWT validation is stateless
+        
         // Download service with shared dictionary
         var downloadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<string, DownloadSession>();
         services.AddSingleton(downloadsDictionary);
@@ -228,6 +260,10 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<IOutboxEventRepository, OutboxEventRepository>();
+        
+        // Client Token Repositories (Phase 2)
+        services.AddScoped<IClientAccessTokenRepository, ClientAccessTokenRepository>();
+        services.AddScoped<IClientTokenUsageLogRepository, ClientTokenUsageLogRepository>();
         
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion

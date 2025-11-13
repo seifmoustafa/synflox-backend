@@ -13,7 +13,7 @@ public class MenuItemsMappingProfile : Profile
     {
         CreateMap<MenuItems, MenuItemsDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id))
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children.OrderBy(c => c.Order)))
             .ForMember(d => d.ParentMenuItems, opt => opt.MapFrom(s => s.ParentMenuItems))
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom(s => 
@@ -23,12 +23,12 @@ public class MenuItemsMappingProfile : Profile
 
         CreateMap<MenuItems, MenuItemsReferenceDto>()
             .ForMember(d => d.Id,
-                opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
 
         CreateMap<CreateMenuItemsDto, MenuItems>()
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.ParentMenuItemsId, 
-                opt => opt.ConvertUsing<DecryptNullableGuidConverter, Guid?>(s => s.ParentMenuItemsId))
+                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.ParentMenuItemsId))
             .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.IsActive, opt => opt.MapFrom(s => true))
@@ -43,7 +43,7 @@ public class MenuItemsMappingProfile : Profile
 
         CreateMap<UpdateMenuItemsDto, MenuItems>()
             .ForMember(d => d.ParentMenuItemsId, 
-                opt => opt.ConvertUsing<DecryptNullableGuidConverter, Guid?>(s => s.ParentMenuItemsId))
+                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.ParentMenuItemsId))
             .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom((src, dest) => 
@@ -54,13 +54,13 @@ public class MenuItemsMappingProfile : Profile
 
         // MenuItem request DTOs - decrypt MenuItemId (using universal converter)
         CreateMap<GetMenuItemByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<GetMenuItemByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         CreateMap<UpdateMenuItemByIdRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<UpdateMenuItemByIdRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         CreateMap<DeleteMenuItemRequest, Guid>()
-            .ConvertUsing<RequestToGuidConverter<DeleteMenuItemRequest>>();
+            .ConvertUsing<UniversalDecryptionConverter>();
     }
 }
 
