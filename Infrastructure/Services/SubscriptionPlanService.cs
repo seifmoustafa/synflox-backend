@@ -119,15 +119,21 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         return _mapper.Map<SubscriptionPlanDto>(result!);
     }
 
-    public async Task<SubscriptionPlanDto?> GetByIdAsync(Guid id)
+    public async Task<SubscriptionPlanDto?> GetByIdAsync(PlanIdRequest request)
     {
-        var plan = await _planRepo.GetWithDetailsAsync(id);
+        // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
+        var decryptedPlanId = _mapper.Map<Guid>(request);
+        
+        var plan = await _planRepo.GetWithDetailsAsync(decryptedPlanId);
         return plan == null ? null : _mapper.Map<SubscriptionPlanDto>(plan);
     }
 
-    public async Task<PlanDetailsDto?> GetDetailsAsync(Guid id)
+    public async Task<PlanDetailsDto?> GetDetailsAsync(PlanIdRequest request)
     {
-        var plan = await _planRepo.GetWithDetailsAsync(id);
+        // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
+        var decryptedPlanId = _mapper.Map<Guid>(request);
+        
+        var plan = await _planRepo.GetWithDetailsAsync(decryptedPlanId);
         return plan == null ? null : _mapper.Map<PlanDetailsDto>(plan);
     }
 
@@ -145,9 +151,12 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         return (dtos, meta);
     }
 
-    public async Task<SubscriptionPlanDto?> UpdateAsync(Guid id, UpdateSubscriptionPlanDto dto)
+    public async Task<SubscriptionPlanDto?> UpdateAsync(PlanIdRequest request, UpdateSubscriptionPlanDto dto)
     {
-        var plan = await _planRepo.GetByIdAsync(id, new[] { "PlanPrices", "PlanProjects", "PlanModules" });
+        // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
+        var decryptedPlanId = _mapper.Map<Guid>(request);
+        
+        var plan = await _planRepo.GetByIdAsync(decryptedPlanId, new[] { "PlanPrices", "PlanProjects", "PlanModules" });
         if (plan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
 
@@ -157,7 +166,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         if (dto.Name != null && dto.Name != plan.Name)
         {
             var existing = await _planRepo.GetByNameAsync(dto.Name);
-            if (existing != null && existing.Id != id)
+            if (existing != null && existing.Id != decryptedPlanId)
                 throw new BadRequestException(_localizer["Plan.NameExists"]);
         }
 
@@ -221,22 +230,25 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         await _planRepo.UpdateAsync(plan);
         await _unitOfWork.SaveChangesAsync();
 
-        var result = await _planRepo.GetWithDetailsAsync(id);
+        var result = await _planRepo.GetWithDetailsAsync(decryptedPlanId);
         return _mapper.Map<SubscriptionPlanDto>(result);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(PlanIdRequest request)
     {
-        var plan = await _planRepo.GetByIdAsync(id, null);
+        // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
+        var decryptedPlanId = _mapper.Map<Guid>(request);
+        
+        var plan = await _planRepo.GetByIdAsync(decryptedPlanId, null);
         if (plan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
 
         // Check if plan has active subscriptions
-        var hasActiveSubscriptions = await _subscriptionRepo.HasActiveSubscriptionsForPlanAsync(id);
+        var hasActiveSubscriptions = await _subscriptionRepo.HasActiveSubscriptionsForPlanAsync(decryptedPlanId);
         if (hasActiveSubscriptions)
             throw new InvalidOperationException(_localizer["Plan.HasActiveSubscriptions"]);
 
-        await _planRepo.DeleteAsync(id);
+        await _planRepo.DeleteAsync(decryptedPlanId);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

@@ -31,5 +31,8 @@ public class CompanyMappingProfile : Profile
             
         CreateMap<UpdateCompanyByIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<CompanyActionRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
     }
 }

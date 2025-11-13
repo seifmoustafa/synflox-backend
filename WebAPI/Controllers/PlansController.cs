@@ -33,7 +33,9 @@ public class PlansController : ControllerBase
     [AllowAnonymous] // Allow public access to view plan details
     public async Task<IActionResult> GetById(Guid id)
     {
-        var plan = await _planService.GetByIdAsync(id);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new PlanIdRequest { PlanId = id };
+        var plan = await _planService.GetByIdAsync(request);
         if (plan == null)
             return NotFound(new { message = _localizer["Plan.NotFound"] });
 
@@ -44,7 +46,9 @@ public class PlansController : ControllerBase
     [AllowAnonymous] // Allow public access to view plan details with projects/modules
     public async Task<IActionResult> GetDetails(Guid id)
     {
-        var plan = await _planService.GetDetailsAsync(id);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new PlanIdRequest { PlanId = id };
+        var plan = await _planService.GetDetailsAsync(request);
         if (plan == null)
             return NotFound(new { message = _localizer["Plan.NotFound"] });
 
@@ -67,7 +71,9 @@ public class PlansController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var plan = await _planService.UpdateAsync(id, dto);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new PlanIdRequest { PlanId = id };
+        var plan = await _planService.UpdateAsync(request, dto);
         if (plan == null)
             return NotFound(new { message = _localizer["Plan.NotFound"] });
 
@@ -77,7 +83,9 @@ public class PlansController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _planService.DeleteAsync(id);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new PlanIdRequest { PlanId = id };
+        await _planService.DeleteAsync(request);
         return NoContent();
     }
 }

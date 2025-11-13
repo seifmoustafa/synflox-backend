@@ -28,6 +28,10 @@ public class SubscriptionMappingProfile : Profile
         // Decrypt ProjectIds collection using universal converter - returns IEnumerable, will be converted to List
         CreateMap<ProjectIdsRequest, IEnumerable<Guid>>()
             .ConvertUsing<UniversalDecryptionConverter>();
+        
+        // Decrypt single PlanId for operations requiring encrypted Plan ID
+        CreateMap<PlanIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         // ========== Module Mappings ==========
         CreateMap<Module, ModuleDto>()

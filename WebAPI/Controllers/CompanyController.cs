@@ -102,5 +102,109 @@ public class CompanyController : ControllerBase
             return BadRequest(new ApiResponse<string>(400, ex.Message));
         }
     }
+
+    [HttpPost("{id}/activate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> ActivateCompany(Guid id, [FromBody] CompanyActionRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        // Set the ID from route parameter
+        request.CompanyId = id;
+
+        try
+        {
+            var result = await _companyService.ActivateCompanyAsync(request);
+            if (!result)
+            {
+                return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
+            }
+            return Ok(new ApiResponse<string>(200, "Company activated successfully"));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("{id}/deactivate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> DeactivateCompany(Guid id, [FromBody] CompanyActionRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        // Set the ID from route parameter
+        request.CompanyId = id;
+
+        try
+        {
+            var result = await _companyService.DeactivateCompanyAsync(request);
+            if (!result)
+            {
+                return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
+            }
+            return Ok(new ApiResponse<string>(200, "Company deactivated successfully"));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk/delete")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkDeleteCompanies([FromBody] BulkCompanyActionRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        try
+        {
+            var result = await _companyService.BulkDeleteCompaniesAsync(request);
+            return Ok(new ApiResponse<BulkOperationResult>(200, result.Summary, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk/activate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkActivateCompanies([FromBody] BulkCompanyActionRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        try
+        {
+            var result = await _companyService.BulkActivateCompaniesAsync(request);
+            return Ok(new ApiResponse<BulkOperationResult>(200, result.Summary, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
+
+    [HttpPost("bulk/deactivate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> BulkDeactivateCompanies([FromBody] BulkCompanyActionRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (request == null) return BadRequest();
+
+        try
+        {
+            var result = await _companyService.BulkDeactivateCompaniesAsync(request);
+            return Ok(new ApiResponse<BulkOperationResult>(200, result.Summary, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<string>(400, ex.Message));
+        }
+    }
 }
 

@@ -136,9 +136,163 @@ public class SubscriptionsController : ControllerBase
     /// Cancel a subscription immediately
     /// </summary>
     [HttpPut("{id}/cancel")]
-    public async Task<IActionResult> Cancel(Guid id)
+    public async Task<IActionResult> Cancel(Guid id, [FromBody] SubscriptionActionDto dto)
     {
-        await _subscriptionService.CancelSubscriptionAsync(id);
-        return NoContent();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.CancelSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription canceled by administrator");
+        return Ok(new { message = _localizer["Subscription.Canceled"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Suspend a subscription temporarily
+    /// </summary>
+    [HttpPut("{id}/suspend")]
+    public async Task<IActionResult> Suspend(Guid id, [FromBody] SubscriptionActionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.SuspendSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription suspended by administrator");
+        return Ok(new { message = _localizer["Subscription.Suspended"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Resume a suspended subscription
+    /// </summary>
+    [HttpPut("{id}/resume")]
+    public async Task<IActionResult> Resume(Guid id, [FromBody] SubscriptionActionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.ResumeSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription resumed by administrator");
+        return Ok(new { message = _localizer["Subscription.Resumed"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Pause a subscription temporarily (different from suspend - preserves trial time)
+    /// </summary>
+    [HttpPut("{id}/pause")]
+    public async Task<IActionResult> Pause(Guid id, [FromBody] SubscriptionActionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.PauseSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription paused by administrator");
+        return Ok(new { message = _localizer["Subscription.Paused"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Unpause a paused subscription
+    /// </summary>
+    [HttpPut("{id}/unpause")]
+    public async Task<IActionResult> Unpause(Guid id, [FromBody] SubscriptionActionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.UnpauseSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription unpaused by administrator");
+        return Ok(new { message = _localizer["Subscription.Unpaused"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Stop trial and convert to paid subscription immediately
+    /// </summary>
+    [HttpPut("{id}/stop-trial")]
+    public async Task<IActionResult> StopTrial(Guid id, [FromBody] SubscriptionActionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.StopTrialAsync(decryptedSubscriptionId, dto.Reason ?? "Trial stopped and converted to paid subscription");
+        return Ok(new { message = _localizer["Subscription.TrialStopped"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Extend subscription expiry date
+    /// </summary>
+    [HttpPut("{id}/extend")]
+    public async Task<IActionResult> Extend(Guid id, [FromBody] ExtendSubscriptionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        var subscription = await _subscriptionService.ExtendSubscriptionAsync(decryptedSubscriptionId, dto);
+        return Ok(subscription);
+    }
+
+    /// <summary>
+    /// Reactivate an expired subscription
+    /// </summary>
+    [HttpPut("{id}/reactivate")]
+    public async Task<IActionResult> Reactivate(Guid id, [FromBody] SubscriptionActionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        await _subscriptionService.ReactivateSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription reactivated by administrator");
+        return Ok(new { message = _localizer["Subscription.Reactivated"], timestamp = DateTime.UtcNow });
+    }
+
+    /// <summary>
+    /// Get subscription history and audit trail
+    /// </summary>
+    [HttpGet("{id}/history")]
+    public async Task<IActionResult> GetHistory(Guid id)
+    {
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        var history = await _subscriptionService.GetSubscriptionHistoryAsync(decryptedSubscriptionId);
+        return Ok(new { data = history });
+    }
+
+    /// <summary>
+    /// Get subscription analytics and usage statistics
+    /// </summary>
+    [HttpGet("{id}/analytics")]
+    public async Task<IActionResult> GetAnalytics(Guid id, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+    {
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        var analytics = await _subscriptionService.GetSubscriptionAnalyticsAsync(decryptedSubscriptionId, fromDate, toDate);
+        return Ok(analytics);
     }
 }

@@ -9,13 +9,14 @@ namespace Application.Services;
 /// <summary>
 /// Service interface for Subscription Plan management
 /// Single Responsibility: Subscription Plans only
+/// SYNFLOX ID Encryption Rule Compliant
 /// </summary>
 public interface ISubscriptionPlanService
 {
     Task<SubscriptionPlanDto> CreateAsync(CreateSubscriptionPlanDto dto);
-    Task<SubscriptionPlanDto?> GetByIdAsync(Guid id);
-    Task<PlanDetailsDto?> GetDetailsAsync(Guid id);
+    Task<SubscriptionPlanDto?> GetByIdAsync(PlanIdRequest request);
+    Task<PlanDetailsDto?> GetDetailsAsync(PlanIdRequest request);
     Task<(IEnumerable<SubscriptionPlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search);
-    Task<SubscriptionPlanDto?> UpdateAsync(Guid id, UpdateSubscriptionPlanDto dto);
-    Task<bool> DeleteAsync(Guid id);
+    Task<SubscriptionPlanDto?> UpdateAsync(PlanIdRequest request, UpdateSubscriptionPlanDto dto);
+    Task<bool> DeleteAsync(PlanIdRequest request);
 }

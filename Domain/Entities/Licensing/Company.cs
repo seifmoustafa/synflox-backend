@@ -22,6 +22,11 @@ namespace Domain.Entities.Licensing
         [StringLength(500)]
         public string? Address { get; set; }
 
+        /// <summary>
+        /// Indicates whether the company is active or deactivated
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
         // License keys are now managed per subscription, not per company
         // See Subscription.OfflineLicenseKey for offline license key management
     }

@@ -158,6 +158,9 @@ app.UseMiddleware<UnicodeHeaderMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseAuthorization();
+
+// Enable static files for email logo access
+app.UseStaticFiles();
 #endregion
 
 #region Endpoint mapping

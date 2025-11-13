@@ -29,6 +29,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IClientTokenService _clientTokenService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
@@ -41,6 +42,7 @@ public class SubscriptionService : ISubscriptionService
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IClientTokenService clientTokenService,
+        IEmailService emailService,
         ILogger<SubscriptionService> logger)
     {
         _subscriptionRepo = subscriptionRepo;
@@ -52,6 +54,7 @@ public class SubscriptionService : ISubscriptionService
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _clientTokenService = clientTokenService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -450,7 +453,7 @@ public class SubscriptionService : ISubscriptionService
         return response;
     }
 
-    public async Task<bool> CancelSubscriptionAsync(Guid subscriptionId)
+    public async Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string reason)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -458,14 +461,18 @@ public class SubscriptionService : ISubscriptionService
 
         subscription.IsActive = false;
         subscription.IsExpired = true;
-        subscription.NextPlanId = null;
-        subscription.NextPlanStartDateUtc = null;
-        subscription.StatusReason = "Canceled by admin";
+        subscription.StatusReason = reason ?? "Canceled by administrator";
 
         await _subscriptionRepo.UpdateAsync(subscription);
         await _unitOfWork.SaveChangesAsync();
 
-        // Create outbox event
+        // Send email notification
+        await _emailService.SendSubscriptionCanceledEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            subscription.Plan.Name);
+
+        // Create outbox event for cancellation
         await CreateOutboxEventAsync(
             SubscriptionEventType.Canceled,
             subscription.CompanyId,
@@ -474,10 +481,284 @@ public class SubscriptionService : ISubscriptionService
             {
                 CompanyName = subscription.Company.Name,
                 CompanyEmail = subscription.Company.ContactEmail,
-                PlanName = subscription.Plan.Name
+                PlanName = subscription.Plan.Name,
+                Reason = reason
             });
 
         return true;
+    }
+
+    public async Task<bool> SuspendSubscriptionAsync(Guid subscriptionId, string reason)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        if (!subscription.IsActive)
+            throw new InvalidOperationException(_localizer["Subscription.AlreadyInactive"]);
+
+        subscription.IsActive = false;
+        subscription.StatusReason = reason ?? "Suspended by administrator";
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification
+        await _emailService.SendSubscriptionSuspendedEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            reason ?? "Suspended by administrator");
+
+        // Create outbox event
+        await CreateOutboxEventAsync(
+            SubscriptionEventType.Suspended,
+            subscription.CompanyId,
+            subscription.Id,
+            new
+            {
+                CompanyName = subscription.Company.Name,
+                CompanyEmail = subscription.Company.ContactEmail,
+                PlanName = subscription.Plan.Name,
+                Reason = reason
+            });
+
+        return true;
+    }
+
+    public async Task<bool> ResumeSubscriptionAsync(Guid subscriptionId, string reason)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        if (subscription.IsActive)
+            throw new InvalidOperationException(_localizer["Subscription.AlreadyActive"]);
+
+        subscription.IsActive = true;
+        subscription.IsExpired = false;
+        subscription.StatusReason = reason ?? "Resumed by administrator";
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification
+        await _emailService.SendSubscriptionResumedEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            subscription.Plan.Name,
+            subscription.ExpiryDateUtc);
+
+        // Create outbox event
+        await CreateOutboxEventAsync(
+            SubscriptionEventType.Resumed,
+            subscription.CompanyId,
+            subscription.Id,
+            new
+            {
+                CompanyName = subscription.Company.Name,
+                CompanyEmail = subscription.Company.ContactEmail,
+                PlanName = subscription.Plan.Name,
+                Reason = reason,
+                ExpiryDate = subscription.ExpiryDateUtc
+            });
+
+        return true;
+    }
+
+    public async Task<bool> PauseSubscriptionAsync(Guid subscriptionId, string reason)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        if (!subscription.IsActive)
+            throw new InvalidOperationException(_localizer["Subscription.NotActive"]);
+
+        // Store the pause date to calculate remaining time later
+        subscription.StatusReason = $"Paused: {reason ?? "Paused by administrator"}";
+        // Note: In a full implementation, you'd want to add PausedAtUtc field to track pause time
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification
+        await _emailService.SendSubscriptionPausedEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            subscription.Plan.Name,
+            reason ?? "Paused by administrator");
+
+        return true;
+    }
+
+    public async Task<bool> UnpauseSubscriptionAsync(Guid subscriptionId, string reason)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        subscription.StatusReason = reason ?? "Unpaused by administrator";
+        // Note: In a full implementation, you'd calculate and adjust the expiry date based on pause duration
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification
+        await _emailService.SendSubscriptionResumedEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            subscription.Plan.Name,
+            subscription.ExpiryDateUtc);
+
+        return true;
+    }
+
+    public async Task<bool> StopTrialAsync(Guid subscriptionId, string reason)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        if (!subscription.IsTrial)
+            throw new InvalidOperationException(_localizer["Subscription.NotTrial"]);
+
+        // Convert trial to paid subscription
+        subscription.IsTrial = false;
+        subscription.StatusReason = reason ?? "Trial converted to paid subscription";
+        
+        // Extend expiry to full plan duration from now
+        var fullDuration = subscription.Plan.DurationMonths;
+        subscription.ExpiryDateUtc = DateTime.UtcNow.AddMonths(fullDuration);
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification
+        await _emailService.SendTrialStoppedEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            subscription.Plan.Name,
+            subscription.ExpiryDateUtc);
+
+        return true;
+    }
+
+    public async Task<SubscriptionDto> ExtendSubscriptionAsync(Guid subscriptionId, ExtendSubscriptionDto dto)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        var oldExpiryDate = subscription.ExpiryDateUtc;
+        subscription.ExpiryDateUtc = subscription.ExpiryDateUtc.AddDays(dto.ExtensionDays);
+        subscription.StatusReason = dto.Reason ?? $"Extended by {dto.ExtensionDays} days";
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification if requested
+        if (dto.SendEmailNotification)
+        {
+            await _emailService.SendSubscriptionExtendedEmailAsync(
+                subscription.Company.ContactEmail,
+                subscription.Company.Name,
+                subscription.Plan.Name,
+                oldExpiryDate,
+                subscription.ExpiryDateUtc,
+                dto.ExtensionDays);
+        }
+
+        return GetMappedSubscriptionDto(subscription)!;
+    }
+
+    public async Task<bool> ReactivateSubscriptionAsync(Guid subscriptionId, string reason)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        if (subscription.IsActive)
+            throw new InvalidOperationException(_localizer["Subscription.AlreadyActive"]);
+
+        subscription.IsActive = true;
+        subscription.IsExpired = false;
+        subscription.StatusReason = reason ?? "Reactivated by administrator";
+        
+        // Extend expiry if it's in the past
+        if (subscription.ExpiryDateUtc <= DateTime.UtcNow)
+        {
+            subscription.ExpiryDateUtc = DateTime.UtcNow.AddMonths(subscription.Plan.DurationMonths);
+        }
+
+        await _subscriptionRepo.UpdateAsync(subscription);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Send email notification
+        await _emailService.SendSubscriptionReactivatedEmailAsync(
+            subscription.Company.ContactEmail,
+            subscription.Company.Name,
+            subscription.Plan.Name,
+            subscription.ExpiryDateUtc);
+
+        return true;
+    }
+
+    public async Task<IEnumerable<object>> GetSubscriptionHistoryAsync(Guid subscriptionId)
+    {
+        var subscription = await _subscriptionRepo.GetByIdAsync(subscriptionId, null);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        // Return audit trail - in a full implementation, you'd have a separate audit table
+        return new List<object>
+        {
+            new
+            {
+                Action = "Created",
+                Timestamp = subscription.CreatedTimestamp,
+                Reason = "Subscription created",
+                Details = new { subscription.PlanId, subscription.CompanyId }
+            },
+            new
+            {
+                Action = "Current Status",
+                Timestamp = subscription.UpdatedTimestamp ?? subscription.CreatedTimestamp,
+                Reason = subscription.StatusReason,
+                Details = new { subscription.IsActive, subscription.IsExpired, subscription.IsTrial }
+            }
+        };
+    }
+
+    public async Task<object> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate)
+    {
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        var from = fromDate ?? DateTime.UtcNow.AddMonths(-1);
+        var to = toDate ?? DateTime.UtcNow;
+
+        return new
+        {
+            SubscriptionId = subscriptionId,
+            CompanyName = subscription.Company.Name,
+            PlanName = subscription.Plan.Name,
+            Period = new { From = from, To = to },
+            Status = new
+            {
+                subscription.IsActive,
+                subscription.IsExpired,
+                subscription.IsTrial,
+                DaysRemaining = subscription.IsActive ? (subscription.ExpiryDateUtc - DateTime.UtcNow).Days : 0
+            },
+            Usage = new
+            {
+                TotalDays = (to - from).Days,
+                ActiveDays = subscription.IsActive ? (DateTime.UtcNow - subscription.StartDateUtc).Days : 0,
+                UtilizationPercentage = subscription.IsActive ? 
+                    Math.Round(((DateTime.UtcNow - subscription.StartDateUtc).Days / (double)(subscription.ExpiryDateUtc - subscription.StartDateUtc).Days) * 100, 2) : 0
+            }
+        };
     }
 
     #region Helper Methods

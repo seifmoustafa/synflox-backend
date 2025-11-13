@@ -38,5 +38,30 @@ public interface ICompanyService
     /// Deletes a company (soft delete).
     /// </summary>
     Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request);
+
+    /// <summary>
+    /// Activates a company.
+    /// </summary>
+    Task<bool> ActivateCompanyAsync(CompanyActionRequest request);
+
+    /// <summary>
+    /// Deactivates a company.
+    /// </summary>
+    Task<bool> DeactivateCompanyAsync(CompanyActionRequest request);
+
+    /// <summary>
+    /// Bulk delete multiple companies.
+    /// </summary>
+    Task<BulkOperationResult> BulkDeleteCompaniesAsync(BulkCompanyActionRequest request);
+
+    /// <summary>
+    /// Bulk activate multiple companies.
+    /// </summary>
+    Task<BulkOperationResult> BulkActivateCompaniesAsync(BulkCompanyActionRequest request);
+
+    /// <summary>
+    /// Bulk deactivate multiple companies.
+    /// </summary>
+    Task<BulkOperationResult> BulkDeactivateCompaniesAsync(BulkCompanyActionRequest request);
 }
 

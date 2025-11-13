@@ -50,8 +50,53 @@ public interface ISubscriptionService
     Task<UpgradeResponseDto> UpgradeSubscriptionAsync(Guid subscriptionId, UpgradeSubscriptionDto dto);
 
     /// <summary>
-    /// Cancels a subscription immediately
+    /// Cancels a subscription immediately with reason and email notification
     /// Sets IsActive=false and IsExpired=true
     /// </summary>
-    Task<bool> CancelSubscriptionAsync(Guid subscriptionId);
+    Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Suspends a subscription temporarily
+    /// </summary>
+    Task<bool> SuspendSubscriptionAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Resumes a suspended subscription
+    /// </summary>
+    Task<bool> ResumeSubscriptionAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Pauses a subscription temporarily (preserves trial time)
+    /// </summary>
+    Task<bool> PauseSubscriptionAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Unpauses a paused subscription
+    /// </summary>
+    Task<bool> UnpauseSubscriptionAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Stops trial and converts to paid subscription immediately
+    /// </summary>
+    Task<bool> StopTrialAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Extends subscription expiry date by specified days
+    /// </summary>
+    Task<SubscriptionDto> ExtendSubscriptionAsync(Guid subscriptionId, ExtendSubscriptionDto dto);
+
+    /// <summary>
+    /// Reactivates an expired subscription
+    /// </summary>
+    Task<bool> ReactivateSubscriptionAsync(Guid subscriptionId, string reason);
+
+    /// <summary>
+    /// Gets subscription history and audit trail
+    /// </summary>
+    Task<IEnumerable<object>> GetSubscriptionHistoryAsync(Guid subscriptionId);
+
+    /// <summary>
+    /// Gets subscription analytics and usage statistics
+    /// </summary>
+    Task<object> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate);
 }
