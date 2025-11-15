@@ -14,7 +14,7 @@ public interface ICompanyService
     /// <summary>
     /// Creates a new company.
     /// </summary>
-    Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto);
+    Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto, string? language = null);
 
     /// <summary>
     /// Gets all companies with pagination.
@@ -32,22 +32,22 @@ public interface ICompanyService
     /// <summary>
     /// Updates a company.
     /// </summary>
-    Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request);
+    Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request, string? language = null);
 
     /// <summary>
     /// Deletes a company (soft delete).
     /// </summary>
-    Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request);
+    Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request, string? language = null);
 
     /// <summary>
     /// Activates a company.
     /// </summary>
-    Task<bool> ActivateCompanyAsync(CompanyActionRequest request);
+    Task<bool> ActivateCompanyAsync(CompanyActionRequest request, string? language = null);
 
     /// <summary>
     /// Deactivates a company.
     /// </summary>
-    Task<bool> DeactivateCompanyAsync(CompanyActionRequest request);
+    Task<bool> DeactivateCompanyAsync(CompanyActionRequest request, string? language = null);
 
     /// <summary>
     /// Bulk delete multiple companies.

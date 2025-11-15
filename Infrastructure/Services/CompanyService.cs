@@ -38,7 +38,7 @@ public class CompanyService : ICompanyService
         _emailService = emailService;
     }
 
-    public async Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto)
+    public async Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto, string? language = null)
     {
         // Check if company name already exists
         var existing = await _repository.GetByNameAsync(dto.Name);
@@ -59,7 +59,8 @@ public class CompanyService : ICompanyService
             await _emailService.SendCompanyCreatedEmailAsync(
                 created.ContactEmail,
                 created.Name,
-                "System");
+                "System",
+                language ?? "en"); // Use provided language or default to English
         }
         catch (Exception ex)
         {
@@ -108,7 +109,7 @@ public class CompanyService : ICompanyService
         return dto;
     }
 
-    public async Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request)
+    public async Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request, string? language = null)
     {
         // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
@@ -154,7 +155,8 @@ public class CompanyService : ICompanyService
                 await _emailService.SendCompanyUpdatedEmailAsync(
                     company.ContactEmail,
                     company.Name,
-                    string.Join(", ", updatedFields));
+                    string.Join(", ", updatedFields),
+                    language);
             }
             catch (Exception ex)
             {
@@ -166,7 +168,7 @@ public class CompanyService : ICompanyService
         return result;
     }
 
-    public async Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request)
+    public async Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request, string? language = null)
     {
         // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
@@ -187,7 +189,7 @@ public class CompanyService : ICompanyService
         // Send deletion email
         try
         {
-            await _emailService.SendCompanyDeletedEmailAsync(contactEmail, companyName);
+            await _emailService.SendCompanyDeletedEmailAsync(contactEmail, companyName, language);
         }
         catch (Exception ex)
         {
@@ -198,7 +200,7 @@ public class CompanyService : ICompanyService
         return true;
     }
 
-    public async Task<bool> ActivateCompanyAsync(CompanyActionRequest request)
+    public async Task<bool> ActivateCompanyAsync(CompanyActionRequest request, string? language = null)
     {
         // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
@@ -219,7 +221,7 @@ public class CompanyService : ICompanyService
         {
             try
             {
-                await _emailService.SendCompanyActivatedEmailAsync(company.ContactEmail, company.Name);
+                await _emailService.SendCompanyActivatedEmailAsync(company.ContactEmail, company.Name, language);
             }
             catch (Exception ex)
             {
@@ -231,7 +233,7 @@ public class CompanyService : ICompanyService
         return true;
     }
 
-    public async Task<bool> DeactivateCompanyAsync(CompanyActionRequest request)
+    public async Task<bool> DeactivateCompanyAsync(CompanyActionRequest request, string? language = null)
     {
         // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
@@ -255,7 +257,8 @@ public class CompanyService : ICompanyService
                 await _emailService.SendCompanyDeactivatedEmailAsync(
                     company.ContactEmail, 
                     company.Name, 
-                    request.Reason);
+                    request.Reason,
+                    language);
             }
             catch (Exception ex)
             {

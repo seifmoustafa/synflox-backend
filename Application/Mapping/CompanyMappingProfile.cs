@@ -34,5 +34,9 @@ public class CompanyMappingProfile : Profile
             
         CreateMap<CompanyActionRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
+            
+        // Custom Email request DTOs - decrypt CompanyId (using universal converter)
+        CreateMap<CustomEmailRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
     }
 }

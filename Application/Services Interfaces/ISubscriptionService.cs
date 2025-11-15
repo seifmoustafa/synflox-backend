@@ -53,42 +53,42 @@ public interface ISubscriptionService
     /// Cancels a subscription immediately with reason and email notification
     /// Sets IsActive=false and IsExpired=true
     /// </summary>
-    Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string reason);
+    Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Suspends a subscription temporarily
     /// </summary>
-    Task<bool> SuspendSubscriptionAsync(Guid subscriptionId, string reason);
+    Task<bool> SuspendSubscriptionAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Resumes a suspended subscription
     /// </summary>
-    Task<bool> ResumeSubscriptionAsync(Guid subscriptionId, string reason);
+    Task<bool> ResumeSubscriptionAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Pauses a subscription temporarily (preserves trial time)
     /// </summary>
-    Task<bool> PauseSubscriptionAsync(Guid subscriptionId, string reason);
+    Task<bool> PauseSubscriptionAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Unpauses a paused subscription
     /// </summary>
-    Task<bool> UnpauseSubscriptionAsync(Guid subscriptionId, string reason);
+    Task<bool> UnpauseSubscriptionAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Stops trial and converts to paid subscription immediately
     /// </summary>
-    Task<bool> StopTrialAsync(Guid subscriptionId, string reason);
+    Task<bool> StopTrialAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Extends subscription expiry date by specified days
     /// </summary>
-    Task<SubscriptionDto> ExtendSubscriptionAsync(Guid subscriptionId, ExtendSubscriptionDto dto);
+    Task<SubscriptionDto> ExtendSubscriptionAsync(Guid subscriptionId, ExtendSubscriptionDto dto, string? language = null);
 
     /// <summary>
     /// Reactivates an expired subscription
     /// </summary>
-    Task<bool> ReactivateSubscriptionAsync(Guid subscriptionId, string reason);
+    Task<bool> ReactivateSubscriptionAsync(Guid subscriptionId, string reason, string? language = null);
 
     /// <summary>
     /// Gets subscription history and audit trail

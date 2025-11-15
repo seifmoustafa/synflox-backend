@@ -136,7 +136,7 @@ public class SubscriptionsController : ControllerBase
     /// Cancel a subscription immediately
     /// </summary>
     [HttpPut("{id}/cancel")]
-    public async Task<IActionResult> Cancel(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> Cancel(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -145,7 +145,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.CancelSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription canceled by administrator");
+        await _subscriptionService.CancelSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription canceled by administrator", lang);
         return Ok(new { message = _localizer["Subscription.Canceled"], timestamp = DateTime.UtcNow });
     }
 
@@ -153,7 +153,7 @@ public class SubscriptionsController : ControllerBase
     /// Suspend a subscription temporarily
     /// </summary>
     [HttpPut("{id}/suspend")]
-    public async Task<IActionResult> Suspend(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> Suspend(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -162,7 +162,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.SuspendSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription suspended by administrator");
+        await _subscriptionService.SuspendSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription suspended by administrator", lang);
         return Ok(new { message = _localizer["Subscription.Suspended"], timestamp = DateTime.UtcNow });
     }
 
@@ -170,7 +170,7 @@ public class SubscriptionsController : ControllerBase
     /// Resume a suspended subscription
     /// </summary>
     [HttpPut("{id}/resume")]
-    public async Task<IActionResult> Resume(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> Resume(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -179,7 +179,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.ResumeSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription resumed by administrator");
+        await _subscriptionService.ResumeSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription resumed by administrator", lang);
         return Ok(new { message = _localizer["Subscription.Resumed"], timestamp = DateTime.UtcNow });
     }
 
@@ -187,7 +187,7 @@ public class SubscriptionsController : ControllerBase
     /// Pause a subscription temporarily (different from suspend - preserves trial time)
     /// </summary>
     [HttpPut("{id}/pause")]
-    public async Task<IActionResult> Pause(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> Pause(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -196,7 +196,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.PauseSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription paused by administrator");
+        await _subscriptionService.PauseSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription paused by administrator", lang);
         return Ok(new { message = _localizer["Subscription.Paused"], timestamp = DateTime.UtcNow });
     }
 
@@ -204,7 +204,7 @@ public class SubscriptionsController : ControllerBase
     /// Unpause a paused subscription
     /// </summary>
     [HttpPut("{id}/unpause")]
-    public async Task<IActionResult> Unpause(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> Unpause(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -213,7 +213,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.UnpauseSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription unpaused by administrator");
+        await _subscriptionService.UnpauseSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription unpaused by administrator", lang);
         return Ok(new { message = _localizer["Subscription.Unpaused"], timestamp = DateTime.UtcNow });
     }
 
@@ -221,7 +221,7 @@ public class SubscriptionsController : ControllerBase
     /// Stop trial and convert to paid subscription immediately
     /// </summary>
     [HttpPut("{id}/stop-trial")]
-    public async Task<IActionResult> StopTrial(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> StopTrial(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -230,7 +230,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.StopTrialAsync(decryptedSubscriptionId, dto.Reason ?? "Trial stopped and converted to paid subscription");
+        await _subscriptionService.StopTrialAsync(decryptedSubscriptionId, dto.Reason ?? "Trial stopped and converted to paid subscription", lang);
         return Ok(new { message = _localizer["Subscription.TrialStopped"], timestamp = DateTime.UtcNow });
     }
 
@@ -238,7 +238,7 @@ public class SubscriptionsController : ControllerBase
     /// Extend subscription expiry date
     /// </summary>
     [HttpPut("{id}/extend")]
-    public async Task<IActionResult> Extend(Guid id, [FromBody] ExtendSubscriptionDto dto)
+    public async Task<IActionResult> Extend(Guid id, [FromBody] ExtendSubscriptionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -247,7 +247,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        var subscription = await _subscriptionService.ExtendSubscriptionAsync(decryptedSubscriptionId, dto);
+        var subscription = await _subscriptionService.ExtendSubscriptionAsync(decryptedSubscriptionId, dto, lang);
         return Ok(subscription);
     }
 
@@ -255,7 +255,7 @@ public class SubscriptionsController : ControllerBase
     /// Reactivate an expired subscription
     /// </summary>
     [HttpPut("{id}/reactivate")]
-    public async Task<IActionResult> Reactivate(Guid id, [FromBody] SubscriptionActionDto dto)
+    public async Task<IActionResult> Reactivate(Guid id, [FromBody] SubscriptionActionDto dto, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -264,7 +264,7 @@ public class SubscriptionsController : ControllerBase
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
 
-        await _subscriptionService.ReactivateSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription reactivated by administrator");
+        await _subscriptionService.ReactivateSubscriptionAsync(decryptedSubscriptionId, dto.Reason ?? "Subscription reactivated by administrator", lang);
         return Ok(new { message = _localizer["Subscription.Reactivated"], timestamp = DateTime.UtcNow });
     }
 

@@ -24,14 +24,14 @@ public class CompanyController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyDto request)
+    public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyDto request, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
 
         try
         {
-            var result = await _companyService.CreateCompanyAsync(request);
+            var result = await _companyService.CreateCompanyAsync(request, lang);
             return CreatedAtAction(nameof(GetCompany), new { id = result.Id }, 
                 new ApiResponse<CompanyDto>(201, _localizer["Company.CompanyCreated"], result));
         }
@@ -62,7 +62,7 @@ public class CompanyController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyDto updateData)
+    public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyDto updateData, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (updateData == null) return BadRequest();
@@ -70,7 +70,7 @@ public class CompanyController : ControllerBase
         try
         {
             var request = new UpdateCompanyByIdRequest { CompanyId = id, UpdateData = updateData };
-            var result = await _companyService.UpdateCompanyAsync(request);
+            var result = await _companyService.UpdateCompanyAsync(request, lang);
             if (result == null)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
@@ -85,12 +85,12 @@ public class CompanyController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> DeleteCompany(Guid id)
+    public async Task<IActionResult> DeleteCompany(Guid id, [FromQuery] string? lang = null)
     {
         try
         {
             var request = new DeleteCompanyRequest { CompanyId = id };
-            var deleted = await _companyService.DeleteCompanyAsync(request);
+            var deleted = await _companyService.DeleteCompanyAsync(request, lang);
             if (!deleted)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
@@ -105,7 +105,7 @@ public class CompanyController : ControllerBase
 
     [HttpPost("{id}/activate")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> ActivateCompany(Guid id, [FromBody] CompanyActionRequest request)
+    public async Task<IActionResult> ActivateCompany(Guid id, [FromBody] CompanyActionRequest request, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
@@ -115,7 +115,7 @@ public class CompanyController : ControllerBase
 
         try
         {
-            var result = await _companyService.ActivateCompanyAsync(request);
+            var result = await _companyService.ActivateCompanyAsync(request, lang);
             if (!result)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));
@@ -130,7 +130,7 @@ public class CompanyController : ControllerBase
 
     [HttpPost("{id}/deactivate")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> DeactivateCompany(Guid id, [FromBody] CompanyActionRequest request)
+    public async Task<IActionResult> DeactivateCompany(Guid id, [FromBody] CompanyActionRequest request, [FromQuery] string? lang = null)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (request == null) return BadRequest();
@@ -140,7 +140,7 @@ public class CompanyController : ControllerBase
 
         try
         {
-            var result = await _companyService.DeactivateCompanyAsync(request);
+            var result = await _companyService.DeactivateCompanyAsync(request, lang);
             if (!result)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));

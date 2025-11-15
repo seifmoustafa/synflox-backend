@@ -239,4 +239,183 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>Subscription not found</value>
   </data>
+  
+  <!-- Email Localization Keys -->
+  
+  <!-- Company Email Keys -->
+  <data name="Email.Company.Created.Subject" xml:space="preserve">
+    <value>🎉 Welcome to SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Company.Created.Title" xml:space="preserve">
+    <value>🎉 Company Successfully Registered!</value>
+  </data>
+  <data name="Email.Company.Created.WelcomeMessage" xml:space="preserve">
+    <value>Welcome to SYNFLOX! Your company has been successfully registered in our system.</value>
+  </data>
+  <data name="Email.Company.Updated.Subject" xml:space="preserve">
+    <value>📝 Company Information Updated - {0}</value>
+  </data>
+  <data name="Email.Company.Updated.Title" xml:space="preserve">
+    <value>📝 Company Information Updated</value>
+  </data>
+  <data name="Email.Company.Updated.Message" xml:space="preserve">
+    <value>Your company information has been successfully updated in our system.</value>
+  </data>
+  <data name="Email.Company.Activated.Subject" xml:space="preserve">
+    <value>✅ Company Activated - {0}</value>
+  </data>
+  <data name="Email.Company.Activated.Title" xml:space="preserve">
+    <value>✅ Company Successfully Activated!</value>
+  </data>
+  <data name="Email.Company.Activated.Message" xml:space="preserve">
+    <value>Great news! Your company has been activated and you now have full access to all SYNFLOX features.</value>
+  </data>
+  <data name="Email.Company.Deactivated.Subject" xml:space="preserve">
+    <value>⚠️ Company Deactivated - {0}</value>
+  </data>
+  <data name="Email.Company.Deactivated.Title" xml:space="preserve">
+    <value>⚠️ Company Deactivated</value>
+  </data>
+  <data name="Email.Company.Deactivated.Message" xml:space="preserve">
+    <value>Your company has been deactivated. Please contact support if you believe this is an error.</value>
+  </data>
+  <data name="Email.Company.Deleted.Subject" xml:space="preserve">
+    <value>🗑️ Company Account Deleted - {0}</value>
+  </data>
+  <data name="Email.Company.Deleted.Title" xml:space="preserve">
+    <value>🗑️ Company Account Deleted</value>
+  </data>
+  <data name="Email.Company.Deleted.Message" xml:space="preserve">
+    <value>Your company account has been deleted from our system. You have 30 days to recover your data by contacting support.</value>
+  </data>
+  
+  <!-- Company Field Labels -->
+  <data name="Email.Company.CompanyName" xml:space="preserve">
+    <value>Company Name</value>
+  </data>
+  <data name="Email.Company.RegistrationDate" xml:space="preserve">
+    <value>Registration Date</value>
+  </data>
+  <data name="Email.Company.ContactEmail" xml:space="preserve">
+    <value>Contact Email</value>
+  </data>
+  <data name="Email.Company.UpdatedFields" xml:space="preserve">
+    <value>Updated Fields</value>
+  </data>
+  <data name="Email.Company.UpdateDate" xml:space="preserve">
+    <value>Update Date</value>
+  </data>
+  <data name="Email.Company.ActivationDate" xml:space="preserve">
+    <value>Activation Date</value>
+  </data>
+  <data name="Email.Company.DeactivationDate" xml:space="preserve">
+    <value>Deactivation Date</value>
+  </data>
+  <data name="Email.Company.DeletionDate" xml:space="preserve">
+    <value>Deletion Date</value>
+  </data>
+  <data name="Email.Company.Reason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  
+  <!-- What's Next Section -->
+  <data name="Email.Company.WhatsNext" xml:space="preserve">
+    <value>🚀 What's next?</value>
+  </data>
+  <data name="Email.Company.WhatsNext.SetupPlan" xml:space="preserve">
+    <value>Set up your first subscription plan</value>
+  </data>
+  <data name="Email.Company.WhatsNext.ConfigureLicensing" xml:space="preserve">
+    <value>Configure your licensing requirements</value>
+  </data>
+  <data name="Email.Company.WhatsNext.ExploreFeatures" xml:space="preserve">
+    <value>Explore all available features</value>
+  </data>
+  <data name="Email.Company.WhatsNext.ContactSupport" xml:space="preserve">
+    <value>Contact support for any assistance</value>
+  </data>
+  <data name="Email.Company.WhatsNext.AccessDashboard" xml:space="preserve">
+    <value>Access your dashboard and start managing licenses</value>
+  </data>
+  
+  <!-- Features Section -->
+  <data name="Email.Company.Features" xml:space="preserve">
+    <value>✨ SYNFLOX Features Available</value>
+  </data>
+  <data name="Email.Company.Features.LicenseManagement" xml:space="preserve">
+    <value>Advanced license management</value>
+  </data>
+  <data name="Email.Company.Features.Analytics" xml:space="preserve">
+    <value>Real-time analytics and reporting</value>
+  </data>
+  <data name="Email.Company.Features.CloudInfrastructure" xml:space="preserve">
+    <value>Secure cloud-based infrastructure</value>
+  </data>
+  <data name="Email.Company.Features.MultiPlan" xml:space="preserve">
+    <value>Multi-plan subscription support</value>
+  </data>
+  <data name="Email.Company.Features.Support" xml:space="preserve">
+    <value>Priority technical support</value>
+  </data>
+  <data name="Email.Company.ThankYou" xml:space="preserve">
+    <value>Thank you for choosing SYNFLOX for your licensing needs!</value>
+  </data>
+  
+  <!-- Common Email Elements -->
+  <data name="Email.Common.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Email.Common.Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="Email.Common.NotificationDetails" xml:space="preserve">
+    <value>📋 Notification Details</value>
+  </data>
+  <data name="Email.Common.Company" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="Email.Common.NotificationTime" xml:space="preserve">
+    <value>Notification Time</value>
+  </data>
+  <data name="Email.Common.System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Email.Common.NeedAssistance" xml:space="preserve">
+    <value>🆘 Need Assistance?</value>
+  </data>
+  <data name="Email.Common.NeedAssistanceMessage" xml:space="preserve">
+    <value>Our support team is here to help you with any questions or concerns.</value>
+  </data>
+  <data name="Email.Common.Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Email.Common.Website" xml:space="preserve">
+    <value>Website</value>
+  </data>
+  <data name="Email.Common.AutomatedMessage" xml:space="preserve">
+    <value>This is an automated notification from SYNFLOX Central Licensing System. Please do not reply to this email. For support, use the contact information above.</value>
+  </data>
+  <data name="Email.Common.FooterText" xml:space="preserve">
+    <value>SYNFLOX - Professional Licensing Solutions</value>
+  </data>
+  <data name="Email.Common.Copyright" xml:space="preserve">
+    <value> 2023 SYNFLOX. All rights reserved. | Powered by Advanced Technology</value>
+  </data>
+  
+  <!-- Missing Email Keys -->
+  <data name="Email.Common.Hello" xml:space="preserve">
+    <value>Hello</value>
+  </data>
+  <data name="Email.Common.Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Email.Common.NeedHelp" xml:space="preserve">
+    <value>Need Help?</value>
+  </data>
+  <data name="Email.Common.SupportMessage" xml:space="preserve">
+    <value>Our technical support team is available to help you 24/7</value>
+  </data>
+  <data name="Email.Common.PoweredBy" xml:space="preserve">
+    <value>Powered by</value>
+  </data>
 </root>

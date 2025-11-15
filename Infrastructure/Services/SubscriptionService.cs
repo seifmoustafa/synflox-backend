@@ -453,7 +453,7 @@ public class SubscriptionService : ISubscriptionService
         return response;
     }
 
-    public async Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string reason)
+    public async Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -470,7 +470,8 @@ public class SubscriptionService : ISubscriptionService
         await _emailService.SendSubscriptionCanceledEmailAsync(
             subscription.Company.ContactEmail,
             subscription.Company.Name,
-            subscription.Plan.Name);
+            subscription.Plan.Name,
+            language);
 
         // Create outbox event for cancellation
         await CreateOutboxEventAsync(
@@ -488,7 +489,7 @@ public class SubscriptionService : ISubscriptionService
         return true;
     }
 
-    public async Task<bool> SuspendSubscriptionAsync(Guid subscriptionId, string reason)
+    public async Task<bool> SuspendSubscriptionAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -507,7 +508,8 @@ public class SubscriptionService : ISubscriptionService
         await _emailService.SendSubscriptionSuspendedEmailAsync(
             subscription.Company.ContactEmail,
             subscription.Company.Name,
-            reason ?? "Suspended by administrator");
+            reason ?? "Suspended by administrator",
+            language);
 
         // Create outbox event
         await CreateOutboxEventAsync(
@@ -525,7 +527,7 @@ public class SubscriptionService : ISubscriptionService
         return true;
     }
 
-    public async Task<bool> ResumeSubscriptionAsync(Guid subscriptionId, string reason)
+    public async Task<bool> ResumeSubscriptionAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -546,7 +548,8 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc);
+            subscription.ExpiryDateUtc,
+            language);
 
         // Create outbox event
         await CreateOutboxEventAsync(
@@ -565,7 +568,7 @@ public class SubscriptionService : ISubscriptionService
         return true;
     }
 
-    public async Task<bool> PauseSubscriptionAsync(Guid subscriptionId, string reason)
+    public async Task<bool> PauseSubscriptionAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -586,12 +589,13 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            reason ?? "Paused by administrator");
+            reason ?? "Paused by administrator",
+            language);
 
         return true;
     }
 
-    public async Task<bool> UnpauseSubscriptionAsync(Guid subscriptionId, string reason)
+    public async Task<bool> UnpauseSubscriptionAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -608,12 +612,13 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc);
+            subscription.ExpiryDateUtc,
+            language);
 
         return true;
     }
 
-    public async Task<bool> StopTrialAsync(Guid subscriptionId, string reason)
+    public async Task<bool> StopTrialAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -638,12 +643,13 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc);
+            subscription.ExpiryDateUtc,
+            language);
 
         return true;
     }
 
-    public async Task<SubscriptionDto> ExtendSubscriptionAsync(Guid subscriptionId, ExtendSubscriptionDto dto)
+    public async Task<SubscriptionDto> ExtendSubscriptionAsync(Guid subscriptionId, ExtendSubscriptionDto dto, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -665,13 +671,14 @@ public class SubscriptionService : ISubscriptionService
                 subscription.Plan.Name,
                 oldExpiryDate,
                 subscription.ExpiryDateUtc,
-                dto.ExtensionDays);
+                dto.ExtensionDays,
+                language);
         }
 
         return GetMappedSubscriptionDto(subscription)!;
     }
 
-    public async Task<bool> ReactivateSubscriptionAsync(Guid subscriptionId, string reason)
+    public async Task<bool> ReactivateSubscriptionAsync(Guid subscriptionId, string reason, string? language = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
@@ -698,7 +705,8 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc);
+            subscription.ExpiryDateUtc,
+            language);
 
         return true;
     }

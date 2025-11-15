@@ -239,4 +239,183 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>الاشتراك غير موجود</value>
   </data>
+  
+  <!-- Email Localization Keys - Arabic -->
+  
+  <!-- Company Email Keys -->
+  <data name="Email.Company.Created.Subject" xml:space="preserve">
+    <value>🎉 مرحباً بك في سينفلوكس - {0}</value>
+  </data>
+  <data name="Email.Company.Created.Title" xml:space="preserve">
+    <value>🎉 تم تسجيل الشركة بنجاح!</value>
+  </data>
+  <data name="Email.Company.Created.WelcomeMessage" xml:space="preserve">
+    <value>مرحباً بك في سينفلوكس! تم تسجيل شركتك بنجاح في نظامنا.</value>
+  </data>
+  <data name="Email.Company.Updated.Subject" xml:space="preserve">
+    <value>📝 تم تحديث معلومات الشركة - {0}</value>
+  </data>
+  <data name="Email.Company.Updated.Title" xml:space="preserve">
+    <value>📝 تم تحديث معلومات الشركة</value>
+  </data>
+  <data name="Email.Company.Updated.Message" xml:space="preserve">
+    <value>تم تحديث معلومات شركتك بنجاح في نظامنا.</value>
+  </data>
+  <data name="Email.Company.Activated.Subject" xml:space="preserve">
+    <value>✅ تم تفعيل الشركة - {0}</value>
+  </data>
+  <data name="Email.Company.Activated.Title" xml:space="preserve">
+    <value>✅ تم تفعيل الشركة بنجاح!</value>
+  </data>
+  <data name="Email.Company.Activated.Message" xml:space="preserve">
+    <value>أخبار رائعة! تم تفعيل شركتك ولديك الآن وصول كامل لجميع ميزات سينفلوكس.</value>
+  </data>
+  <data name="Email.Company.Deactivated.Subject" xml:space="preserve">
+    <value>⚠️ تم إلغاء تفعيل الشركة - {0}</value>
+  </data>
+  <data name="Email.Company.Deactivated.Title" xml:space="preserve">
+    <value>⚠️ تم إلغاء تفعيل الشركة</value>
+  </data>
+  <data name="Email.Company.Deactivated.Message" xml:space="preserve">
+    <value>تم إلغاء تفعيل شركتك. يرجى الاتصال بالدعم الفني إذا كنت تعتقد أن هذا خطأ.</value>
+  </data>
+  <data name="Email.Company.Deleted.Subject" xml:space="preserve">
+    <value>🗑️ تم حذف حساب الشركة - {0}</value>
+  </data>
+  <data name="Email.Company.Deleted.Title" xml:space="preserve">
+    <value>🗑️ تم حذف حساب الشركة</value>
+  </data>
+  <data name="Email.Company.Deleted.Message" xml:space="preserve">
+    <value>تم حذف حساب شركتك من نظامنا. لديك 30 يوماً لاستعادة بياناتك عن طريق الاتصال بالدعم الفني.</value>
+  </data>
+  
+  <!-- Company Field Labels -->
+  <data name="Email.Company.CompanyName" xml:space="preserve">
+    <value>اسم الشركة</value>
+  </data>
+  <data name="Email.Company.RegistrationDate" xml:space="preserve">
+    <value>تاريخ التسجيل</value>
+  </data>
+  <data name="Email.Company.ContactEmail" xml:space="preserve">
+    <value>البريد الإلكتروني للتواصل</value>
+  </data>
+  <data name="Email.Company.UpdatedFields" xml:space="preserve">
+    <value>الحقول المحدثة</value>
+  </data>
+  <data name="Email.Company.UpdateDate" xml:space="preserve">
+    <value>تاريخ التحديث</value>
+  </data>
+  <data name="Email.Company.ActivationDate" xml:space="preserve">
+    <value>تاريخ التفعيل</value>
+  </data>
+  <data name="Email.Company.DeactivationDate" xml:space="preserve">
+    <value>تاريخ إلغاء التفعيل</value>
+  </data>
+  <data name="Email.Company.DeletionDate" xml:space="preserve">
+    <value>تاريخ الحذف</value>
+  </data>
+  <data name="Email.Company.Reason" xml:space="preserve">
+    <value>السبب</value>
+  </data>
+  
+  <!-- What's Next Section -->
+  <data name="Email.Company.WhatsNext" xml:space="preserve">
+    <value>🚀 ما هي الخطوات التالية؟</value>
+  </data>
+  <data name="Email.Company.WhatsNext.SetupPlan" xml:space="preserve">
+    <value>إعداد أول خطة اشتراك لك</value>
+  </data>
+  <data name="Email.Company.WhatsNext.ConfigureLicensing" xml:space="preserve">
+    <value>تكوين متطلبات الترخيص الخاصة بك</value>
+  </data>
+  <data name="Email.Company.WhatsNext.ExploreFeatures" xml:space="preserve">
+    <value>استكشاف جميع الميزات المتاحة</value>
+  </data>
+  <data name="Email.Company.WhatsNext.ContactSupport" xml:space="preserve">
+    <value>الاتصال بالدعم الفني للحصول على أي مساعدة</value>
+  </data>
+  <data name="Email.Company.WhatsNext.AccessDashboard" xml:space="preserve">
+    <value>الوصول إلى لوحة التحكم وبدء إدارة التراخيص</value>
+  </data>
+  
+  <!-- Features Section -->
+  <data name="Email.Company.Features" xml:space="preserve">
+    <value>✨ ميزات سينفلوكس المتاحة</value>
+  </data>
+  <data name="Email.Company.Features.LicenseManagement" xml:space="preserve">
+    <value>إدارة متقدمة للتراخيص</value>
+  </data>
+  <data name="Email.Company.Features.Analytics" xml:space="preserve">
+    <value>تحليلات وتقارير في الوقت الفعلي</value>
+  </data>
+  <data name="Email.Company.Features.CloudInfrastructure" xml:space="preserve">
+    <value>بنية تحتية آمنة قائمة على السحابة</value>
+  </data>
+  <data name="Email.Company.Features.MultiPlan" xml:space="preserve">
+    <value>دعم خطط اشتراك متعددة</value>
+  </data>
+  <data name="Email.Company.Features.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية</value>
+  </data>
+  <data name="Email.Company.ThankYou" xml:space="preserve">
+    <value>شكراً لك لاختيار سينفلوكس لاحتياجات الترخيص الخاصة بك!</value>
+  </data>
+  
+  <!-- Common Email Elements -->
+  <data name="Email.Common.Date" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Email.Common.Message" xml:space="preserve">
+    <value>الرسالة</value>
+  </data>
+  <data name="Email.Common.NotificationDetails" xml:space="preserve">
+    <value>📋 تفاصيل الإشعار</value>
+  </data>
+  <data name="Email.Common.Company" xml:space="preserve">
+    <value>الشركة</value>
+  </data>
+  <data name="Email.Common.NotificationTime" xml:space="preserve">
+    <value>وقت الإشعار</value>
+  </data>
+  <data name="Email.Common.System" xml:space="preserve">
+    <value>النظام</value>
+  </data>
+  <data name="Email.Common.NeedAssistance" xml:space="preserve">
+    <value>🆘 تحتاج مساعدة؟</value>
+  </data>
+  <data name="Email.Common.NeedAssistanceMessage" xml:space="preserve">
+    <value>فريق الدعم الفني لدينا هنا لمساعدتك في أي أسئلة أو مخاوف.</value>
+  </data>
+  <data name="Email.Common.Email" xml:space="preserve">
+    <value>البريد الإلكتروني</value>
+  </data>
+  <data name="Email.Common.Website" xml:space="preserve">
+    <value>الموقع الإلكتروني</value>
+  </data>
+  <data name="Email.Common.AutomatedMessage" xml:space="preserve">
+    <value>هذا إشعار تلقائي من نظام سينفلوكس المركزي للترخيص. يرجى عدم الرد على هذا البريد الإلكتروني. للحصول على الدعم، استخدم معلومات الاتصال أعلاه.</value>
+  </data>
+  <data name="Email.Common.FooterText" xml:space="preserve">
+    <value>سينفلوكس - حلول ترخيص احترافية</value>
+  </data>
+  <data name="Email.Common.Copyright" xml:space="preserve">
+    <value>© {0} سينفلوكس. جميع الحقوق محفوظة. | مدعوم بالتكنولوجيا المتقدمة</value>
+  </data>
+  
+  <!-- Missing Email Keys -->
+  <data name="Email.Common.Hello" xml:space="preserve">
+    <value>مرحباً</value>
+  </data>
+  <data name="Email.Common.Notes" xml:space="preserve">
+    <value>ملاحظات</value>
+  </data>
+  <data name="Email.Common.NeedHelp" xml:space="preserve">
+    <value>تحتاج مساعدة؟</value>
+  </data>
+  <data name="Email.Common.SupportMessage" xml:space="preserve">
+    <value>فريق الدعم الفني متاح لمساعدتك على مدار الساعة</value>
+  </data>
+  <data name="Email.Common.PoweredBy" xml:space="preserve">
+    <value>مدعوم من</value>
+  </data>
 </root>
