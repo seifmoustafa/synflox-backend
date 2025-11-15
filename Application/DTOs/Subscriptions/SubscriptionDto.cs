@@ -14,6 +14,12 @@ public class SubscriptionDto
     public bool IsActive { get; set; }
     public bool IsTrial { get; set; }
     public bool IsExpired { get; set; }
+    
+    /// <summary>
+    /// Indicates if this is a lifetime/permanent subscription
+    /// </summary>
+    public bool IsLifetime { get; set; }
+    
     public bool AutoRenew { get; set; }
     public Currency Currency { get; set; }
     public decimal Amount { get; set; }

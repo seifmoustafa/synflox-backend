@@ -10,6 +10,7 @@ using Domain.Entities.Subscriptions;
 using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
+using Domain.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
@@ -82,6 +83,16 @@ public class SubscriptionService : ISubscriptionService
         if (!price.HasValue)
             throw new BadRequestException(_localizer["Plan.PriceNotAvailableForCurrency"]);
 
+        // Validate lifetime plan rules
+        if (plan.IsLifetimePlan)
+        {
+            if (dto.StartWithTrial)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotHaveTrial"]);
+            
+            if (dto.AutoRenew == true)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotAutoRenew"]);
+        }
+
         // Set additional properties not handled by AutoMapper
         var now = DateTime.UtcNow;
         subscription.Id = Guid.NewGuid();
@@ -89,24 +100,34 @@ public class SubscriptionService : ISubscriptionService
         subscription.IsTrial = dto.StartWithTrial;
         subscription.IsActive = true;
         subscription.IsExpired = false;
-        subscription.AutoRenew = dto.AutoRenew ?? plan.AutoRenew;
+        
+        // Lifetime plans cannot auto-renew
+        subscription.AutoRenew = plan.IsLifetimePlan ? false : (dto.AutoRenew ?? plan.AutoRenew);
+        
         subscription.Currency = dto.Currency;
         subscription.Amount = price.Value;
-        subscription.StatusReason = dto.StartWithTrial ? "Trial started" : "Subscription activated";
+        subscription.StatusReason = dto.StartWithTrial ? "Trial started" : 
+                                    plan.IsLifetimePlan ? "Lifetime subscription activated" : 
+                                    "Subscription activated";
 
-        // Calculate expiry based on trial or paid
+        // Calculate expiry based on plan duration type
         if (dto.StartWithTrial)
         {
             subscription.ExpiryDateUtc = now.AddDays(plan.TrialDurationDays!.Value);
         }
         else
         {
-            subscription.ExpiryDateUtc = now.AddMonths(plan.DurationMonths);
+            // Use PlanDurationHelper to calculate expiry based on DurationType
+            subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, plan.DurationType);
         }
 
         // Handle scheduled next plan (deferred upgrade) - NextPlanId already decrypted by AutoMapper
         if (subscription.NextPlanId.HasValue)
         {
+            // Lifetime plans cannot schedule upgrades
+            if (plan.IsLifetimePlan)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotScheduleUpgrade"]);
+
             var nextPlan = await _planRepo.GetByIdAsync(subscription.NextPlanId.Value, null);
             if (nextPlan == null)
                 throw new NotFoundException(_localizer["Plan.NotFound"]);
@@ -118,14 +139,18 @@ public class SubscriptionService : ISubscriptionService
         }
 
         // Check for overlapping active subscriptions (same company + plan)
-        var hasOverlap = await _subscriptionRepo.HasOverlappingActiveSubscriptionAsync(
-            subscription.CompanyId,
-            subscription.PlanId,
-            subscription.StartDateUtc,
-            subscription.ExpiryDateUtc);
+        // Skip overlap check for lifetime plans (they can coexist with time-based plans)
+        if (!plan.IsLifetimePlan)
+        {
+            var hasOverlap = await _subscriptionRepo.HasOverlappingActiveSubscriptionAsync(
+                subscription.CompanyId,
+                subscription.PlanId,
+                subscription.StartDateUtc,
+                subscription.ExpiryDateUtc);
 
-        if (hasOverlap)
-            throw new OverlappingActiveSubscriptionException(_localizer["Subscription.OverlappingActive"]);
+            if (hasOverlap)
+                throw new OverlappingActiveSubscriptionException(_localizer["Subscription.OverlappingActive"]);
+        }
 
         // Create subscription
         await _subscriptionRepo.AddAsync(subscription);
@@ -220,6 +245,10 @@ public class SubscriptionService : ISubscriptionService
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
 
+        // Lifetime subscriptions cannot be renewed (already permanent)
+        if (subscription.IsLifetime)
+            throw new InvalidOperationException(_localizer["Subscription.LifetimeCannotRenew"]);
+
         var plan = subscription.Plan;
         var company = subscription.Company;
 
@@ -228,7 +257,8 @@ public class SubscriptionService : ISubscriptionService
         if (dto.RenewStrategy == "ExtendInPlace")
         {
             // Extend current subscription (not recommended but supported)
-            subscription.ExpiryDateUtc = subscription.ExpiryDateUtc.AddMonths(plan.DurationMonths);
+            // Use PlanDurationHelper for dynamic duration
+            subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(subscription.ExpiryDateUtc, plan.DurationType);
             subscription.AutoRenew = dto.NewAutoRenew ?? subscription.AutoRenew;
             subscription.StatusReason = "Extended in place";
 
@@ -253,7 +283,7 @@ public class SubscriptionService : ISubscriptionService
                 CompanyId = subscription.CompanyId,
                 PlanId = subscription.PlanId,
                 StartDateUtc = startDate,
-                ExpiryDateUtc = startDate.AddMonths(plan.DurationMonths),
+                ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(startDate, plan.DurationType), // Use helper
                 IsActive = true,
                 IsExpired = false,
                 IsTrial = false,
@@ -631,9 +661,8 @@ public class SubscriptionService : ISubscriptionService
         subscription.IsTrial = false;
         subscription.StatusReason = reason ?? "Trial converted to paid subscription";
         
-        // Extend expiry to full plan duration from now
-        var fullDuration = subscription.Plan.DurationMonths;
-        subscription.ExpiryDateUtc = DateTime.UtcNow.AddMonths(fullDuration);
+        // Extend expiry to full plan duration from now using PlanDurationHelper
+        subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(DateTime.UtcNow, subscription.Plan.DurationType);
 
         await _subscriptionRepo.UpdateAsync(subscription);
         await _unitOfWork.SaveChangesAsync();
@@ -654,6 +683,10 @@ public class SubscriptionService : ISubscriptionService
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
+
+        // Lifetime subscriptions cannot be extended (already infinite)
+        if (subscription.IsLifetime)
+            throw new InvalidOperationException(_localizer["Subscription.LifetimeCannotExtend"]);
 
         var oldExpiryDate = subscription.ExpiryDateUtc;
         subscription.ExpiryDateUtc = subscription.ExpiryDateUtc.AddDays(dto.ExtensionDays);
@@ -691,10 +724,10 @@ public class SubscriptionService : ISubscriptionService
         subscription.IsExpired = false;
         subscription.StatusReason = reason ?? "Reactivated by administrator";
         
-        // Extend expiry if it's in the past
-        if (subscription.ExpiryDateUtc <= DateTime.UtcNow)
+        // Extend expiry if it's in the past (but not for lifetime plans)
+        if (!subscription.IsLifetime && subscription.ExpiryDateUtc <= DateTime.UtcNow)
         {
-            subscription.ExpiryDateUtc = DateTime.UtcNow.AddMonths(subscription.Plan.DurationMonths);
+            subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(DateTime.UtcNow, subscription.Plan.DurationType);
         }
 
         await _subscriptionRepo.UpdateAsync(subscription);

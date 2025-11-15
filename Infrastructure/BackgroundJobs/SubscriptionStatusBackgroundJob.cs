@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Domain.Entities.Subscriptions;
 using Domain.Enums;
 using Domain.Interfaces;
+using Domain.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -84,6 +85,13 @@ public class SubscriptionStatusBackgroundJob : BackgroundService
 
         foreach (var subscription in expiredSubs)
         {
+            // Skip lifetime subscriptions - they never expire naturally
+            if (subscription.IsLifetime)
+            {
+                _logger.LogDebug("Skipping lifetime subscription {SubscriptionId} from expiry processing", subscription.Id);
+                continue;
+            }
+
             subscription.IsExpired = true;
             subscription.IsActive = false;
             subscription.StatusReason = "Expired";
@@ -137,18 +145,18 @@ public class SubscriptionStatusBackgroundJob : BackgroundService
             var existing = await subscriptionRepo.FindAsync(s => s.ParentSubscriptionId == oldSubscription.Id);
             if (existing.Any()) continue;
 
-            // Create new subscription
+            // Create new subscription using PlanDurationHelper
             var newSubscription = new Subscription
             {
                 Id = Guid.NewGuid(),
                 CompanyId = oldSubscription.CompanyId,
                 PlanId = oldSubscription.NextPlanId.Value,
                 StartDateUtc = now,
-                ExpiryDateUtc = now.AddMonths(nextPlan.DurationMonths),
+                ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, nextPlan.DurationType),
                 IsActive = true,
                 IsExpired = false,
                 IsTrial = false,
-                AutoRenew = nextPlan.AutoRenew,
+                AutoRenew = nextPlan.IsLifetimePlan ? false : nextPlan.AutoRenew, // Lifetime cannot auto-renew
                 Currency = oldSubscription.Currency,
                 Amount = (await planRepo.GetPriceAsync(nextPlan.Id, oldSubscription.Currency)) ?? 0,
                 ParentSubscriptionId = oldSubscription.Id,
@@ -205,6 +213,13 @@ public class SubscriptionStatusBackgroundJob : BackgroundService
 
         foreach (var subscription in subsForRenewal)
         {
+            // Skip lifetime subscriptions - they cannot auto-renew (already permanent)
+            if (subscription.IsLifetime)
+            {
+                _logger.LogDebug("Skipping lifetime subscription {SubscriptionId} from auto-renewal", subscription.Id);
+                continue;
+            }
+
             // Check for duplicate (idempotency)
             var existing = await subscriptionRepo.FindAsync(s => 
                 s.ParentSubscriptionId == subscription.Id && 
@@ -216,14 +231,15 @@ public class SubscriptionStatusBackgroundJob : BackgroundService
             var price = await planRepo.GetPriceAsync(subscription.PlanId, subscription.Currency);
             if (!price.HasValue) continue;
 
-            // Create renewal subscription
+            // Create renewal subscription using PlanDurationHelper
+            var startDate = subscription.ExpiryDateUtc.AddSeconds(1);
             var newSubscription = new Subscription
             {
                 Id = Guid.NewGuid(),
                 CompanyId = subscription.CompanyId,
                 PlanId = subscription.PlanId,
-                StartDateUtc = subscription.ExpiryDateUtc.AddSeconds(1),
-                ExpiryDateUtc = subscription.ExpiryDateUtc.AddMonths(plan.DurationMonths),
+                StartDateUtc = startDate,
+                ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(startDate, plan.DurationType),
                 IsActive = true,
                 IsExpired = false,
                 IsTrial = false,

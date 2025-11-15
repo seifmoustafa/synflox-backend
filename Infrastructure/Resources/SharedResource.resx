@@ -441,4 +441,21 @@
   <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
     <value>System statistics retrieved successfully</value>
   </data>
+  
+  <!-- Lifetime Plan & Dynamic Duration Messages -->
+  <data name="Plan.LifetimeCannotHaveTrial" xml:space="preserve">
+    <value>Lifetime plans cannot have trial periods</value>
+  </data>
+  <data name="Plan.LifetimeCannotAutoRenew" xml:space="preserve">
+    <value>Lifetime plans cannot auto-renew (already permanent)</value>
+  </data>
+  <data name="Plan.LifetimeCannotScheduleUpgrade" xml:space="preserve">
+    <value>Lifetime plans cannot schedule upgrades (already permanent)</value>
+  </data>
+  <data name="Subscription.LifetimeCannotExtend" xml:space="preserve">
+    <value>Lifetime subscriptions cannot be extended (already infinite)</value>
+  </data>
+  <data name="Subscription.LifetimeCannotRenew" xml:space="preserve">
+    <value>Lifetime subscriptions cannot be renewed (already permanent)</value>
+  </data>
 </root>

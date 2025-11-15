@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Entities.Subscriptions;
 using Application.DTOs.Subscriptions;
+using Domain.Helpers;
 
 namespace Application.Mapping;
 
@@ -52,11 +53,17 @@ public class SubscriptionMappingProfile : Profile
         // ========== Subscription Plan Mappings ==========
         CreateMap<SubscriptionPlan, SubscriptionPlanDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
-            .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices));
+            .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
+            .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
+            .ForMember(d => d.IsLifetimePlan, opt => opt.MapFrom(s => s.IsLifetimePlan))
+            .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)));
 
         CreateMap<SubscriptionPlan, PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
+            .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
+            .ForMember(d => d.IsLifetimePlan, opt => opt.MapFrom(s => s.IsLifetimePlan))
+            .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)))
             .ForMember(d => d.Projects, opt => opt.MapFrom(s => 
                 s.PlanProjects.Select(pp => pp.Project)))
             .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
@@ -64,12 +71,18 @@ public class SubscriptionMappingProfile : Profile
 
         CreateMap<CreateSubscriptionPlanDto, SubscriptionPlan>()
             .ForMember(d => d.Id, opt => opt.Ignore())
+            .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
+            .ForMember(d => d.DurationMonths, opt => opt.MapFrom(s => 
+                s.DurationMonths.HasValue ? s.DurationMonths.Value : PlanDurationHelper.GetEquivalentMonths(s.DurationType)))
             .ForMember(d => d.PlanPrices, opt => opt.Ignore())
             .ForMember(d => d.PlanProjects, opt => opt.Ignore())
             .ForMember(d => d.PlanModules, opt => opt.Ignore())
             .ForMember(d => d.Subscriptions, opt => opt.Ignore());
 
         CreateMap<UpdateSubscriptionPlanDto, SubscriptionPlan>()
+            .ForMember(d => d.DurationMonths, opt => opt.MapFrom((s, d) => 
+                s.DurationType.HasValue ? PlanDurationHelper.GetEquivalentMonths(s.DurationType.Value) : 
+                s.DurationMonths.HasValue ? s.DurationMonths.Value : d.DurationMonths))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // ========== Subscription Mappings ==========
@@ -78,6 +91,7 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.CompanyId))
             .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.PlanId))
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
+            .ForMember(d => d.IsLifetime, opt => opt.MapFrom(s => s.IsLifetime))
             .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextPlanId))
             .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
             .ForMember(d => d.OfflineLicenseKey, opt => opt.Ignore()) // Set manually based on user role

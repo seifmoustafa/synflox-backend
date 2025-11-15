@@ -19,10 +19,21 @@ public class SubscriptionPlan : AuditEntity<Guid>
     public string? Description { get; set; }
 
     /// <summary>
-    /// Duration in months for paid subscriptions (must be > 0)
+    /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
     /// </summary>
-    [Range(1, 120)]
+    public PlanDurationType DurationType { get; set; } = PlanDurationType.Monthly;
+
+    /// <summary>
+    /// Duration in months for paid subscriptions (computed from DurationType, kept for backward compatibility)
+    /// For Lifetime plans, this is ignored
+    /// </summary>
+    [Range(0, 120)]
     public int DurationMonths { get; set; }
+
+    /// <summary>
+    /// Indicates if this is a lifetime/permanent plan
+    /// </summary>
+    public bool IsLifetimePlan => DurationType == PlanDurationType.Lifetime;
 
     /// <summary>
     /// Whether this plan allows a trial period
@@ -37,6 +48,7 @@ public class SubscriptionPlan : AuditEntity<Guid>
 
     /// <summary>
     /// Whether subscriptions auto-renew by default
+    /// Note: Lifetime plans cannot auto-renew (forced to false)
     /// </summary>
     public bool AutoRenew { get; set; }
 

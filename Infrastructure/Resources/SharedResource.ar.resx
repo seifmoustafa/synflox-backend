@@ -441,4 +441,21 @@
   <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
     <value>تم استرجاع إحصائيات النظام بنجاح</value>
   </data>
+  
+  <!-- Lifetime Plan & Dynamic Duration Messages -->
+  <data name="Plan.LifetimeCannotHaveTrial" xml:space="preserve">
+    <value>الخطط مدى الحياة لا يمكن أن تحتوي على فترة تجريبية</value>
+  </data>
+  <data name="Plan.LifetimeCannotAutoRenew" xml:space="preserve">
+    <value>الخطط مدى الحياة لا يمكن تجديدها تلقائيًا (دائمة بالفعل)</value>
+  </data>
+  <data name="Plan.LifetimeCannotScheduleUpgrade" xml:space="preserve">
+    <value>الخطط مدى الحياة لا يمكن جدولة ترقيتها (دائمة بالفعل)</value>
+  </data>
+  <data name="Subscription.LifetimeCannotExtend" xml:space="preserve">
+    <value>الاشتراكات مدى الحياة لا يمكن تمديدها (لا نهائية بالفعل)</value>
+  </data>
+  <data name="Subscription.LifetimeCannotRenew" xml:space="preserve">
+    <value>الاشتراكات مدى الحياة لا يمكن تجديدها (دائمة بالفعل)</value>
+  </data>
 </root>

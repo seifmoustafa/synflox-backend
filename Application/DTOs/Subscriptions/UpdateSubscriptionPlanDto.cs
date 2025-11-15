@@ -13,7 +13,16 @@ public class UpdateSubscriptionPlanDto
     [StringLength(2000)]
     public string? Description { get; set; }
 
-    [Range(1, 120)]
+    /// <summary>
+    /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
+    /// </summary>
+    public PlanDurationType? DurationType { get; set; }
+
+    /// <summary>
+    /// Duration in months (optional, auto-calculated from DurationType if not provided)
+    /// For Lifetime plans, this is ignored
+    /// </summary>
+    [Range(0, 120)]
     public int? DurationMonths { get; set; }
 
     public List<PlanPriceDto>? Prices { get; set; }

@@ -14,9 +14,18 @@ public class CreateSubscriptionPlanDto
     [StringLength(2000)]
     public string? Description { get; set; }
 
+    /// <summary>
+    /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
+    /// </summary>
     [Required]
-    [Range(1, 120)]
-    public int DurationMonths { get; set; }
+    public PlanDurationType DurationType { get; set; } = PlanDurationType.Monthly;
+
+    /// <summary>
+    /// Duration in months (optional, auto-calculated from DurationType if not provided)
+    /// For Lifetime plans, this is ignored
+    /// </summary>
+    [Range(0, 120)]
+    public int? DurationMonths { get; set; }
 
     /// <summary>
     /// Prices in multiple currencies

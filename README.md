@@ -1,1182 +1,774 @@
-# SYNFLOX Backend - Central Licensing System API
+# SYNFLOX Backend - Complete Technical Documentation
 
-## Business Overview
+> **Comprehensive technical reference for developers, architects, and DevOps engineers**  
+> **Version:** 2.0 | **Updated:** November 16, 2025
 
-**SYNFLOX** is an enterprise-grade **Central Licensing System** that serves as the authoritative control center for managing software licenses across multiple external enterprise applications (ERP, CRM, POS, HR, Inventory systems, etc.).
+---
 
-### Business Purpose
-SYNFLOX solves the critical business problem of **centralized license management** for software vendors who distribute multiple enterprise products. Instead of each product managing its own licensing, SYNFLOX provides:
+## 📋 Quick Navigation
 
-- **Unified License Control**: Single source of truth for all product licenses
-- **Multi-Tenant Management**: Manage thousands of companies and their subscriptions
-- **Flexible Licensing Models**: Support for both online and offline licensing scenarios
-- **Real-Time Validation**: Instant license status checks for connected systems
-- **Secure Offline Keys**: Encrypted license keys for air-gapped environments
-- **Administrative Control**: Complete subscription lifecycle management
+- [Architecture](#architecture) - Clean Architecture layers and principles
+- [Technology Stack](#technology-stack) - All frameworks and libraries used
+- [Domain Entities](#domain-entities) - All 20 business entities documented
+- [API Endpoints](#api-endpoints) - All 17 controllers with complete endpoint reference
+- [Services](#services) - All 27 service implementations
+- [Background Jobs](#background-jobs) - Automated tasks and scheduling
+- [Security](#security) - Authentication, authorization, encryption
+- [Database](#database) - Schema, migrations, configuration
+- [Development](#development) - Setup, workflow, testing
+- [Deployment](#deployment) - Production setup and best practices
 
-### Core Business Functions
+---
 
-#### 1. **Company (Tenant) Management**
-- Create and manage customer companies
-- Track contact information and subscription details
-- Maintain audit trails for all changes
-- Support for soft deletion and data retention
+## 🏗️ Architecture
 
-#### 2. **Subscription Lifecycle Control**
-- **Activate**: Enable company subscriptions with expiry dates
-- **Suspend**: Temporarily disable access (manual control)
-- **Resume**: Reactivate suspended subscriptions
-- **Extend**: Modify expiration dates for renewals
-- **Status Checking**: Real-time validation of subscription state
+### Clean Architecture Implementation
 
-#### 3. **License Key Management**
-- Generate secure, encrypted license keys for offline systems
-- Support key regeneration for security updates
-- Tamper-proof validation with clock detection
-- AES-256 encryption with HMAC SHA256 signatures
-
-#### 4. **Multi-Product Integration**
-- RESTful API for online product integration
-- Standardized response formats for all products
-- Support for different integration patterns
-- Comprehensive error handling and messaging
-
-## Technical Architecture
-
-SYNFLOX implements **Clean Architecture** principles with strict layer separation and dependency inversion:
+SYNFLOX follows **Clean Architecture** with strict separation:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    WebAPI Layer                          │
-│  Controllers • Middleware • Authentication • CORS       │
-│  Authorization Policies • Exception Handling            │
-└─────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────┐
-│                 Application Layer                        │
-│  Service Interfaces • DTOs • AutoMapper Profiles        │
-│  Business Logic Contracts • Request/Response Models     │
-└─────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────┐
-│                   Domain Layer                           │
-│  Entities • Enums • Interfaces • Business Rules         │
-│  NO EXTERNAL DEPENDENCIES (Pure Business Logic)         │
-└─────────────────────────────────────────────────────────┘
-                            ↑
-┌─────────────────────────────────────────────────────────┐
-│               Infrastructure Layer                       │
-│  EF Core • Repositories • External Services • Auth      │
-│  Database Context • File Storage • Email/SMS            │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                  WebAPI Layer                        │
+│  • 17 REST Controllers                               │
+│  • JWT Authentication                                │
+│  • Exception Handling                                │
+│  • Localization (EN/AR)                              │
+│  • CORS & Swagger                                    │
+└─────────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────────┐
+│               Application Layer                      │
+│  • Service Interfaces                                │
+│  • 50+ DTOs                                          │
+│  • AutoMapper Profiles                               │
+│  • Universal Encryption Converters                   │
+└─────────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────────┐
+│                Domain Layer                          │
+│  • 20 Entities                                       │
+│  • 15+ Enums                                         │
+│  • Business Rules                                    │
+│  • ⚠️ ZERO Dependencies                              │
+└─────────────────────────────────────────────────────┘
+                      ↑
+┌─────────────────────────────────────────────────────┐
+│             Infrastructure Layer                     │
+│  • EF Core 8.0                                       │
+│  • 27 Services                                       │
+│  • Repositories                                      │
+│  • Background Jobs                                   │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Layer Responsibilities
+### Key Principles
 
-#### **1. Domain Layer** (Core Business)
-- **Entities**: `Company`, `Admin`, `AdminType`, `RefreshToken`, `MenuItems`
-- **Enums**: `LicenseStatus` (Active, Expired, Suspended), `AuthProvider`, `Gender`
-- **Base Classes**: `AuditEntity<TKey>`, `BaseEntity<TKey>` with soft delete support
-- **Interfaces**: Repository contracts (`ICompanyRepository`, `IAdminRepository`, `IUnitOfWork`)
-- **Business Rules**: Status calculation logic, validation rules
-- **Zero Dependencies**: Pure business logic with no external references
+- **Dependency Inversion** - Domain has zero dependencies
+- **Separation of Concerns** - Each layer has single responsibility
+- **SOLID Principles** - Clean, maintainable code
 
-#### **2. Application Layer** (Use Cases)
-- **Service Interfaces**: `ILicensingService`, `ICompanyService`, `IAuthenticationService`
-- **DTOs**: Complete data transfer object structure for all entities
-- **AutoMapper Profiles**: Entity ↔ DTO mapping with encryption/decryption
-- **Request/Response Models**: API contract definitions
-- **Business Logic Orchestration**: Coordinates between domain and infrastructure
-- **Separation of Concerns**: CRUD operations separate from business operations
+---
 
-#### **3. Infrastructure Layer** (External Concerns)
-- **Services**: `LicensingService`, `CompanyService`, `AuthenticationService`
-- **Repositories**: `BaseRepository<T>`, entity-specific repositories
-- **Database Context**: `ApplicationDBContext` with SQL Server/Oracle support
-- **Authentication**: JWT token generation, password hashing, claims management
-- **External Services**: Email, SMS, file storage, caching (Redis)
-- **Settings & Configuration**: Encryption, license keys, file uploads
+## 🔧 Technology Stack
 
-#### **4. WebAPI Layer** (Presentation)
-- **Controllers**: RESTful endpoints with proper HTTP status codes
-- **Authorization**: Role-based policies (`SuperAdminOnly`, `AdminOrSuperAdmin`)
-- **Middleware Pipeline**: Exception handling, localization, rate limiting, caching
-- **API Documentation**: Swagger/OpenAPI integration
-- **CORS Configuration**: Cross-origin resource sharing setup
-- **Request/Response Handling**: Model validation, error responses
+**Framework:**
+- .NET 8.0 (LTS)
+- ASP.NET Core 8.0
+- C# 12
 
-### Key Architectural Patterns
+**Data:**
+- Entity Framework Core 8.0
+- SQL Server (primary)
+- Oracle (secondary support)
 
-#### **ID Encryption Pattern**
+**Security:**
+- JWT Authentication
+- BCrypt.Net (password hashing)
+- AES-256 + HMAC SHA256
+
+**Background Jobs:**
+- Hangfire
+
+**Logging:**
+- Serilog
+
+**Mapping:**
+- AutoMapper 12.0
+
+**Email:**
+- MailKit + MimeKit
+
+**Documentation:**
+- Swagger/OpenAPI 3.0
+
+---
+
+## 📦 Domain Entities
+
+### Complete Entity List (20 Total)
+
+#### **Authentication (3)**
+1. **Admin** - System administrators
+2. **AdminType** - Roles (SuperAdmin, Admin)
+3. **RefreshToken** - JWT refresh tokens
+
+#### **Client Access (2)**
+4. **ClientAccessToken** - External system tokens
+5. **ClientTokenUsageLog** - Token usage audit
+
+#### **Licensing (1)**
+6. **Company** - Customer companies
+
+#### **Subscriptions (9)** 🆕
+7. **SubscriptionPlan** - Plans with duration types
+8. **Subscription** - Active subscriptions
+9. **Project** - Products (ERP, CRM, etc.)
+10. **Module** - Feature modules
+11. **ProjectModule** - Project ↔ Module link
+12. **PlanProject** - Plan ↔ Project link
+13. **PlanModule** - Plan ↔ Module link
+14. **PlanPrice** - Multi-currency pricing
+15. **OutboxEvent** - Event sourcing
+
+#### **Navigation (1)**
+16. **MenuItem** - Dynamic navigation
+
+#### **Base Classes (4)**
+17. **BaseEntity<TKey>** - Base with ID
+18. **AuditEntity<TKey>** - Base with audit trail
+19. **IBaseEntity<TKey>** - Entity interface
+20. **PaginationMetadata** - Pagination info
+
+### Key Entity Details
+
+#### **SubscriptionPlan** 🆕⭐
 ```csharp
-// All entity IDs are encrypted in API responses and decrypted in requests
-// Uses AutoMapper converters for seamless transformation
+public class SubscriptionPlan : AuditEntity<Guid>
+{
+    public string Name { get; set; }
+    
+    // ⭐ NEW: Dynamic Duration
+    public PlanDurationType DurationType { get; set; }
+    public int DurationMonths { get; set; }
+    
+    public bool AllowTrial { get; set; }
+    public bool AutoRenew { get; set; }
+    
+    // ⭐ Computed Property
+    public bool IsLifetimePlan => DurationType == PlanDurationType.Lifetime;
+}
+```
+
+**Duration Types:**
+- Weekly (7 days)
+- BiWeekly (14 days)
+- Monthly (1 month)
+- Quarterly (3 months)
+- SemiAnnually (6 months)
+- Yearly (12 months)
+- Biennial (2 years)
+- Triennial (3 years)
+- **Lifetime (Never expires)** 🆕
+
+#### **Subscription** 🆕⭐
+```csharp
+public class Subscription : AuditEntity<Guid>
+{
+    public DateTime ExpiryDateUtc { get; set; } // DateTime.MaxValue for lifetime
+    public bool IsActive { get; set; }
+    public bool AutoRenew { get; set; }
+    
+    // Offline license key
+    public string? OfflineLicenseKey { get; set; }
+    
+    // ⭐ Computed Properties
+    public bool IsExpired => DateTime.UtcNow > ExpiryDateUtc;
+    public bool IsLifetime => Plan?.DurationType == PlanDurationType.Lifetime;
+}
+```
+
+---
+
+## 🎛️ API Endpoints
+
+### Complete Controller List (17 Total)
+
+#### **1. AdminAuthenticationController**
+`/api/admin/auth`
+
+```http
+POST   /login        # Admin login (JWT)
+POST   /refresh      # Refresh token
+POST   /logout       # Revoke token
+```
+
+#### **2. AdminsController**
+`/api/admins` | Auth: SuperAdminOnly
+
+```http
+GET    /             # List (paginated, searchable)
+GET    /{id}         # Get by ID
+POST   /             # Create
+PUT    /{id}         # Update
+DELETE /{id}         # Soft delete
+PUT    /{id}/change-password
+```
+
+#### **3. CompanyController**
+`/api/companies` | Auth: SuperAdminOnly
+
+```http
+GET    /             # List (filters: isActive, search)
+GET    /{id}         # Get details
+POST   /             # Create
+PUT    /{id}         # Update
+DELETE /{id}         # Delete
+```
+
+#### **4. SubscriptionsController** 🆕⭐
+`/api/subscriptions` | Auth: SuperAdminOnly
+
+**Complete Lifecycle Management:**
+
+```http
+# CRUD
+GET    /                         # List all
+GET    /{id}                     # Get details
+POST   /                         # Create
+DELETE /{id}                     # Cancel
+
+# Lifecycle
+PUT    /{id}/suspend             # Suspend
+PUT    /{id}/resume              # Resume
+PUT    /{id}/pause               # Pause (hold time)
+PUT    /{id}/unpause             # Unpause
+PUT    /{id}/extend              # Extend expiry
+PUT    /{id}/stop-trial          # Trial → Paid
+PUT    /{id}/reactivate          # Reactivate
+
+# Advanced
+POST   /{id}/upgrade             # Upgrade plan
+POST   /{id}/renew               # Renew
+
+# Status (Public)
+GET    /{id}/status              # Check status
+```
+
+**Lifetime Plan Rules:**
+- ✅ Cannot create with trial
+- ✅ Cannot enable auto-renew
+- ✅ Cannot schedule upgrade
+- ✅ Cannot extend (already permanent)
+- ✅ Cannot renew (already permanent)
+- ✅ CAN suspend/resume manually
+
+#### **5. PlansController** 🆕⭐
+`/api/subscription-plans` | Auth: SuperAdminOnly
+
+```http
+GET    /             # List all plans
+GET    /{id}         # Get plan details
+POST   /             # Create plan
+PUT    /{id}         # Update plan
+DELETE /{id}         # Delete plan
+```
+
+**Create Lifetime Plan Example:**
+```json
+POST /api/subscription-plans
+{
+  "name": "Enterprise Lifetime",
+  "durationType": 99,  // Lifetime
+  "allowTrial": false,
+  "autoRenew": false,
+  "prices": [
+    { "currency": 1, "amount": 9999.99 }
+  ]
+}
+```
+
+#### **6-8. Configuration Controllers**
+- **ProjectsController** - `/api/projects`
+- **ModulesController** - `/api/modules`
+- **MenuItemController** - `/api/menu-items`
+
+#### **9. ClientTokenController** 🆕
+`/api/client-tokens` | Auth: SuperAdminOnly
+
+```http
+GET    /                         # List tokens
+POST   /                         # Generate token
+PUT    /{id}/revoke              # Revoke
+GET    /{id}/usage-logs          # Usage history
+```
+
+**Purpose:** Generate JWT tokens for external systems (ERP, CRM)
+
+#### **10. ClientApiController** 🆕
+`/api/client` | Auth: Client JWT Token
+
+```http
+GET    /subscription/{id}/status      # Check status
+POST   /validate-license-key          # Validate key
+GET    /company/{id}/details          # Company info
+```
+
+**Usage:** External products call these endpoints
+
+#### **11. LicenseController** 🆕
+`/api/licenses`
+
+```http
+POST   /subscriptions/{id}/generate-key    # Generate
+POST   /subscriptions/{id}/regenerate-key  # Regenerate
+POST   /validate-key                       # Validate (public)
+```
+
+**License Key Security:**
+- AES-256 encryption
+- HMAC SHA256 signature
+- Clock tampering detection
+
+#### **12. DashboardController** 🆕
+`/api/dashboard` | Auth: SuperAdminOnly
+
+```http
+GET    /                    # Full dashboard
+GET    /companies           # Company stats
+GET    /subscriptions       # Subscription stats
+GET    /admins              # Admin stats
+GET    /alerts              # System alerts
+```
+
+#### **13-17. Supporting Controllers**
+- **SearchController** - Global search
+- **UploadsController** - File uploads
+- **DownloadsController** - Export data
+- **CustomEmailController** - Emails
+- **AdminTypesController** - Roles
+
+---
+
+## ⚙️ Services
+
+### Complete Service List (27 Total)
+
+#### **Core Business Services (10)**
+1. **SubscriptionService** 🆕 - Subscription lifecycle
+2. **SubscriptionPlanService** 🆕 - Plan management
+3. **CompanyService** - Company CRUD
+4. **AdminService** - Admin management
+5. **ProjectService** - Project CRUD
+6. **ModuleService** - Module CRUD
+7. **ClientTokenService** 🆕 - Token management
+8. **LicenseService** 🆕 - License keys
+9. **DashboardService** 🆕 - Dashboard data
+10. **SearchService** - Global search
+
+#### **Authentication & Authorization (3)**
+11. **AuthenticationService** - Login, tokens
+12. **ClientJwtService** 🆕 - Client tokens
+13. **CurrentUserService** - User context
+
+#### **Infrastructure Services (8)**
+14. **EmailService** - SMTP email
+15. **EmailQueue** - Email queue
+16. **FileService** - File operations
+17. **UploadService** - File uploads
+18. **DownloadService** - Data export
+19. **LocalizationService** - i18n
+20. **IdEncryptionService** - ID encryption
+21. **MenuItemService** - Navigation
+
+#### **Utility Services (6)**
+22. **AdminTypeService** - Role management
+23. **ClientApiService** 🆕 - Client API
+24. **UploadCleanupService** - Cleanup
+25. **EmailLocalizationHelper** - Email templates
+26. **EmailSender** - Email sending
+27. **PlanDurationHelper** 🆕 - Duration calculations
+
+### Key Service: SubscriptionService 🆕
+
+**Lifetime Plan Logic Example:**
+```csharp
+public async Task<SubscriptionDto> CreateSubscriptionAsync(CreateSubscriptionDto dto)
+{
+    var plan = await _planRepository.GetByIdAsync(dto.PlanId);
+    
+    // ⭐ Lifetime Validation
+    if (plan.IsLifetimePlan)
+    {
+        if (dto.StartWithTrial)
+            throw new BadRequestException("Lifetime plans cannot have trials");
+        
+        if (dto.AutoRenew)
+            throw new BadRequestException("Lifetime plans cannot auto-renew");
+    }
+    
+    // ⭐ Calculate expiry using helper
+    var expiryDate = PlanDurationHelper.CalculateExpiryDate(
+        startDate,
+        plan.DurationType
+    ); // Returns DateTime.MaxValue for Lifetime
+    
+    // Create subscription...
+}
+```
+
+---
+
+## 🔄 Background Jobs
+
+### SubscriptionStatusBackgroundJob 🆕⭐
+**Schedule:** Every 10 minutes  
+**Purpose:** Automated subscription management
+
+#### **Tasks:**
+
+**1. Process Expired Subscriptions**
+```csharp
+// Mark expired (SKIP lifetime plans)
+var expired = subscriptions.Where(s => 
+    !s.Plan.IsLifetimePlan &&  // ⭐ SKIP
+    s.ExpiryDateUtc + GracePeriod < DateTime.UtcNow
+);
+```
+
+**2. Process Auto-Renewals**
+```csharp
+// Auto-renew (SKIP lifetime plans)
+var renewals = subscriptions.Where(s =>
+    s.AutoRenew &&
+    !s.Plan.IsLifetimePlan &&  // ⭐ SKIP
+    s.ExpiryDateUtc <= DateTime.UtcNow.AddDays(7)
+);
+```
+
+**3. Process Deferred Upgrades**
+```csharp
+// Activate scheduled upgrades
+var upgrades = subscriptions.Where(s =>
+    s.NextPlanId != null &&
+    s.NextPlanStartDateUtc <= DateTime.UtcNow
+);
+```
+
+**Logging:**
+```csharp
+_logger.LogInformation(
+    "Skipping lifetime subscription {Id} from {Process}",
+    subscription.Id,
+    "expiry processing"
+);
+```
+
+---
+
+## 🔐 Security
+
+### ID Encryption Pattern ⚠️ **CRITICAL RULE**
+
+**Rule:** Encryption/decryption ONLY in AutoMapper converters.
+
+**Universal Converters:**
+
+```csharp
+// UniversalEncryptionConverter
+Guid → Guid (encrypted)
+Guid? → Guid?
+IEnumerable<Guid> → IEnumerable<Guid>
+
+// UniversalDecryptionConverter
+Guid → Guid (decrypted)
+Guid? → Guid?
+Request DTOs → Guid (smart extraction)
+```
+
+**Usage:**
+```csharp
 CreateMap<Company, CompanyDto>()
-    .ForMember(d => d.Id, opt => opt.ConvertUsing<EncryptGuidConverter, Guid>(s => s.Id));
+    .ForMember(d => d.Id, 
+        opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
 ```
 
-#### **Soft Delete Pattern**
+**Forbidden:**
 ```csharp
-// All entities support soft deletion with audit trails
-public class AuditEntity<TKey> : BaseEntity<TKey>
-{
-    public DateTime CreatedTimestamp { get; set; }
-    public DateTime? UpdatedTimestamp { get; set; }
-    public DateTime? DeletedTimestamp { get; set; }
-}
+// ❌ NEVER in controllers or services
+var decryptedId = _idEncryption.Decrypt(id);  // WRONG!
+
+// ✅ ALWAYS use AutoMapper
+var dto = _mapper.Map<CompanyDto>(entity);  // CORRECT!
 ```
 
-#### **Repository Pattern with Unit of Work**
-```csharp
-// Centralized data access with transaction support
-public interface IUnitOfWork
-{
-    ICompanyRepository Companies { get; }
-    IAdminRepository Admins { get; }
-    Task<int> SaveChangesAsync();
-}
+### Authentication
+
+**Admin JWT:**
+- Access token: 30 minutes
+- Refresh token: 60 days
+- BCrypt password hashing
+
+**Client JWT:**
+- Separate tokens for external systems
+- Configurable expiration
+- Endpoint restrictions
+
+### License Key Security
+
+**Format:**
+```
+Base64(AES-256(JSON + HMAC-SHA256))
 ```
 
-#### **Service Layer Separation**
-- **CRUD Services**: Handle basic entity operations (`ICompanyService`)
-- **Business Services**: Handle complex business logic (`ILicensingService`)
-- **Clear Boundaries**: Each service has a single responsibility
+**Features:**
+- AES-256 encryption
+- HMAC tamper detection
+- Clock tampering detection
+- Version control
 
-## How It Works
+---
 
-### Status Calculation Logic
+## 💾 Database
 
-SYNFLOX uses a priority-based status calculation:
+### Schema Overview
 
-1. **Expired** (Highest Priority): If `ExpiryDate < DateTime.UtcNow`, status is **Expired** regardless of `IsActive` flag
-2. **Suspended**: If `IsActive = false` AND `ExpiryDate >= DateTime.UtcNow`, status is **Suspended**
-3. **Active**: If `IsActive = true` AND `ExpiryDate >= DateTime.UtcNow`, status is **Active**
+**Tables:** 20+ tables with proper indexing
 
-### Online Systems Integration
+**Key Tables:**
+- `Companies` - Customer tenants
+- `Subscriptions` - Active subscriptions
+- `SubscriptionPlans` - Commercial plans
+- `Admins` - System administrators
+- `ClientAccessTokens` - External tokens
 
-Online systems call the SYNFLOX API directly to check license status:
+### Migration: Add DurationType 🆕
 
-```
-External Product → GET /api/licensing/{companyId}/status → SYNFLOX
-                                                              ↓
-                                                         Check Status
-                                                              ↓
-External Product ← { status: "Active", expiryDate: "..." } ← SYNFLOX
-```
-
-**Example Flow:**
-1. ERP system starts up
-2. ERP calls `GET /api/licensing/{companyId}/status`
-3. SYNFLOX checks company subscription status
-4. Returns status: `Active`, `Expired`, or `Suspended`
-5. ERP allows or blocks access based on response
-
-### Offline Systems Integration
-
-Offline systems use a **secure license key** installed locally:
-
-1. **License Key Generation**: SuperAdmin generates an encrypted license key for the company
-2. **Key Installation**: The license key is installed in the offline system's configuration
-3. **Local Validation**: The offline system validates the key locally without internet connection
-4. **Clock Tampering Detection**: System detects if system clock has been tampered with
-
-**License Key Format:**
-- Encrypted JWT-like token
-- Contains: CompanyId, ExpiryDate, IssuedDate, Version
-- Signed with HMAC SHA256
-- Encrypted with AES-256
-- Base64 encoded
-
-**Validation Process:**
-1. Decrypt license key
-2. Verify HMAC signature
-3. Check expiry date
-4. Detect clock tampering (current time must be >= issued time)
-5. Return validation result
-
-## API Endpoints
-
-### Company Management (SuperAdmin Only)
-
-#### Create Company
-```http
-POST /api/licensing/companies
-Authorization: Bearer {admin_jwt_token}
-Content-Type: application/json
-
-{
-  "name": "Acme Corporation",
-  "expiryDate": "2025-12-31T23:59:59Z",
-  "contactEmail": "admin@acme.com",
-  "contactPhone": "+1234567890",
-  "address": "123 Main St, City, Country"
-}
-```
-
-**Response (English):**
-```json
-{
-  "statusCode": 201,
-  "message": "Company created successfully",
-  "data": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "Acme Corporation",
-    "isActive": true,
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "contactEmail": "admin@acme.com",
-    "contactPhone": "+1234567890",
-    "address": "123 Main St, City, Country"
-  }
-}
-```
-
-**Response (Arabic):**
-```json
-{
-  "statusCode": 201,
-  "message": "تم إنشاء الشركة بنجاح",
-  "data": { ... }
-}
-```
-
-#### Get All Companies
-```http
-GET /api/licensing/companies?page=1&pageSize=10&search=Acme
-Authorization: Bearer {admin_jwt_token}
-```
-
-#### Get Company by ID
-```http
-GET /api/licensing/companies/{id}
-Authorization: Bearer {admin_jwt_token}
-```
-
-#### Update Company
-```http
-PUT /api/licensing/companies/{id}
-Authorization: Bearer {admin_jwt_token}
-Content-Type: application/json
-
-{
-  "name": "Acme Corporation Updated",
-  "contactEmail": "newadmin@acme.com"
-}
-```
-
-#### Delete Company
-```http
-DELETE /api/licensing/companies/{id}
-Authorization: Bearer {admin_jwt_token}
-```
-
-### Subscription Management (SuperAdmin Only)
-
-#### Activate Company
-```http
-PUT /api/licensing/{id}/activate
-Authorization: Bearer {admin_jwt_token}
-Content-Type: application/json
-
-{
-  "expiryDate": "2025-12-31T23:59:59Z"
-}
-```
-
-**Response (English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Company subscription activated successfully",
-  "data": { ... }
-}
-```
-
-**Response (Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "تم تفعيل اشتراك الشركة بنجاح",
-  "data": { ... }
-}
-```
-
-#### Suspend Company
-```http
-PUT /api/licensing/{id}/suspend
-Authorization: Bearer {admin_jwt_token}
-```
-
-**Response (English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Company subscription suspended successfully",
-  "data": { ... }
-}
-```
-
-**Response (Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "تم تعليق اشتراك الشركة بنجاح",
-  "data": { ... }
-}
-```
-
-#### Resume Company
-```http
-PUT /api/licensing/{id}/resume
-Authorization: Bearer {admin_jwt_token}
-```
-
-#### Extend Subscription
-```http
-PUT /api/licensing/{id}/extend
-Authorization: Bearer {admin_jwt_token}
-Content-Type: application/json
-
-{
-  "newExpiryDate": "2026-12-31T23:59:59Z"
-}
-```
-
-**Response (English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Subscription extended successfully",
-  "data": { ... }
-}
-```
-
-**Response (Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "تم تمديد الاشتراك بنجاح",
-  "data": { ... }
-}
-```
-
-### License Status Check (Public - For External Products)
-
-#### Check Company Status
-```http
-GET /api/licensing/{id}/status
-```
-
-**Response (Active - English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Subscription is active",
-  "data": {
-    "status": "Active",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": true,
-    "statusMessage": "Subscription is active"
-  }
-}
-```
-
-**Response (Active - Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "الاشتراك نشط",
-  "data": {
-    "status": "Active",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": true,
-    "statusMessage": "الاشتراك نشط"
-  }
-}
-```
-
-**Response (Expired - English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Subscription has expired",
-  "data": {
-    "status": "Expired",
-    "expiryDate": "2024-01-01T00:00:00Z",
-    "isActive": true,
-    "statusMessage": "Subscription has expired"
-  }
-}
-```
-
-**Response (Expired - Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "انتهت صلاحية الاشتراك",
-  "data": {
-    "status": "Expired",
-    "expiryDate": "2024-01-01T00:00:00Z",
-    "isActive": true,
-    "statusMessage": "انتهت صلاحية الاشتراك"
-  }
-}
-```
-
-**Response (Suspended - English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Subscription is suspended",
-  "data": {
-    "status": "Suspended",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": false,
-    "statusMessage": "Subscription is suspended"
-  }
-}
-```
-
-**Response (Suspended - Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "الاشتراك معلق",
-  "data": {
-    "status": "Suspended",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": false,
-    "statusMessage": "الاشتراك معلق"
-  }
-}
-```
-
-### License Key Management (SuperAdmin Only)
-
-#### Generate License Key
-```http
-POST /api/licensing/{id}/license-key/generate
-Authorization: Bearer {admin_jwt_token}
-```
-
-**Response (English):**
-```json
-{
-  "statusCode": 200,
-  "message": "License key generated successfully",
-  "data": {
-    "licenseKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "message": "License key generated successfully"
-  }
-}
-```
-
-**Response (Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "تم إنشاء مفتاح الترخيص بنجاح",
-  "data": {
-    "licenseKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "message": "تم إنشاء مفتاح الترخيص بنجاح"
-  }
-}
-```
-
-#### Regenerate License Key
-```http
-POST /api/licensing/{id}/license-key/regenerate
-Authorization: Bearer {admin_jwt_token}
-```
-
-### License Key Validation (Public - For Offline Systems)
-
-#### Validate License Key
-```http
-POST /api/licensing/validate-key
-Content-Type: application/json
-
-{
-  "licenseKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response (Valid - English):**
-```json
-{
-  "statusCode": 200,
-  "message": "Subscription is active",
-  "data": {
-    "isValid": true,
-    "status": "Active",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": true,
-    "clockTampered": false,
-    "companyId": "550e8400-e29b-41d4-a716-446655440000",
-    "message": "Subscription is active"
-  }
-}
-```
-
-**Response (Valid - Arabic):**
-```json
-{
-  "statusCode": 200,
-  "message": "الاشتراك نشط",
-  "data": {
-    "isValid": true,
-    "status": "Active",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": true,
-    "clockTampered": false,
-    "companyId": "550e8400-e29b-41d4-a716-446655440000",
-    "message": "الاشتراك نشط"
-  }
-}
-```
-
-**Response (Clock Tampered - English):**
-```json
-{
-  "statusCode": 401,
-  "message": "System clock tampering detected. License validation failed.",
-  "data": {
-    "isValid": false,
-    "status": "Active",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": true,
-    "clockTampered": true,
-    "companyId": "550e8400-e29b-41d4-a716-446655440000",
-    "message": "System clock tampering detected. License validation failed."
-  }
-}
-```
-
-**Response (Clock Tampered - Arabic):**
-```json
-{
-  "statusCode": 401,
-  "message": "تم اكتشاف تلاعب بساعة النظام. فشل التحقق من الترخيص.",
-  "data": {
-    "isValid": false,
-    "status": "Active",
-    "expiryDate": "2025-12-31T23:59:59Z",
-    "isActive": true,
-    "clockTampered": true,
-    "companyId": "550e8400-e29b-41d4-a716-446655440000",
-    "message": "تم اكتشاف تلاعب بساعة النظام. فشل التحقق من الترخيص."
-  }
-}
-```
-
-## Usage Examples
-
-### ERP System Integration
-
-**Scenario**: ERP system needs to check if customer can access the system.
-
-**Implementation:**
-```csharp
-// On ERP startup or periodic check
-public async Task<bool> CheckLicenseStatus(Guid companyId)
-{
-    var client = new HttpClient();
-    var response = await client.GetAsync(
-        $"https://synflox-api.com/api/licensing/{companyId}/status");
-    
-    var result = await response.Content.ReadFromJsonAsync<CompanyStatusResponse>();
-    
-    if (result.Status == "Active")
-    {
-        // Allow access
-        return true;
-    }
-    else if (result.Status == "Expired")
-    {
-        // Show subscription expired message
-        ShowMessage(result.StatusMessage); // "Subscription has expired" or "انتهت صلاحية الاشتراك"
-        return false;
-    }
-    else if (result.Status == "Suspended")
-    {
-        // Show suspended message
-        ShowMessage(result.StatusMessage); // "Subscription is suspended" or "الاشتراك معلق"
-        return false;
-    }
-    
-    return false;
-}
-```
-
-### CRM System Integration (Online)
-
-**Scenario**: CRM system validates license on user login.
-
-**Implementation:**
-```javascript
-// JavaScript/TypeScript example
-async function validateLicense(companyId) {
-    const response = await fetch(
-        `https://synflox-api.com/api/licensing/${companyId}/status`,
-        {
-            headers: {
-                'Accept-Language': 'ar' // or 'en' for English
-            }
-        }
-    );
-    
-    const data = await response.json();
-    
-    if (data.data.status === 'Active') {
-        // Proceed with login
-        return true;
-    } else {
-        // Block login and show message
-        alert(data.message); // Localized message
-        return false;
-    }
-}
-```
-
-### POS System Integration (Offline)
-
-**Scenario**: POS system works offline and needs to validate license locally.
-
-**Implementation:**
-```csharp
-// Offline POS system
-public bool ValidateOfflineLicense(string licenseKey)
-{
-    // Call SYNFLOX validation endpoint (when internet is available)
-    // Or validate locally using installed license key
-    
-    var client = new HttpClient();
-    var request = new
-    {
-        licenseKey = licenseKey
-    };
-    
-    var response = await client.PostAsJsonAsync(
-        "https://synflox-api.com/api/licensing/validate-key",
-        request);
-    
-    var result = await response.Content.ReadFromJsonAsync<LicenseKeyValidationResponse>();
-    
-    if (!result.IsValid)
-    {
-        // License invalid or expired
-        if (result.ClockTampered)
-        {
-            ShowError("System clock tampering detected!");
-        }
-        else
-        {
-            ShowError(result.Message); // Localized error message
-        }
-        return false;
-    }
-    
-    // License is valid
-    return true;
-}
-```
-
-### HR System Integration
-
-**Scenario**: HR system checks license status periodically.
-
-**Implementation:**
-```python
-# Python example
-import requests
-
-def check_license_status(company_id, language='en'):
-    url = f"https://synflox-api.com/api/licensing/{company_id}/status"
-    headers = {
-        'Accept-Language': language
-    }
-    
-    response = requests.get(url, headers=headers)
-    data = response.json()
-    
-    status = data['data']['status']
-    message = data['message']
-    
-    if status == 'Active':
-        print(f"License is active: {message}")
-        return True
-    elif status == 'Expired':
-        print(f"License expired: {message}")
-        return False
-    elif status == 'Suspended':
-        print(f"License suspended: {message}")
-        return False
-    
-    return False
-
-# Usage
-if check_license_status('550e8400-e29b-41d4-a716-446655440000', 'ar'):
-    # Continue with HR operations
-    pass
-else:
-    # Block access
-    pass
-```
-
-## Multi-Language Support
-
-SYNFLOX supports **English** and **Arabic** responses. The system automatically detects the language from the `Accept-Language` HTTP header.
-
-### Setting Language
-
-**English:**
-```http
-GET /api/licensing/{id}/status
-Accept-Language: en
-```
-
-**Arabic:**
-```http
-GET /api/licensing/{id}/status
-Accept-Language: ar
-```
-
-### Response Examples
-
-**English Response:**
-```json
-{
-  "statusCode": 200,
-  "message": "Subscription is active",
-  "data": {
-    "status": "Active",
-    "statusMessage": "Subscription is active"
-  }
-}
-```
-
-**Arabic Response:**
-```json
-{
-  "statusCode": 200,
-  "message": "الاشتراك نشط",
-  "data": {
-    "status": "Active",
-    "statusMessage": "الاشتراك نشط"
-  }
-}
-```
-
-## Security Architecture
-
-### Multi-Layer Security Model
-
-SYNFLOX implements enterprise-grade security across all layers:
-
-#### **1. Authentication & Authorization**
-```csharp
-// JWT-based authentication with role-based authorization
-[Authorize(Policy = "SuperAdminOnly")]
-public async Task<IActionResult> ActivateCompany(Guid id, [FromBody] ActivateCompanyRequest request)
-{
-    var decryptedId = _idEncryption.Decrypt(id); // ID decryption at boundary
-    var result = await _licensingService.ActivateCompanyAsync(decryptedId, request.ExpiryDate);
-    return Ok(new ApiResponse<CompanyDto>(200, _localizer["Licensing.CompanyActivated"], result));
-}
-```
-
-#### **2. ID Encryption System**
-- **Boundary Encryption**: All entity IDs encrypted at API boundaries
-- **AutoMapper Integration**: Seamless encryption/decryption via converters
-- **Security by Design**: Internal services work with plain GUIDs
-- **Tamper Protection**: Encrypted IDs prevent enumeration attacks
-
-#### **3. License Key Security**
-```
-License Key Structure:
-┌─────────────────────────────────────────────────────────┐
-│  Base64(AES-256_Encrypt(JSON({                          │
-│    Payload: {                                           │
-│      CompanyId: Guid,                                   │
-│      ExpiryDate: DateTime,                              │
-│      IssuedDate: DateTime,                              │
-│      Version: int                                       │
-│    },                                                   │
-│    Signature: HMAC_SHA256(Payload)                      │
-│  })))                                                   │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Security Features**:
-- **AES-256 Encryption**: Military-grade encryption
-- **HMAC SHA256 Signature**: Tamper-proof validation
-- **Clock Tampering Detection**: Prevents system time manipulation
-- **Version Control**: Future-proof key format evolution
-
-#### **4. Validation Process**
-1. **Decode**: Base64 → Encrypted JSON
-2. **Decrypt**: AES-256 → Plain JSON
-3. **Verify**: HMAC signature validation
-4. **Check Expiry**: Date validation
-5. **Clock Detection**: Time manipulation check
-6. **Result**: Secure validation response
-
-### Database Security
-
-#### **Soft Delete Protection**
-```csharp
-// All queries automatically filter deleted records
-public async Task<IEnumerable<Company>> GetActiveCompaniesAsync()
-{
-    return await _context.Companies
-        .Where(c => !c.IsDeleted && c.IsActive) // Automatic soft delete filter
-        .ToListAsync();
-}
-```
-
-#### **Audit Trail System**
-- **Automatic Timestamps**: Created, Updated, Deleted timestamps
-- **Change Tracking**: Entity Framework change detection
-- **Data Retention**: Soft delete preserves historical data
-- **Compliance Ready**: Audit trails for regulatory requirements
-
-#### **Database Encryption**
-- **Connection String Security**: Encrypted configuration
-- **Column-Level Encryption**: Sensitive data protection
-- **Index Optimization**: Secure, performant queries
-- **Multi-Database Support**: SQL Server + Oracle compatibility
-
-## Configuration
-
-### appsettings.json
-
-```json
-{
-  "LicenseKeySettings": {
-    "EncryptionKey": "7exg2aivWDs075iB+viRJOO7biKuI+XD9CUYUCEeBYM=",
-    "IV": "HjE/Sa+cbfdt2fAyv7f3JA==",
-    "SigningKey": "MpXbg7DFEYjqxGhLnU0U51C6c7Ln6Mt5KeyHDXcTA08=",
-    "Version": 1
-  },
-  "JwtSettings": {
-    "Issuer": "localhost",
-    "Audience": "localhost",
-    "SecretKey": "...",
-    "Lifetime": 30,
-    "RefreshTokenExpiration": 60
-  }
-}
-```
-
-## Authentication
-
-SYNFLOX uses **JWT-based authentication** for admin access. All management endpoints require SuperAdmin authorization.
-
-### Admin Login
-```http
-POST /api/admin/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "password123"
-}
-```
-
-### Using JWT Token
-```http
-GET /api/licensing/companies
-Authorization: Bearer {jwt_token}
-```
-
-## Database Support
-
-SYNFLOX supports:
-- **SQL Server**
-- **Oracle** (with automatic type conversions)
-
-## Technology Stack
-
-- **.NET** - Core framework
-- **ASP.NET Core** - Web API framework
-- **Entity Framework Core** - ORM
-- **JWT** - Authentication
-- **AutoMapper** - Object mapping
-- **Serilog** - Logging
-- **AES-256** - License key encryption
-- **HMAC SHA256** - License key signing
-
-## Security Features
-
-1. **JWT Authentication**: Secure admin access
-2. **Role-Based Authorization**: SuperAdmin and Admin roles
-3. **Encrypted License Keys**: AES-256 encryption
-4. **HMAC Signatures**: Tamper-proof license keys
-5. **Clock Tampering Detection**: Prevents date manipulation
-6. **Soft Delete**: Companies are soft-deleted, not permanently removed
-7. **Audit Trail**: Automatic timestamp tracking
-
-## Database Schema
-
-### Core Entities
-
-#### **Companies Table**
+**SQL:**
 ```sql
-CREATE TABLE Companies (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    Name NVARCHAR(200) NOT NULL,
-    IsActive BIT NOT NULL DEFAULT 1,
-    ExpiryDate DATETIME2 NULL,
-    ContactEmail NVARCHAR(200) NULL,
-    ContactPhone NVARCHAR(50) NULL,
-    Address NVARCHAR(500) NULL,
-    LicenseKey NVARCHAR(1000) NULL,
-    CreatedTimestamp DATETIME2 NOT NULL,
-    UpdatedTimestamp DATETIME2 NULL,
-    DeletedTimestamp DATETIME2 NULL,
-    IsDeleted BIT NOT NULL DEFAULT 0
-);
+-- Add DurationType column
+ALTER TABLE SubscriptionPlans
+ADD DurationType INT NOT NULL DEFAULT 3; -- Monthly
 
--- Indexes for optimal performance
-CREATE UNIQUE INDEX IX_Companies_Name ON Companies (Name) WHERE IsDeleted = 0;
-CREATE INDEX IX_Companies_LicenseKey ON Companies (LicenseKey) WHERE LicenseKey IS NOT NULL;
-CREATE INDEX IX_Companies_Status ON Companies (ExpiryDate, IsActive, IsDeleted);
+-- Migrate existing plans
+UPDATE SubscriptionPlans
+SET DurationType = CASE DurationMonths
+    WHEN 1 THEN 3   -- Monthly
+    WHEN 3 THEN 4   -- Quarterly
+    WHEN 6 THEN 5   -- SemiAnnually
+    WHEN 12 THEN 6  -- Yearly
+    WHEN 24 THEN 7  -- Biennial
+    WHEN 36 THEN 8  -- Triennial
+    ELSE 3          -- Default to Monthly
+END
+WHERE DurationMonths > 0;
+
+-- Lifetime plans
+UPDATE SubscriptionPlans
+SET DurationType = 99,  -- Lifetime
+    DurationMonths = 0
+WHERE DurationMonths = 0;
 ```
 
-#### **Admins Table**
-```sql
-CREATE TABLE Admins (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    FirstName NVARCHAR(100) NULL,
-    LastName NVARCHAR(100) NULL,
-    PhoneNumber NVARCHAR(20) NULL,
-    Username NVARCHAR(100) NOT NULL,
-    Password NVARCHAR(100) NOT NULL, -- Hashed
-    AdminTypeId UNIQUEIDENTIFIER NOT NULL,
-    CreatedTimestamp DATETIME2 NOT NULL,
-    UpdatedTimestamp DATETIME2 NULL,
-    DeletedTimestamp DATETIME2 NULL,
-    IsDeleted BIT NOT NULL DEFAULT 0,
-    FOREIGN KEY (AdminTypeId) REFERENCES AdminTypes(Id)
-);
-```
+### Connection Strings
 
-#### **AdminTypes Table**
-```sql
-CREATE TABLE AdminTypes (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    AdminTypeName NVARCHAR(50) NOT NULL, -- 'SuperAdmin', 'Admin'
-    CreatedTimestamp DATETIME2 NOT NULL,
-    UpdatedTimestamp DATETIME2 NULL,
-    DeletedTimestamp DATETIME2 NULL,
-    IsDeleted BIT NOT NULL DEFAULT 0
-);
-```
-
-### Database Features
-- **Audit Trails**: All tables include Created/Updated/Deleted timestamps
-- **Soft Delete**: Logical deletion with `IsDeleted` flag
-- **Optimized Indexes**: Performance-tuned for common queries
-- **Referential Integrity**: Foreign key constraints
-- **Multi-Database**: SQL Server (primary) and Oracle (secondary) support
-
-## Deployment Architecture
-
-### Environment Configuration
-
-#### **Development Environment**
+**SQL Server:**
 ```json
-{
-  "ConnectionStrings": {
-    "SqlServerConnection": "Server=.\\SQLEXPRESS;Database=SYNFLOX_Dev;Trusted_Connection=True;TrustServerCertificate=True;"
-  },
-  "JwtSettings": {
-    "Issuer": "localhost",
-    "Audience": "localhost",
-    "SecretKey": "development-secret-key",
-    "Lifetime": 30
-  }
-}
+"SqlServerConnection": "Server=.\\SQLEXPRESS;Database=SYNFLOX;Trusted_Connection=True;"
 ```
 
-#### **Production Environment**
+**Oracle:**
 ```json
-{
-  "ConnectionStrings": {
-    "SqlServerConnection": "Server=prod-server;Database=SYNFLOX_Prod;User Id=synflox_user;Password=***;Encrypt=True;"
-  },
-  "JwtSettings": {
-    "Issuer": "api.synflox.com",
-    "Audience": "synflox-clients",
-    "SecretKey": "production-secure-key-256-bits",
-    "Lifetime": 15
-  },
-  "CacheSettings": {
-    "UseRedis": true,
-    "RedisConnection": "prod-redis:6379"
-  }
-}
+"OracleConnection": "Data Source=localhost:1521/SYNFLOX;User Id=admin;Password=***;"
 ```
 
-### Docker Deployment
+---
 
-#### **Dockerfile**
-```dockerfile
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 80
-EXPOSE 443
-
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY ["WebAPI/WebAPI.csproj", "WebAPI/"]
-COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
-COPY ["Application/Application.csproj", "Application/"]
-COPY ["Domain/Domain.csproj", "Domain/"]
-RUN dotnet restore "WebAPI/WebAPI.csproj"
-COPY . .
-WORKDIR "/src/WebAPI"
-RUN dotnet build "WebAPI.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "WebAPI.csproj" -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "WebAPI.dll"]
-```
-
-#### **Docker Compose**
-```yaml
-version: '3.8'
-services:
-  synflox-api:
-    build: .
-    ports:
-      - "5000:80"
-      - "5001:443"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__SqlServerConnection=Server=db;Database=SYNFLOX;User Id=sa;Password=YourPassword123;
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourPassword123
-    ports:
-      - "1433:1433"
-    volumes:
-      - sqlserver_data:/var/opt/mssql
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-volumes:
-  sqlserver_data:
-  redis_data:
-```
-
-## Getting Started
+## 🚀 Development
 
 ### Prerequisites
-- **.NET 8.0 SDK** or later
-- **SQL Server** (LocalDB, Express, or Full)
-- **Visual Studio 2022** or **VS Code** with C# extension
-- **Redis** (optional, for caching)
+- .NET 8.0 SDK
+- SQL Server (LocalDB/Express/Full)
+- Visual Studio 2022 or VS Code
 
-### Quick Start
+### Setup
 
-#### **1. Clone and Setup**
+**1. Clone & Restore:**
 ```bash
-git clone <repository-url>
+git clone <repo>
 cd SYNFLOX
 dotnet restore
 ```
 
-#### **2. Database Configuration**
-Update `appsettings.json` in WebAPI project:
-```json
-{
-  "ConnectionStrings": {
-    "SqlServerConnection": "Server=.\\SQLEXPRESS;Database=SYNFLOX;Trusted_Connection=True;TrustServerCertificate=True;"
-  }
-}
-```
+**2. Configure Database:**
+Edit `appsettings.json` in WebAPI project.
 
-#### **3. Run Database Migrations**
+**3. Run Migrations:**
 ```bash
 cd WebAPI
 dotnet ef database update
-# Database will be created automatically with initial data
 ```
 
-#### **4. Start the API**
+**4. Run:**
 ```bash
 dotnet run --project WebAPI
 ```
 
-#### **5. Access the API**
-- **Swagger UI**: `https://localhost:5001/swagger`
-- **API Base URL**: `https://localhost:5001/api`
-
-### Initial Login Credentials
-- **Username**: `superadmin`
-- **Password**: `password`
-- **Role**: `SuperAdmin`
+**5. Access:**
+- Swagger: `https://localhost:5001/swagger`
+- Login: username: `superadmin`, password: `password`
 
 ### Development Workflow
 
-#### **1. Add New Entity**
+**Add New Feature:**
 1. Create entity in `Domain/Entities`
 2. Add repository interface in `Domain/Interfaces`
 3. Create DTOs in `Application/DTOs`
-4. Add AutoMapper profile in `Application/Mapping`
-5. Implement repository in `Infrastructure/Repositories`
-6. Create service interface and implementation
-7. Add controller in `WebAPI/Controllers`
-8. Create database migration
+4. Add AutoMapper profile
+5. Implement repository in `Infrastructure`
+6. Create service interface + implementation
+7. Add controller in `WebAPI`
+8. Create migration
 
-#### **2. Testing**
+**Testing:**
 ```bash
-# Run unit tests
 dotnet test
-
-# Run integration tests
-dotnet test --filter Category=Integration
-
-# Generate test coverage
-dotnet test --collect:"XPlat Code Coverage"
 ```
-
-#### **3. Code Quality**
-```bash
-# Format code
-dotnet format
-
-# Analyze code
-dotnet build --verbosity normal
-```
-
-## API Documentation
-
-Full API documentation is available via Swagger UI when running the application:
-- Development: `https://localhost:5001/swagger`
-- Production: `https://your-domain.com/swagger`
-
-## Support
-
-For issues, questions, or contributions, please refer to the project repository.
 
 ---
 
-**SYNFLOX** - Central Licensing System for Enterprise Products  
-**Version**: 1.0  
-**Last Updated**: 2025
+## 📦 Deployment
+
+### Docker
+
+**Dockerfile:**
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY publish/ .
+ENTRYPOINT ["dotnet", "WebAPI.dll"]
+```
+
+**Build:**
+```bash
+docker build -t synflox-api .
+docker run -p 5000:80 synflox-api
+```
+
+### Configuration
+
+**Production Settings:**
+```json
+{
+  "ConnectionStrings": {
+    "SqlServerConnection": "Server=prod;Database=SYNFLOX;User=***"
+  },
+  "JwtSettings": {
+    "SecretKey": "production-secure-key-256-bits",
+    "Lifetime": 15
+  },
+  "LicenseKeySettings": {
+    "EncryptionKey": "base64-key",
+    "SigningKey": "base64-key"
+  }
+}
+```
+
+---
+
+## 📊 Features Summary
+
+### ✅ Implemented Features
+
+**Authentication:**
+- JWT admin authentication
+- JWT client tokens
+- Refresh token rotation
+- Role-based authorization
+
+**Subscription Management:** 🆕
+- 9 duration types + Lifetime
+- Complete lifecycle (create, suspend, resume, extend, renew, upgrade)
+- Trial periods
+- Auto-renewal
+- Scheduled upgrades
+- Prorated billing
+
+**License Management:**
+- Offline license keys
+- AES-256 encryption
+- Clock tampering detection
+- Key regeneration
+
+**Multi-Product Support:**
+- Projects (products)
+- Modules (features)
+- Flexible plan bundles
+- Multi-currency pricing
+
+**Background Jobs:**
+- Expiry processing
+- Auto-renewals
+- Deferred upgrades
+- Email notifications
+
+**Dashboard:**
+- Real-time statistics
+- Company metrics
+- Subscription metrics
+- System alerts
+
+**Localization:**
+- English + Arabic
+- RTL/LTR support
+- Resource-based i18n
+
+---
+
+## 📞 Support
+
+**Documentation:**
+- Business: `/README.md`
+- Backend: `/SYNFLOX/README.md` (this file)
+- Frontend: `/synflox-frontend/README.md`
+
+**API Documentation:**
+- Swagger UI: `https://localhost:5001/swagger`
+
+---
+
+## 🎯 Quick Reference
+
+**Project Structure:**
+```
+SYNFLOX/
+├── Domain/              # 20 entities, enums, helpers
+├── Application/         # DTOs, interfaces, mapping
+├── Infrastructure/      # Services, repositories, EF
+├── WebAPI/              # 17 controllers
+└── README.md            # This file
+```
+
+**Key Files:**
+- `Domain/Entities/Subscriptions/SubscriptionPlan.cs` - Plans with duration types
+- `Domain/Entities/Subscriptions/Subscription.cs` - Subscriptions with lifetime support
+- `Domain/Enums/PlanDurationType.cs` - Duration type enum
+- `Domain/Helpers/PlanDurationHelper.cs` - Duration calculations
+- `Infrastructure/Services/SubscriptionService.cs` - Subscription logic
+- `Infrastructure/BackgroundJobs/SubscriptionStatusBackgroundJob.cs` - Automated tasks
+
+**Important Enums:**
+- `PlanDurationType` - Weekly, Monthly, Yearly, **Lifetime**, etc.
+- `UpgradePolicy` - ExtendInPlace, CreateFollowUp, FullReplace, etc.
+- `Currency` - USD, EUR, EGP, SAR, AED
+- `ClientTokenStatus` - Active, Revoked, Expired
+
+---
+
+<div align="center">
+
+**SYNFLOX Backend**  
+*Enterprise Central Licensing System*
+
+**Version 2.0** | **November 2025**
+
+</div>

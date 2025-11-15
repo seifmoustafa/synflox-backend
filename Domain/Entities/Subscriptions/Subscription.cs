@@ -46,12 +46,20 @@ public class Subscription : AuditEntity<Guid>
     /// <summary>
     /// Whether this subscription has expired (past expiry + grace)
     /// Set by background job
+    /// Note: Lifetime subscriptions never expire naturally (IsExpired stays false unless manually canceled)
     /// </summary>
     public bool IsExpired { get; set; }
 
     /// <summary>
+    /// Indicates if this is a lifetime/permanent subscription
+    /// Lifetime subscriptions have ExpiryDateUtc = DateTime.MaxValue
+    /// </summary>
+    public bool IsLifetime => ExpiryDateUtc >= DateTime.MaxValue.AddYears(-1); // Close to max value
+
+    /// <summary>
     /// Whether this subscription should auto-renew
     /// Can override plan's default AutoRenew setting
+    /// Note: Lifetime subscriptions cannot auto-renew (always false)
     /// </summary>
     public bool AutoRenew { get; set; }
 
