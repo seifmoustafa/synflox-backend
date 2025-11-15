@@ -458,4 +458,72 @@
   <data name="Subscription.LifetimeCannotRenew" xml:space="preserve">
     <value>الاشتراكات مدى الحياة لا يمكن تجديدها (دائمة بالفعل)</value>
   </data>
+  <data name="Plan.LifetimeMustUseFullReplace" xml:space="preserve">
+    <value>يجب أن تستخدم الخطط مدى الحياة سياسة الاستبدال الكامل (لا يمكن التقسيط النسبي أو التأجيل)</value>
+  </data>
+  
+  <!-- Subscription Plan General Messages -->
+  <data name="Plan.TrialDurationRequired" xml:space="preserve">
+    <value>مدة التجربة مطلوبة عند السماح بالفترة التجريبية</value>
+  </data>
+  <data name="Plan.AtLeastOnePriceRequired" xml:space="preserve">
+    <value>يجب تحديد سعر واحد على الأقل</value>
+  </data>
+  <data name="Plan.MustIncludeContent" xml:space="preserve">
+    <value>يجب أن تتضمن الخطة مشروعًا أو وحدة واحدة على الأقل</value>
+  </data>
+  <data name="Plan.NameExists" xml:space="preserve">
+    <value>خطة بهذا الاسم موجودة بالفعل</value>
+  </data>
+  <data name="Plan.NotFound" xml:space="preserve">
+    <value>خطة الاشتراك غير موجودة</value>
+  </data>
+  <data name="Plan.HasActiveSubscriptions" xml:space="preserve">
+    <value>لا يمكن حذف الخطة التي تحتوي على اشتراكات نشطة</value>
+  </data>
+  <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
+    <value>سعر الخطة غير متاح للعملة المطلوبة</value>
+  </data>
+  
+  <!-- Project Messages -->
+  <data name="Project.NotFound" xml:space="preserve">
+    <value>المشروع غير موجود</value>
+  </data>
+  
+  <!-- Module Messages -->
+  <data name="Module.NotFound" xml:space="preserve">
+    <value>الوحدة غير موجودة</value>
+  </data>
+  
+  <!-- Subscription Messages -->
+  <data name="Subscription.NotFound" xml:space="preserve">
+    <value>الاشتراك غير موجود</value>
+  </data>
+  <data name="Subscription.NextPlanBeforeExpiry" xml:space="preserve">
+    <value>يجب أن يكون تاريخ بدء الخطة التالية بعد انتهاء الاشتراك الحالي</value>
+  </data>
+  <data name="Subscription.OverlappingActive" xml:space="preserve">
+    <value>اشتراك نشط لهذه الخطة موجود بالفعل لهذه الشركة</value>
+  </data>
+  <data name="Subscription.InvalidUpgradeMode" xml:space="preserve">
+    <value>وضع الترقية المحدد غير صالح</value>
+  </data>
+  <data name="Subscription.AlreadyInactive" xml:space="preserve">
+    <value>الاشتراك غير نشط بالفعل</value>
+  </data>
+  <data name="Subscription.AlreadyActive" xml:space="preserve">
+    <value>الاشتراك نشط بالفعل</value>
+  </data>
+  <data name="Subscription.NotActive" xml:space="preserve">
+    <value>الاشتراك غير نشط</value>
+  </data>
+  <data name="Subscription.NotTrial" xml:space="preserve">
+    <value>الاشتراك ليس في فترة تجريبية</value>
+  </data>
+  <data name="Plan.TrialNotAllowed" xml:space="preserve">
+    <value>هذه الخطة لا تسمح بفترات تجريبية</value>
+  </data>
+  <data name="Company.NotFound" xml:space="preserve">
+    <value>الشركة غير موجودة</value>
+  </data>
 </root>

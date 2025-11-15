@@ -19,8 +19,9 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.Property(p => p.Description)
             .HasMaxLength(2000);
 
-        builder.Property(p => p.DurationMonths)
-            .IsRequired();
+        builder.Property(p => p.DurationType)
+            .IsRequired()
+            .HasConversion<int>();  // Store enum as int
 
         builder.Property(p => p.CustomFeatures)
             .HasColumnType("nvarchar(max)")

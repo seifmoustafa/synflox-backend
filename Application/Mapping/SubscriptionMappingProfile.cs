@@ -72,17 +72,12 @@ public class SubscriptionMappingProfile : Profile
         CreateMap<CreateSubscriptionPlanDto, SubscriptionPlan>()
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
-            .ForMember(d => d.DurationMonths, opt => opt.MapFrom(s => 
-                s.DurationMonths.HasValue ? s.DurationMonths.Value : PlanDurationHelper.GetEquivalentMonths(s.DurationType)))
             .ForMember(d => d.PlanPrices, opt => opt.Ignore())
             .ForMember(d => d.PlanProjects, opt => opt.Ignore())
             .ForMember(d => d.PlanModules, opt => opt.Ignore())
             .ForMember(d => d.Subscriptions, opt => opt.Ignore());
 
         CreateMap<UpdateSubscriptionPlanDto, SubscriptionPlan>()
-            .ForMember(d => d.DurationMonths, opt => opt.MapFrom((s, d) => 
-                s.DurationType.HasValue ? PlanDurationHelper.GetEquivalentMonths(s.DurationType.Value) : 
-                s.DurationMonths.HasValue ? s.DurationMonths.Value : d.DurationMonths))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // ========== Subscription Mappings ==========

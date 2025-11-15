@@ -15,14 +15,9 @@ public class PlanDetailsDto
     public string? Description { get; set; }
     
     /// <summary>
-    /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
+    /// The type of duration for this plan (source of truth for expiry calculation)
     /// </summary>
     public PlanDurationType DurationType { get; set; }
-    
-    /// <summary>
-    /// Duration in months (kept for backward compatibility)
-    /// </summary>
-    public int DurationMonths { get; set; }
     
     /// <summary>
     /// Indicates if this is a lifetime/permanent plan
@@ -30,7 +25,7 @@ public class PlanDetailsDto
     public bool IsLifetimePlan { get; set; }
     
     /// <summary>
-    /// Human-readable description of the duration (e.g., "1 month", "Lifetime (Never Expires)")
+    /// Human-readable duration description
     /// </summary>
     public string DurationDescription { get; set; } = string.Empty;
     

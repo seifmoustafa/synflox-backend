@@ -16,16 +16,10 @@ public class CreateSubscriptionPlanDto
 
     /// <summary>
     /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
+    /// This is the SINGLE SOURCE OF TRUTH - expiry dates are calculated directly from this.
     /// </summary>
     [Required]
     public PlanDurationType DurationType { get; set; } = PlanDurationType.Monthly;
-
-    /// <summary>
-    /// Duration in months (optional, auto-calculated from DurationType if not provided)
-    /// For Lifetime plans, this is ignored
-    /// </summary>
-    [Range(0, 120)]
-    public int? DurationMonths { get; set; }
 
     /// <summary>
     /// Prices in multiple currencies
@@ -35,11 +29,19 @@ public class CreateSubscriptionPlanDto
     [MinLength(1)]
     public List<PlanPriceDto> Prices { get; set; } = new();
 
+    /// <summary>
+    /// Allow trial period for this plan
+    /// ⚠️ LIFETIME PLANS: This MUST be false (request will be rejected if true)
+    /// </summary>
     public bool AllowTrial { get; set; }
 
     [Range(1, 60)]
     public int? TrialDurationDays { get; set; }
 
+    /// <summary>
+    /// Enable auto-renewal for this plan
+    /// ⚠️ LIFETIME PLANS: This MUST be false (request will be rejected if true)
+    /// </summary>
     public bool AutoRenew { get; set; }
 
     [Required]

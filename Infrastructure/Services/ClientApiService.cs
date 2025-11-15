@@ -74,7 +74,9 @@ public class ClientApiService : IClientApiService
 
         // Build plan limits dictionary
         var planLimits = new Dictionary<string, object>();
-        planLimits["DurationMonths"] = plan.DurationMonths;
+        planLimits["DurationType"] = plan.DurationType.ToString();
+        planLimits["DurationDescription"] = Domain.Helpers.PlanDurationHelper.GetDurationDescription(plan.DurationType);
+        planLimits["IsLifetimePlan"] = plan.IsLifetimePlan;
         planLimits["GracePeriodDays"] = plan.GracePeriodDays;
         if (plan.TrialDurationDays.HasValue) planLimits["TrialDurationDays"] = plan.TrialDurationDays.Value;
 
@@ -312,7 +314,9 @@ public class ClientApiService : IClientApiService
             Modules = modules,
             Limits = new Dictionary<string, object>
             {
-                ["DurationMonths"] = plan.DurationMonths,
+                ["DurationType"] = plan.DurationType.ToString(),
+                ["DurationDescription"] = Domain.Helpers.PlanDurationHelper.GetDurationDescription(plan.DurationType),
+                ["IsLifetimePlan"] = plan.IsLifetimePlan,
                 ["TrialDurationDays"] = plan.TrialDurationDays ?? 0,
                 ["GracePeriodDays"] = plan.GracePeriodDays
             },

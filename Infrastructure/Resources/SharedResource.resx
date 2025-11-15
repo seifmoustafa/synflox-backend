@@ -458,4 +458,72 @@
   <data name="Subscription.LifetimeCannotRenew" xml:space="preserve">
     <value>Lifetime subscriptions cannot be renewed (already permanent)</value>
   </data>
+  <data name="Plan.LifetimeMustUseFullReplace" xml:space="preserve">
+    <value>Lifetime plans must use FullReplace upgrade policy (cannot prorate or defer)</value>
+  </data>
+  
+  <!-- Subscription Plan General Messages -->
+  <data name="Plan.TrialDurationRequired" xml:space="preserve">
+    <value>Trial duration is required when trial is allowed</value>
+  </data>
+  <data name="Plan.AtLeastOnePriceRequired" xml:space="preserve">
+    <value>At least one price must be specified</value>
+  </data>
+  <data name="Plan.MustIncludeContent" xml:space="preserve">
+    <value>Plan must include at least one project or module</value>
+  </data>
+  <data name="Plan.NameExists" xml:space="preserve">
+    <value>A plan with this name already exists</value>
+  </data>
+  <data name="Plan.NotFound" xml:space="preserve">
+    <value>Subscription plan not found</value>
+  </data>
+  <data name="Plan.HasActiveSubscriptions" xml:space="preserve">
+    <value>Cannot delete plan with active subscriptions</value>
+  </data>
+  <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
+    <value>Plan price not available for the requested currency</value>
+  </data>
+  
+  <!-- Project Messages -->
+  <data name="Project.NotFound" xml:space="preserve">
+    <value>Project not found</value>
+  </data>
+  
+  <!-- Module Messages -->
+  <data name="Module.NotFound" xml:space="preserve">
+    <value>Module not found</value>
+  </data>
+  
+  <!-- Subscription Messages -->
+  <data name="Subscription.NotFound" xml:space="preserve">
+    <value>Subscription not found</value>
+  </data>
+  <data name="Subscription.NextPlanBeforeExpiry" xml:space="preserve">
+    <value>Next plan start date must be after current subscription expiry</value>
+  </data>
+  <data name="Subscription.OverlappingActive" xml:space="preserve">
+    <value>An active subscription for this plan already exists for this company</value>
+  </data>
+  <data name="Subscription.InvalidUpgradeMode" xml:space="preserve">
+    <value>Invalid upgrade mode specified</value>
+  </data>
+  <data name="Subscription.AlreadyInactive" xml:space="preserve">
+    <value>Subscription is already inactive</value>
+  </data>
+  <data name="Subscription.AlreadyActive" xml:space="preserve">
+    <value>Subscription is already active</value>
+  </data>
+  <data name="Subscription.NotActive" xml:space="preserve">
+    <value>Subscription is not active</value>
+  </data>
+  <data name="Subscription.NotTrial" xml:space="preserve">
+    <value>Subscription is not in trial period</value>
+  </data>
+  <data name="Plan.TrialNotAllowed" xml:space="preserve">
+    <value>This plan does not allow trial periods</value>
+  </data>
+  <data name="Company.NotFound" xml:space="preserve">
+    <value>Company not found</value>
+  </data>
 </root>

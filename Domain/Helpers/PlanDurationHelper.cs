@@ -29,7 +29,7 @@ public static class PlanDurationHelper
     }
 
     /// <summary>
-    /// Converts PlanDurationType to equivalent months (for backward compatibility)
+    /// Converts PlanDurationType to equivalent months (for backward compatibility and reporting)
     /// </summary>
     public static int GetEquivalentMonths(PlanDurationType durationType)
     {
@@ -44,6 +44,26 @@ public static class PlanDurationHelper
             PlanDurationType.Biennial => 24,
             PlanDurationType.Triennial => 36,
             PlanDurationType.Lifetime => 0, // No expiry
+            _ => throw new ArgumentException($"Unsupported duration type: {durationType}")
+        };
+    }
+
+    /// <summary>
+    /// Converts PlanDurationType to approximate days (for proration calculations)
+    /// </summary>
+    public static int GetApproximateDays(PlanDurationType durationType)
+    {
+        return durationType switch
+        {
+            PlanDurationType.Weekly => 7,
+            PlanDurationType.BiWeekly => 14,
+            PlanDurationType.Monthly => 30,
+            PlanDurationType.Quarterly => 90,
+            PlanDurationType.SemiAnnually => 180,
+            PlanDurationType.Yearly => 365,
+            PlanDurationType.Biennial => 730,
+            PlanDurationType.Triennial => 1095,
+            PlanDurationType.Lifetime => 0, // N/A for lifetime
             _ => throw new ArgumentException($"Unsupported duration type: {durationType}")
         };
     }

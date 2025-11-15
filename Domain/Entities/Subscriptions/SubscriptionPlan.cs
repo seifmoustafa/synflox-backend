@@ -20,15 +20,10 @@ public class SubscriptionPlan : AuditEntity<Guid>
 
     /// <summary>
     /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
+    /// This is the SINGLE SOURCE OF TRUTH for plan duration.
+    /// Expiry dates are calculated directly from this field.
     /// </summary>
     public PlanDurationType DurationType { get; set; } = PlanDurationType.Monthly;
-
-    /// <summary>
-    /// Duration in months for paid subscriptions (computed from DurationType, kept for backward compatibility)
-    /// For Lifetime plans, this is ignored
-    /// </summary>
-    [Range(0, 120)]
-    public int DurationMonths { get; set; }
 
     /// <summary>
     /// Indicates if this is a lifetime/permanent plan
@@ -54,11 +49,13 @@ public class SubscriptionPlan : AuditEntity<Guid>
 
     /// <summary>
     /// How upgrades from this plan are handled
+    /// Note: Lifetime plans can only use FullReplace (cannot prorate or defer)
     /// </summary>
     public UpgradePolicy UpgradePolicy { get; set; }
 
     /// <summary>
     /// Grace period in days after expiry before full deactivation
+    /// Note: Lifetime plans should have 0 grace period (they never expire)
     /// </summary>
     [Range(0, 30)]
     public int GracePeriodDays { get; set; }

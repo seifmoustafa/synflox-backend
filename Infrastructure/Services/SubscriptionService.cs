@@ -366,7 +366,7 @@ public class SubscriptionService : ISubscriptionService
                     CompanyId = oldSubscription.CompanyId,
                     PlanId = dto.NewPlanId,
                     StartDateUtc = now,
-                    ExpiryDateUtc = now.AddMonths(newPlan.DurationMonths),
+                    ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, newPlan.DurationType),
                     IsActive = true,
                     IsExpired = false,
                     IsTrial = false,
@@ -385,7 +385,7 @@ public class SubscriptionService : ISubscriptionService
                 var oldDailyRate = oldSubscription.Amount / oldPlanDays;
                 var suggestedCredit = oldDailyRate * remainingDays;
 
-                var newPlanDays = newPlan.DurationMonths * 30; // Approximate
+                var newPlanDays = PlanDurationHelper.GetApproximateDays(newPlan.DurationType);
                 var newDailyRate = newPrice.Value / newPlanDays;
                 var newFullCharge = newPrice.Value;
                 var netDue = newFullCharge - suggestedCredit;
@@ -413,7 +413,7 @@ public class SubscriptionService : ISubscriptionService
                     CompanyId = oldSubscription.CompanyId,
                     PlanId = dto.NewPlanId,
                     StartDateUtc = now,
-                    ExpiryDateUtc = now.AddMonths(newPlan.DurationMonths),
+                    ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, newPlan.DurationType),
                     IsActive = true,
                     IsExpired = false,
                     IsTrial = false,

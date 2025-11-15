@@ -46,6 +46,24 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<SubscriptionPlanDto> CreateAsync(CreateSubscriptionPlanDto dto)
     {
+        // ⭐ LIFETIME PLAN VALIDATION
+        if (dto.DurationType == Domain.Enums.PlanDurationType.Lifetime)
+        {
+            // Reject invalid values for Lifetime plans
+            if (dto.AllowTrial)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotHaveTrial"]);
+            
+            if (dto.AutoRenew)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotAutoRenew"]);
+            
+            // Lifetime plans can only use FullReplace upgrade policy
+            if (dto.UpgradePolicy != Domain.Enums.UpgradePolicy.FullReplace)
+                throw new BadRequestException(_localizer["Plan.LifetimeMustUseFullReplace"]);
+            
+            // Force grace period to 0 (lifetime never expires)
+            dto.GracePeriodDays = 0;
+        }
+        
         // Validate
         if (dto.AllowTrial && (!dto.TrialDurationDays.HasValue || dto.TrialDurationDays.Value <= 0))
             throw new BadRequestException(_localizer["Plan.TrialDurationRequired"]);
@@ -62,6 +80,15 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
         var plan = _mapper.Map<SubscriptionPlan>(dto);
         plan.Id = Guid.NewGuid();
+        
+        // ⭐ FORCE correct values for Lifetime (defense in depth)
+        if (plan.DurationType == Domain.Enums.PlanDurationType.Lifetime)
+        {
+            plan.AllowTrial = false;
+            plan.AutoRenew = false;
+            plan.UpgradePolicy = Domain.Enums.UpgradePolicy.FullReplace;
+            plan.GracePeriodDays = 0;
+        }
 
         // Add prices
         foreach (var priceDto in dto.Prices)
@@ -160,6 +187,26 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         if (plan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
 
+        // ⭐ LIFETIME PLAN VALIDATION for UPDATE
+        var targetDurationType = dto.DurationType ?? plan.DurationType;
+        
+        if (targetDurationType == Domain.Enums.PlanDurationType.Lifetime)
+        {
+            // Reject invalid values for Lifetime plans
+            if (dto.AllowTrial == true)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotHaveTrial"]);
+            
+            if (dto.AutoRenew == true)
+                throw new BadRequestException(_localizer["Plan.LifetimeCannotAutoRenew"]);
+            
+            // Lifetime plans can only use FullReplace upgrade policy
+            if (dto.UpgradePolicy.HasValue && dto.UpgradePolicy.Value != Domain.Enums.UpgradePolicy.FullReplace)
+                throw new BadRequestException(_localizer["Plan.LifetimeMustUseFullReplace"]);
+            
+            // Force grace period to 0
+            dto.GracePeriodDays = 0;
+        }
+        
         if (dto.AllowTrial == true && (!dto.TrialDurationDays.HasValue || dto.TrialDurationDays.Value <= 0))
             throw new BadRequestException(_localizer["Plan.TrialDurationRequired"]);
 
@@ -171,6 +218,15 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         }
 
         _mapper.Map(dto, plan);
+        
+        // ⭐ FORCE correct values for Lifetime after mapping (defense in depth)
+        if (plan.DurationType == Domain.Enums.PlanDurationType.Lifetime)
+        {
+            plan.AllowTrial = false;
+            plan.AutoRenew = false;
+            plan.UpgradePolicy = Domain.Enums.UpgradePolicy.FullReplace;
+            plan.GracePeriodDays = 0;
+        }
 
         // Update prices if provided
         if (dto.Prices != null)
