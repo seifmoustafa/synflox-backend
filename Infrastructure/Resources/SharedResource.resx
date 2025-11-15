@@ -418,4 +418,27 @@
   <data name="Email.Common.PoweredBy" xml:space="preserve">
     <value>Powered by</value>
   </data>
+  
+  <!-- Dashboard Messages -->
+  <data name="Dashboard.Retrieved" xml:space="preserve">
+    <value>Dashboard data retrieved successfully</value>
+  </data>
+  <data name="Dashboard.CompaniesRetrieved" xml:space="preserve">
+    <value>Company analytics retrieved successfully</value>
+  </data>
+  <data name="Dashboard.SubscriptionsRetrieved" xml:space="preserve">
+    <value>Subscription analytics retrieved successfully</value>
+  </data>
+  <data name="Dashboard.AdminsRetrieved" xml:space="preserve">
+    <value>Admin analytics retrieved successfully</value>
+  </data>
+  <data name="Dashboard.AlertsRetrieved" xml:space="preserve">
+    <value>System alerts retrieved successfully</value>
+  </data>
+  <data name="Dashboard.ActivityRetrieved" xml:space="preserve">
+    <value>Recent activity retrieved successfully</value>
+  </data>
+  <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
+    <value>System statistics retrieved successfully</value>
+  </data>
 </root>

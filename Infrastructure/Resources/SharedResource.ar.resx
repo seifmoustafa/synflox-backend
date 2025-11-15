@@ -418,4 +418,27 @@
   <data name="Email.Common.PoweredBy" xml:space="preserve">
     <value>مدعوم من</value>
   </data>
+  
+  <!-- Dashboard Messages -->
+  <data name="Dashboard.Retrieved" xml:space="preserve">
+    <value>تم استرجاع بيانات لوحة التحكم بنجاح</value>
+  </data>
+  <data name="Dashboard.CompaniesRetrieved" xml:space="preserve">
+    <value>تم استرجاع تحليلات الشركات بنجاح</value>
+  </data>
+  <data name="Dashboard.SubscriptionsRetrieved" xml:space="preserve">
+    <value>تم استرجاع تحليلات الاشتراكات بنجاح</value>
+  </data>
+  <data name="Dashboard.AdminsRetrieved" xml:space="preserve">
+    <value>تم استرجاع تحليلات المديرين بنجاح</value>
+  </data>
+  <data name="Dashboard.AlertsRetrieved" xml:space="preserve">
+    <value>تم استرجاع تنبيهات النظام بنجاح</value>
+  </data>
+  <data name="Dashboard.ActivityRetrieved" xml:space="preserve">
+    <value>تم استرجاع النشاط الأخير بنجاح</value>
+  </data>
+  <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
+    <value>تم استرجاع إحصائيات النظام بنجاح</value>
+  </data>
 </root>

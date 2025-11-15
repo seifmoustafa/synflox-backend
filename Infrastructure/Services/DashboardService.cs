@@ -1,310 +1,246 @@
-using System;
-using System.Linq;
-using System.Reflection;
 using Application.DTOs.Dashboard;
 using Application.Services;
 using Domain.Entities.Authentication;
 using Domain.Entities.Licensing;
+using Domain.Entities.Subscriptions;
 using Domain.Enums;
 using Domain.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Routing;
 
 namespace Infrastructure.Services;
 
 /// <summary>
-/// Service for discovering and listing all API endpoints in the system
+/// Professional Dashboard Service with real data calculations
 /// </summary>
 public class DashboardService : IDashboardService
 {
-    private readonly IActionDescriptorCollectionProvider _actionDescriptorCollectionProvider;
-    private readonly EndpointDataSource _endpointDataSource;
     private readonly ICompanyRepository _companyRepository;
     private readonly IAdminRepository _adminRepository;
     private readonly IBaseRepository<Guid, AdminType> _adminTypeRepository;
     private readonly ISubscriptionRepository _subscriptionRepository;
+    private readonly IBaseRepository<Guid, SubscriptionPlan> _planRepository;
 
     public DashboardService(
-        IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
-        EndpointDataSource endpointDataSource,
         ICompanyRepository companyRepository,
         IAdminRepository adminRepository,
         IBaseRepository<Guid, AdminType> adminTypeRepository,
-        ISubscriptionRepository subscriptionRepository)
+        ISubscriptionRepository subscriptionRepository,
+        IBaseRepository<Guid, SubscriptionPlan> planRepository)
     {
-        _actionDescriptorCollectionProvider = actionDescriptorCollectionProvider;
-        _endpointDataSource = endpointDataSource;
         _companyRepository = companyRepository;
         _adminRepository = adminRepository;
         _adminTypeRepository = adminTypeRepository;
         _subscriptionRepository = subscriptionRepository;
+        _planRepository = planRepository;
     }
 
-    public Task<DashboardResponseDto> GetAllEndpointsAsync()
+    public async Task<DashboardDto> GetDashboardAsync()
     {
-        var endpoints = new List<EndpointInfoDto>();
-        var endpointsByController = new Dictionary<string, List<EndpointInfoDto>>();
+        var now = DateTime.UtcNow;
+        var today = now.Date;
+        var weekAgo = now.AddDays(-7);
+        var monthAgo = now.AddDays(-30);
+        var dayAgo = now.AddDays(-1);
 
-        // Create a dictionary of route patterns from endpoints for lookup
-        var routePatterns = new Dictionary<string, string>();
-        foreach (var endpoint in _endpointDataSource.Endpoints)
+        // Get ALL data sequentially to avoid DbContext threading issues
+        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = companiesResult.Item1.Cast<Company>().ToList();
+
+        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
+        var admins = adminsResult.Item1.Cast<Admin>().ToList();
+
+        var adminTypesResult = await _adminTypeRepository.GetAllAsync(null, 1, int.MaxValue);
+        var adminTypes = adminTypesResult.Item1.Cast<AdminType>().ToList();
+
+        var plansResult = await _planRepository.GetAllAsync(null, 1, int.MaxValue);
+        var plans = plansResult.Item1.Cast<SubscriptionPlan>().ToList();
+
+        // Get subscriptions for each company
+        var subscriptions = new List<Subscription>();
+        foreach (var company in companies)
         {
-            if (endpoint is RouteEndpoint routeEndpoint)
+            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            if (subscription != null)
             {
-                var actionDescriptor = endpoint.Metadata.GetMetadata<ControllerActionDescriptor>();
-                if (actionDescriptor != null)
-                {
-                    var key = $"{actionDescriptor.ControllerName}.{actionDescriptor.ActionName}";
-                    routePatterns[key] = routeEndpoint.RoutePattern.RawText ?? routeEndpoint.RoutePattern.ToString();
-                }
+                subscriptions.Add(subscription);
             }
         }
 
-        // Process action descriptors
-        foreach (var actionDescriptor in _actionDescriptorCollectionProvider.ActionDescriptors.Items)
+        // Calculate company stats
+        var activeCompanies = 0;
+        var suspendedCompanies = 0;
+        var expiredCompanies = 0;
+
+        foreach (var company in companies)
         {
-            // Skip if not a controller action
-            if (actionDescriptor is not ControllerActionDescriptor controllerAction)
-                continue;
+            var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == company.Id);
+            var status = CalculateLicenseStatus(subscription);
 
-            // Skip if not an API controller
-            if (!controllerAction.ControllerTypeInfo.IsDefined(typeof(ApiControllerAttribute), false))
-                continue;
+            if (status == LicenseStatus.Active)
+                activeCompanies++;
+            else if (status == LicenseStatus.Suspended)
+                suspendedCompanies++;
+            else if (status == LicenseStatus.Expired)
+                expiredCompanies++;
+        }
 
-            var key = $"{controllerAction.ControllerName}.{controllerAction.ActionName}";
-            var routePattern = routePatterns.GetValueOrDefault(key);
+        // Calculate subscription stats
+        var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsExpired);
+        var trialSubscriptions = subscriptions.Count(s => s.IsTrial);
+        var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
+        var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired);
 
-            var endpointInfo = ExtractEndpointInfo(controllerAction, routePattern);
-            endpoints.Add(endpointInfo);
+        var expiring7Days = 0;
+        var expiring30Days = 0;
+        var expiringToday = 0;
 
-            // Group by controller
-            if (!endpointsByController.ContainsKey(endpointInfo.Controller))
+        foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
+        {
+            var daysUntilExpiry = (sub.ExpiryDateUtc - now).Days;
+
+            if (daysUntilExpiry <= 0)
+                expiringToday++;
+            if (daysUntilExpiry > 0 && daysUntilExpiry <= 7)
+                expiring7Days++;
+            if (daysUntilExpiry > 7 && daysUntilExpiry <= 30)
+                expiring30Days++;
+        }
+
+        // Subscriptions by plan
+        var subscriptionsByPlan = new Dictionary<string, int>();
+        foreach (var plan in plans)
+        {
+            var count = subscriptions.Count(s => s.PlanId == plan.Id);
+            if (count > 0)
             {
-                endpointsByController[endpointInfo.Controller] = new List<EndpointInfoDto>();
+                subscriptionsByPlan[plan.Name] = count;
             }
-            endpointsByController[endpointInfo.Controller].Add(endpointInfo);
         }
 
-        // Sort endpoints within each controller by route
-        foreach (var controllerGroup in endpointsByController.Values)
+        // Admins by type
+        var adminsByType = new Dictionary<string, int>();
+        foreach (var adminType in adminTypes)
         {
-            controllerGroup.Sort((a, b) => string.Compare(a.Route, b.Route, StringComparison.OrdinalIgnoreCase));
+            var count = admins.Count(a => a.AdminTypeId == adminType.Id);
+            if (count > 0)
+            {
+                adminsByType[adminType.AdminTypeName] = count;
+            }
         }
 
-        // Sort all endpoints
-        endpoints.Sort((a, b) =>
-        {
-            var controllerCompare = string.Compare(a.Controller, b.Controller, StringComparison.OrdinalIgnoreCase);
-            if (controllerCompare != 0) return controllerCompare;
-            return string.Compare(a.Route, b.Route, StringComparison.OrdinalIgnoreCase);
-        });
+        // Build alert messages
+        var alertMessages = new List<string>();
+        if (expiringToday > 0)
+            alertMessages.Add($"{expiringToday} subscription(s) expiring today");
+        if (expiring7Days > 0)
+            alertMessages.Add($"{expiring7Days} subscription(s) expiring within 7 days");
+        if (suspendedCompanies > 0)
+            alertMessages.Add($"{suspendedCompanies} company(ies) suspended");
+        if (expiredCompanies > 0)
+            alertMessages.Add($"{expiredCompanies} company(ies) expired");
 
-        var response = new DashboardResponseDto
+        return new DashboardDto
         {
-            TotalEndpoints = endpoints.Count,
-            EndpointsByController = endpointsByController,
-            AllEndpoints = endpoints
+            Overview = new OverviewStatsDto
+            {
+                TotalCompanies = companies.Count,
+                ActiveCompanies = activeCompanies,
+                TotalSubscriptions = subscriptions.Count,
+                ActiveSubscriptions = activeSubscriptions,
+                TotalAdmins = admins.Count,
+                ActiveAdmins = admins.Count(a => a.IsActive)
+            },
+            Companies = new CompanyStatsDto
+            {
+                Total = companies.Count,
+                Active = activeCompanies,
+                Suspended = suspendedCompanies,
+                Expired = expiredCompanies,
+                CreatedToday = companies.Count(c => c.CreatedTimestamp.Date == today),
+                CreatedThisWeek = companies.Count(c => c.CreatedTimestamp >= weekAgo),
+                CreatedThisMonth = companies.Count(c => c.CreatedTimestamp >= monthAgo)
+            },
+            Subscriptions = new SubscriptionStatsDto
+            {
+                Total = subscriptions.Count,
+                Active = activeSubscriptions,
+                Trial = trialSubscriptions,
+                Expired = expiredSubscriptions,
+                Suspended = suspendedSubscriptions,
+                ExpiringWithin7Days = expiring7Days,
+                ExpiringWithin30Days = expiring30Days,
+                CreatedToday = subscriptions.Count(s => s.StartDateUtc.Date == today),
+                CreatedThisWeek = subscriptions.Count(s => s.StartDateUtc >= weekAgo),
+                CreatedThisMonth = subscriptions.Count(s => s.StartDateUtc >= monthAgo),
+                ByPlan = subscriptionsByPlan
+            },
+            Admins = new AdminStatsDto
+            {
+                Total = admins.Count,
+                Active = admins.Count(a => a.IsActive),
+                Inactive = admins.Count(a => !a.IsActive),
+                CreatedToday = admins.Count(a => a.CreatedTimestamp.Date == today),
+                CreatedThisWeek = admins.Count(a => a.CreatedTimestamp >= weekAgo),
+                CreatedThisMonth = admins.Count(a => a.CreatedTimestamp >= monthAgo),
+                ByType = adminsByType
+            },
+            Alerts = new AlertsDto
+            {
+                SubscriptionsExpiringToday = expiringToday,
+                SubscriptionsExpiringThisWeek = expiring7Days,
+                SuspendedCompanies = suspendedCompanies,
+                ExpiredCompanies = expiredCompanies,
+                InactiveAdmins = admins.Count(a => !a.IsActive),
+                Messages = alertMessages
+            },
+            RecentActivity = new RecentActivityDto
+            {
+                CompaniesLast24Hours = companies.Count(c => c.CreatedTimestamp >= dayAgo),
+                SubscriptionsLast24Hours = subscriptions.Count(s => s.StartDateUtc >= dayAgo),
+                AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
+            },
+            GeneratedAtUtc = DateTime.UtcNow
         };
-
-        return Task.FromResult(response);
-    }
-
-    private EndpointInfoDto ExtractEndpointInfo(ControllerActionDescriptor actionDescriptor, string? routePattern = null)
-    {
-        var endpointInfo = new EndpointInfoDto
-        {
-            Controller = actionDescriptor.ControllerName,
-            Action = actionDescriptor.ActionName
-        };
-
-        // Extract HTTP method from action method attributes
-        var methodInfo = actionDescriptor.MethodInfo;
-        if (methodInfo.IsDefined(typeof(HttpGetAttribute), false))
-            endpointInfo.Method = "GET";
-        else if (methodInfo.IsDefined(typeof(HttpPostAttribute), false))
-            endpointInfo.Method = "POST";
-        else if (methodInfo.IsDefined(typeof(HttpPutAttribute), false))
-            endpointInfo.Method = "PUT";
-        else if (methodInfo.IsDefined(typeof(HttpDeleteAttribute), false))
-            endpointInfo.Method = "DELETE";
-        else if (methodInfo.IsDefined(typeof(HttpPatchAttribute), false))
-            endpointInfo.Method = "PATCH";
-        else
-            endpointInfo.Method = "GET"; // Default
-
-        // Extract route
-        if (!string.IsNullOrEmpty(routePattern))
-        {
-            endpointInfo.Route = routePattern;
-        }
-        else
-        {
-            // Fallback: construct route from attributes
-            var routeAttribute = actionDescriptor.ControllerTypeInfo.GetCustomAttribute<RouteAttribute>();
-            var actionRouteAttribute = actionDescriptor.MethodInfo.GetCustomAttribute<RouteAttribute>();
-            
-            var controllerRoute = routeAttribute?.Template ?? $"api/{actionDescriptor.ControllerName.ToLower()}";
-            var actionRoute = actionRouteAttribute?.Template ?? string.Empty;
-
-            // Build full route
-            if (!string.IsNullOrEmpty(actionRoute))
-            {
-                if (actionRoute.StartsWith("/"))
-                    endpointInfo.Route = actionRoute;
-                else if (controllerRoute.EndsWith("/"))
-                    endpointInfo.Route = $"{controllerRoute}{actionRoute}";
-                else
-                    endpointInfo.Route = $"{controllerRoute}/{actionRoute}";
-            }
-            else
-            {
-                endpointInfo.Route = controllerRoute;
-            }
-        }
-
-        // Ensure route starts with /
-        if (!string.IsNullOrEmpty(endpointInfo.Route) && !endpointInfo.Route.StartsWith("/"))
-            endpointInfo.Route = $"/{endpointInfo.Route}";
-
-        // Extract authorization info
-        var authorizeAttribute = actionDescriptor.MethodInfo.GetCustomAttribute<AuthorizeAttribute>();
-        var allowAnonymousAttribute = actionDescriptor.MethodInfo.GetCustomAttribute<AllowAnonymousAttribute>();
-        var controllerAuthorize = actionDescriptor.ControllerTypeInfo.GetCustomAttribute<AuthorizeAttribute>();
-
-        if (allowAnonymousAttribute != null)
-        {
-            endpointInfo.AllowAnonymous = true;
-            endpointInfo.AuthorizationPolicy = null;
-        }
-        else if (authorizeAttribute != null)
-        {
-            endpointInfo.AllowAnonymous = false;
-            endpointInfo.AuthorizationPolicy = authorizeAttribute.Policy ?? "Authorize";
-        }
-        else if (controllerAuthorize != null)
-        {
-            endpointInfo.AllowAnonymous = false;
-            endpointInfo.AuthorizationPolicy = controllerAuthorize.Policy ?? "Authorize";
-        }
-        else
-        {
-            endpointInfo.AllowAnonymous = true;
-            endpointInfo.AuthorizationPolicy = null;
-        }
-
-        // Extract XML documentation summary from Summary attribute or XML comments
-        var summaryAttribute = actionDescriptor.MethodInfo.GetCustomAttribute<System.ComponentModel.DescriptionAttribute>();
-        endpointInfo.Summary = summaryAttribute?.Description;
-
-        // Extract parameters
-        var methodParameters = actionDescriptor.MethodInfo.GetParameters();
-        foreach (var parameter in actionDescriptor.Parameters)
-        {
-            var methodParam = methodParameters.FirstOrDefault(p => p.Name == parameter.Name);
-            
-            var paramInfo = new ParameterInfoDto
-            {
-                Name = parameter.Name ?? "unknown",
-                Type = parameter.ParameterType.Name,
-                IsOptional = methodParam?.IsOptional ?? false
-            };
-
-            // Determine parameter source
-            if (parameter.BindingInfo?.BindingSource != null)
-            {
-                paramInfo.Source = parameter.BindingInfo.BindingSource.DisplayName;
-            }
-            else if (methodParam != null)
-            {
-                // Check attributes on the method parameter
-                if (methodParam.GetCustomAttribute<FromRouteAttribute>() != null)
-                    paramInfo.Source = "Route";
-                else if (methodParam.GetCustomAttribute<FromQueryAttribute>() != null)
-                    paramInfo.Source = "Query";
-                else if (methodParam.GetCustomAttribute<FromBodyAttribute>() != null)
-                    paramInfo.Source = "Body";
-                else if (methodParam.GetCustomAttribute<FromFormAttribute>() != null)
-                    paramInfo.Source = "Form";
-                else if (methodParam.GetCustomAttribute<FromHeaderAttribute>() != null)
-                    paramInfo.Source = "Header";
-                else
-                    paramInfo.Source = "ModelBinding";
-            }
-            else
-            {
-                paramInfo.Source = "ModelBinding";
-            }
-
-            endpointInfo.Parameters.Add(paramInfo);
-        }
-
-        return endpointInfo;
     }
 
     public async Task<SystemStatisticsDto> GetSystemStatisticsAsync()
     {
         var now = DateTime.UtcNow;
-        var thirtyDaysFromNow = now.AddDays(30);
         var sevenDaysAgo = now.AddDays(-7);
+        var thirtyDaysAgo = now.AddDays(-30);
 
-        // Get all companies for status calculation
-        var allCompanies = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = allCompanies.Item1.Cast<Company>().ToList();
+        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = companiesResult.Item1.Cast<Company>().ToList();
 
-        // Calculate license status breakdown
+        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
+        var admins = adminsResult.Item1.Cast<Admin>().ToList();
+
+        var adminTypesCount = await _adminTypeRepository.Count();
+
+        // Calculate license status
         var activeCount = 0;
         var expiredCount = 0;
         var suspendedCount = 0;
         var expiringSoonCount = 0;
-        var recentlyCreatedCompanies = 0;
 
         foreach (var company in companies)
         {
-            // Get active subscription for this company
-            var activeSubscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            
-            var status = CalculateLicenseStatus(company, activeSubscription);
-            switch (status)
-            {
-                case LicenseStatus.Active:
-                    activeCount++;
-                    break;
-                case LicenseStatus.Expired:
-                    expiredCount++;
-                    break;
-                case LicenseStatus.Suspended:
-                    suspendedCount++;
-                    break;
-            }
+            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            var status = CalculateLicenseStatus(subscription);
 
-            // Check if expiring soon (within 30 days)
-            if (activeSubscription != null && 
-                activeSubscription.ExpiryDateUtc >= now && 
-                activeSubscription.ExpiryDateUtc <= thirtyDaysFromNow)
-            {
-                expiringSoonCount++;
-            }
+            if (status == LicenseStatus.Active)
+                activeCount++;
+            else if (status == LicenseStatus.Expired)
+                expiredCount++;
+            else if (status == LicenseStatus.Suspended)
+                suspendedCount++;
 
-            // Check if recently created (last 7 days)
-            if (company.CreatedTimestamp >= sevenDaysAgo)
+            if (subscription != null && !subscription.IsExpired && subscription.IsActive)
             {
-                recentlyCreatedCompanies++;
+                var daysUntilExpiry = (subscription.ExpiryDateUtc - now).Days;
+                if (daysUntilExpiry > 0 && daysUntilExpiry <= 30)
+                    expiringSoonCount++;
             }
         }
-
-        // Get admin statistics
-        var allAdmins = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
-        var admins = allAdmins.Item1.Cast<Admin>().ToList();
-        
-        var activeAdmins = admins.Count(a => a.IsActive);
-        var inactiveAdmins = admins.Count(a => !a.IsActive);
-        var recentlyCreatedAdmins = admins.Count(a => a.CreatedTimestamp >= sevenDaysAgo);
-
-        // Get admin types count
-        var adminTypesCount = await _adminTypeRepository.Count();
 
         return new SystemStatisticsDto
         {
@@ -317,53 +253,273 @@ public class DashboardService : IDashboardService
                 Expired = expiredCount,
                 Suspended = suspendedCount
             },
-            ActiveAdmins = activeAdmins,
-            InactiveAdmins = inactiveAdmins,
+            ActiveAdmins = admins.Count(a => a.IsActive),
+            InactiveAdmins = admins.Count(a => !a.IsActive),
             CompaniesExpiringSoon = expiringSoonCount,
-            RecentlyCreatedCompanies = recentlyCreatedCompanies,
-            RecentlyCreatedAdmins = recentlyCreatedAdmins
+            RecentlyCreatedCompanies = companies.Count(c => c.CreatedTimestamp >= sevenDaysAgo),
+            RecentlyCreatedAdmins = admins.Count(a => a.CreatedTimestamp >= sevenDaysAgo)
         };
     }
 
-    public async Task<DashboardOverviewDto> GetDashboardOverviewAsync()
+    public async Task<CompanyStatsDto> GetCompanyAnalyticsAsync()
     {
-        var statisticsTask = GetSystemStatisticsAsync();
-        var endpointsTask = GetAllEndpointsAsync();
+        var now = DateTime.UtcNow;
+        var today = now.Date;
+        var weekAgo = now.AddDays(-7);
+        var monthAgo = now.AddDays(-30);
 
-        await Task.WhenAll(statisticsTask, endpointsTask);
+        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = companiesResult.Item1.Cast<Company>().ToList();
 
-        return new DashboardOverviewDto
+        var subscriptions = new List<Subscription>();
+        foreach (var company in companies)
         {
-            Statistics = await statisticsTask,
-            Endpoints = await endpointsTask
+            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            if (subscription != null)
+            {
+                subscriptions.Add(subscription);
+            }
+        }
+
+        var activeCompanies = 0;
+        var suspendedCompanies = 0;
+        var expiredCompanies = 0;
+
+        foreach (var company in companies)
+        {
+            var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == company.Id);
+            var status = CalculateLicenseStatus(subscription);
+
+            if (status == LicenseStatus.Active)
+                activeCompanies++;
+            else if (status == LicenseStatus.Suspended)
+                suspendedCompanies++;
+            else if (status == LicenseStatus.Expired)
+                expiredCompanies++;
+        }
+
+        return new CompanyStatsDto
+        {
+            Total = companies.Count,
+            Active = activeCompanies,
+            Suspended = suspendedCompanies,
+            Expired = expiredCompanies,
+            CreatedToday = companies.Count(c => c.CreatedTimestamp.Date == today),
+            CreatedThisWeek = companies.Count(c => c.CreatedTimestamp >= weekAgo),
+            CreatedThisMonth = companies.Count(c => c.CreatedTimestamp >= monthAgo)
         };
     }
 
-    private LicenseStatus CalculateLicenseStatus(Company company, Domain.Entities.Subscriptions.Subscription? subscription)
+    public async Task<SubscriptionStatsDto> GetSubscriptionAnalyticsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var today = now.Date;
+        var weekAgo = now.AddDays(-7);
+        var monthAgo = now.AddDays(-30);
+
+        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = companiesResult.Item1.Cast<Company>().ToList();
+
+        var plansResult = await _planRepository.GetAllAsync(null, 1, int.MaxValue);
+        var plans = plansResult.Item1.Cast<SubscriptionPlan>().ToList();
+
+        var subscriptions = new List<Subscription>();
+        foreach (var company in companies)
+        {
+            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            if (subscription != null)
+            {
+                subscriptions.Add(subscription);
+            }
+        }
+
+        var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsExpired);
+        var trialSubscriptions = subscriptions.Count(s => s.IsTrial);
+        var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
+        var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired);
+
+        var expiring7Days = 0;
+        var expiring30Days = 0;
+
+        foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
+        {
+            var daysUntilExpiry = (sub.ExpiryDateUtc - now).Days;
+
+            if (daysUntilExpiry > 0 && daysUntilExpiry <= 7)
+                expiring7Days++;
+            if (daysUntilExpiry > 7 && daysUntilExpiry <= 30)
+                expiring30Days++;
+        }
+
+        var subscriptionsByPlan = new Dictionary<string, int>();
+        foreach (var plan in plans)
+        {
+            var count = subscriptions.Count(s => s.PlanId == plan.Id);
+            if (count > 0)
+            {
+                subscriptionsByPlan[plan.Name] = count;
+            }
+        }
+
+        return new SubscriptionStatsDto
+        {
+            Total = subscriptions.Count,
+            Active = activeSubscriptions,
+            Trial = trialSubscriptions,
+            Expired = expiredSubscriptions,
+            Suspended = suspendedSubscriptions,
+            ExpiringWithin7Days = expiring7Days,
+            ExpiringWithin30Days = expiring30Days,
+            CreatedToday = subscriptions.Count(s => s.StartDateUtc.Date == today),
+            CreatedThisWeek = subscriptions.Count(s => s.StartDateUtc >= weekAgo),
+            CreatedThisMonth = subscriptions.Count(s => s.StartDateUtc >= monthAgo),
+            ByPlan = subscriptionsByPlan
+        };
+    }
+
+    public async Task<AdminStatsDto> GetAdminAnalyticsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var today = now.Date;
+        var weekAgo = now.AddDays(-7);
+        var monthAgo = now.AddDays(-30);
+
+        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
+        var admins = adminsResult.Item1.Cast<Admin>().ToList();
+
+        var adminTypesResult = await _adminTypeRepository.GetAllAsync(null, 1, int.MaxValue);
+        var adminTypes = adminTypesResult.Item1.Cast<AdminType>().ToList();
+
+        var adminsByType = new Dictionary<string, int>();
+        foreach (var adminType in adminTypes)
+        {
+            var count = admins.Count(a => a.AdminTypeId == adminType.Id);
+            if (count > 0)
+            {
+                adminsByType[adminType.AdminTypeName] = count;
+            }
+        }
+
+        return new AdminStatsDto
+        {
+            Total = admins.Count,
+            Active = admins.Count(a => a.IsActive),
+            Inactive = admins.Count(a => !a.IsActive),
+            CreatedToday = admins.Count(a => a.CreatedTimestamp.Date == today),
+            CreatedThisWeek = admins.Count(a => a.CreatedTimestamp >= weekAgo),
+            CreatedThisMonth = admins.Count(a => a.CreatedTimestamp >= monthAgo),
+            ByType = adminsByType
+        };
+    }
+
+    public async Task<AlertsDto> GetAlertsAsync()
     {
         var now = DateTime.UtcNow;
 
-        // If no active subscription, company is expired
+        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = companiesResult.Item1.Cast<Company>().ToList();
+
+        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
+        var admins = adminsResult.Item1.Cast<Admin>().ToList();
+
+        var subscriptions = new List<Subscription>();
+        foreach (var company in companies)
+        {
+            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            if (subscription != null)
+            {
+                subscriptions.Add(subscription);
+            }
+        }
+
+        var suspendedCompanies = 0;
+        var expiredCompanies = 0;
+
+        foreach (var company in companies)
+        {
+            var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == company.Id);
+            var status = CalculateLicenseStatus(subscription);
+
+            if (status == LicenseStatus.Suspended)
+                suspendedCompanies++;
+            else if (status == LicenseStatus.Expired)
+                expiredCompanies++;
+        }
+
+        var expiringToday = 0;
+        var expiring7Days = 0;
+
+        foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
+        {
+            var daysUntilExpiry = (sub.ExpiryDateUtc - now).Days;
+
+            if (daysUntilExpiry <= 0)
+                expiringToday++;
+            if (daysUntilExpiry > 0 && daysUntilExpiry <= 7)
+                expiring7Days++;
+        }
+
+        var alertMessages = new List<string>();
+        if (expiringToday > 0)
+            alertMessages.Add($"{expiringToday} subscription(s) expiring today");
+        if (expiring7Days > 0)
+            alertMessages.Add($"{expiring7Days} subscription(s) expiring within 7 days");
+        if (suspendedCompanies > 0)
+            alertMessages.Add($"{suspendedCompanies} company(ies) suspended");
+        if (expiredCompanies > 0)
+            alertMessages.Add($"{expiredCompanies} company(ies) expired");
+
+        return new AlertsDto
+        {
+            SubscriptionsExpiringToday = expiringToday,
+            SubscriptionsExpiringThisWeek = expiring7Days,
+            SuspendedCompanies = suspendedCompanies,
+            ExpiredCompanies = expiredCompanies,
+            InactiveAdmins = admins.Count(a => !a.IsActive),
+            Messages = alertMessages
+        };
+    }
+
+    public async Task<RecentActivityDto> GetRecentActivityAsync()
+    {
+        var dayAgo = DateTime.UtcNow.AddDays(-1);
+
+        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
+        var companies = companiesResult.Item1.Cast<Company>().ToList();
+
+        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
+        var admins = adminsResult.Item1.Cast<Admin>().ToList();
+
+        var subscriptions = new List<Subscription>();
+        foreach (var company in companies)
+        {
+            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
+            if (subscription != null)
+            {
+                subscriptions.Add(subscription);
+            }
+        }
+
+        return new RecentActivityDto
+        {
+            CompaniesLast24Hours = companies.Count(c => c.CreatedTimestamp >= dayAgo),
+            SubscriptionsLast24Hours = subscriptions.Count(s => s.StartDateUtc >= dayAgo),
+            AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
+        };
+    }
+
+    private LicenseStatus CalculateLicenseStatus(Subscription? subscription)
+    {
         if (subscription == null || subscription.IsExpired)
-        {
             return LicenseStatus.Expired;
-        }
 
-        // If subscription is not active (suspended/canceled), company is suspended
         if (!subscription.IsActive)
-        {
             return LicenseStatus.Suspended;
-        }
 
-        // If subscription expiry + grace period has passed, it's expired
+        var now = DateTime.UtcNow;
         if (subscription.ExpiryDateUtc.AddDays(subscription.Plan?.GracePeriodDays ?? 0) < now)
-        {
             return LicenseStatus.Expired;
-        }
 
-        // Otherwise, it's active
         return LicenseStatus.Active;
     }
 }
-
-

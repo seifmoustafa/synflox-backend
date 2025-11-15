@@ -8,21 +8,38 @@ namespace Application.Services;
 public interface IDashboardService
 {
     /// <summary>
-    /// Gets all API endpoints in the system
+    /// Gets the main dashboard with all statistics and metrics (lightweight overview)
     /// </summary>
-    /// <returns>Dashboard response containing all endpoints</returns>
-    Task<DashboardResponseDto> GetAllEndpointsAsync();
+    Task<DashboardDto> GetDashboardAsync();
 
     /// <summary>
-    /// Gets system-wide statistics for the dashboard
+    /// Gets detailed company analytics
     /// </summary>
-    /// <returns>System statistics including counts and license status breakdown</returns>
+    Task<CompanyStatsDto> GetCompanyAnalyticsAsync();
+
+    /// <summary>
+    /// Gets detailed subscription analytics
+    /// </summary>
+    Task<SubscriptionStatsDto> GetSubscriptionAnalyticsAsync();
+
+    /// <summary>
+    /// Gets detailed admin analytics
+    /// </summary>
+    Task<AdminStatsDto> GetAdminAnalyticsAsync();
+
+    /// <summary>
+    /// Gets system alerts and warnings
+    /// </summary>
+    Task<AlertsDto> GetAlertsAsync();
+
+    /// <summary>
+    /// Gets recent activity summary
+    /// </summary>
+    Task<RecentActivityDto> GetRecentActivityAsync();
+
+    /// <summary>
+    /// Gets system-wide statistics (legacy)
+    /// </summary>
     Task<SystemStatisticsDto> GetSystemStatisticsAsync();
-
-    /// <summary>
-    /// Gets complete dashboard overview (statistics + endpoints)
-    /// </summary>
-    /// <returns>Complete dashboard data</returns>
-    Task<DashboardOverviewDto> GetDashboardOverviewAsync();
 }
 
