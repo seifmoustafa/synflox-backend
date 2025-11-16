@@ -199,6 +199,7 @@ public class DashboardService : IDashboardService
                 AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
             },
             TimeSeries = await GetTimeSeriesDataAsync(companies, subscriptions, admins),
+            Revenue = await GetRevenueDataAsync(subscriptions, companies),
             GeneratedAtUtc = DateTime.UtcNow
         };
     }
@@ -580,5 +581,128 @@ public class DashboardService : IDashboardService
             return LicenseStatus.Expired;
 
         return LicenseStatus.Active;
+    }
+
+    private async Task<RevenueDto> GetRevenueDataAsync(
+        List<Subscription> subscriptions,
+        List<Company> companies)
+    {
+        var activeSubscriptions = subscriptions.Where(s => s.IsActive && !s.IsExpired).ToList();
+        var payingSubscriptions = activeSubscriptions.Where(s => !s.IsTrial).ToList();
+        
+        // Calculate total revenue (normalized to USD for simplicity)
+        // In production, you'd use exchange rates
+        decimal totalRevenue = payingSubscriptions.Sum(s => s.Amount);
+        
+        // Calculate MRR (Monthly Recurring Revenue)
+        // Normalize all subscriptions to monthly revenue
+        decimal mrr = 0;
+        foreach (var sub in payingSubscriptions)
+        {
+            var monthlyAmount = NormalizeToMonthlyRevenue(sub);
+            mrr += monthlyAmount;
+        }
+        
+        // ARR = MRR * 12
+        decimal arr = mrr * 12;
+        
+        // ARPC (Average Revenue Per Customer)
+        int payingCustomers = payingSubscriptions.Select(s => s.CompanyId).Distinct().Count();
+        decimal arpc = payingCustomers > 0 ? mrr / payingCustomers : 0;
+        
+        // Revenue by plan
+        var revenueByPlan = payingSubscriptions
+            .GroupBy(s => s.Plan?.Name ?? "Unknown")
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(s => s.Amount)
+            );
+        
+        // Revenue by currency
+        var revenueByCurrency = payingSubscriptions
+            .GroupBy(s => s.Currency.ToString())
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(s => s.Amount)
+            );
+        
+        // Monthly revenue for last 12 months
+        var monthlyRevenue = new List<MonthlyRevenueDto>();
+        var now = DateTime.UtcNow;
+        
+        for (int i = 11; i >= 0; i--)
+        {
+            var targetMonth = now.AddMonths(-i);
+            var monthStart = new DateTime(targetMonth.Year, targetMonth.Month, 1);
+            var monthEnd = monthStart.AddMonths(1);
+            
+            var monthSubscriptions = subscriptions.Where(s =>
+                s.StartDateUtc < monthEnd &&
+                s.ExpiryDateUtc >= monthStart &&
+                !s.IsTrial &&
+                !s.IsDeleted
+            ).ToList();
+            
+            var monthRevenue = monthSubscriptions.Sum(s => s.Amount);
+            var avgRevenue = monthSubscriptions.Count > 0 
+                ? monthRevenue / monthSubscriptions.Count 
+                : 0;
+            
+            monthlyRevenue.Add(new MonthlyRevenueDto
+            {
+                Month = monthStart.ToString("MMM yyyy"),
+                Revenue = monthRevenue,
+                SubscriptionCount = monthSubscriptions.Count,
+                AverageRevenuePerSubscription = avgRevenue
+            });
+        }
+        
+        // Calculate month-over-month growth
+        decimal momGrowth = 0;
+        if (monthlyRevenue.Count >= 2)
+        {
+            var currentMonth = monthlyRevenue[^1].Revenue;
+            var previousMonth = monthlyRevenue[^2].Revenue;
+            
+            if (previousMonth > 0)
+            {
+                momGrowth = ((currentMonth - previousMonth) / previousMonth) * 100;
+            }
+        }
+        
+        return new RevenueDto
+        {
+            MRR = mrr,
+            ARR = arr,
+            TotalRevenue = totalRevenue,
+            ARPC = arpc,
+            RevenueByPlan = revenueByPlan,
+            RevenueByCurrency = revenueByCurrency,
+            MonthlyRevenue = monthlyRevenue,
+            MonthOverMonthGrowth = momGrowth,
+            PayingCustomers = payingCustomers,
+            TrialSubscriptions = activeSubscriptions.Count(s => s.IsTrial)
+        };
+    }
+    
+    private decimal NormalizeToMonthlyRevenue(Subscription subscription)
+    {
+        // Normalize subscription revenue to monthly amount based on plan duration
+        if (subscription.Plan == null)
+            return subscription.Amount;
+        
+        return subscription.Plan.DurationType switch
+        {
+            PlanDurationType.Weekly => subscription.Amount * 4.33m,      // ~4.33 weeks per month
+            PlanDurationType.BiWeekly => subscription.Amount * 2.165m,   // ~2.165 bi-weeks per month
+            PlanDurationType.Monthly => subscription.Amount,
+            PlanDurationType.Quarterly => subscription.Amount / 3m,
+            PlanDurationType.SemiAnnually => subscription.Amount / 6m,   // Fixed: was SemiAnnual
+            PlanDurationType.Yearly => subscription.Amount / 12m,
+            PlanDurationType.Biennial => subscription.Amount / 24m,      // 2 years
+            PlanDurationType.Triennial => subscription.Amount / 36m,     // 3 years
+            PlanDurationType.Lifetime => subscription.Amount / 120m,     // Amortize over 10 years
+            _ => subscription.Amount
+        };
     }
 }

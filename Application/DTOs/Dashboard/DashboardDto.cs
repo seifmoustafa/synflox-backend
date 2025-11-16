@@ -41,6 +41,11 @@ public class DashboardDto
     public TimeSeriesDto TimeSeries { get; set; } = new();
 
     /// <summary>
+    /// Revenue tracking and financial analytics
+    /// </summary>
+    public RevenueDto Revenue { get; set; } = new();
+
+    /// <summary>
     /// Dashboard generation timestamp
     /// </summary>
     public DateTime GeneratedAtUtc { get; set; } = DateTime.UtcNow;
@@ -148,4 +153,73 @@ public class DailyMetricDto
     public int CompaniesActive { get; set; }
     public int SubscriptionsActive { get; set; }
     public int AdminsActive { get; set; }
+}
+
+/// <summary>
+/// Revenue tracking and financial analytics
+/// </summary>
+public class RevenueDto
+{
+    /// <summary>
+    /// Monthly Recurring Revenue (normalized to USD)
+    /// </summary>
+    public decimal MRR { get; set; }
+
+    /// <summary>
+    /// Annual Recurring Revenue (MRR * 12)
+    /// </summary>
+    public decimal ARR { get; set; }
+
+    /// <summary>
+    /// Total revenue from all active subscriptions
+    /// </summary>
+    public decimal TotalRevenue { get; set; }
+
+    /// <summary>
+    /// Average Revenue Per Customer (ARPC)
+    /// </summary>
+    public decimal ARPC { get; set; }
+
+    /// <summary>
+    /// Revenue breakdown by subscription plan
+    /// Key: Plan Name, Value: Revenue Amount
+    /// </summary>
+    public Dictionary<string, decimal> RevenueByPlan { get; set; } = new();
+
+    /// <summary>
+    /// Revenue breakdown by currency
+    /// Key: Currency Code (USD, EUR, etc.), Value: Revenue Amount
+    /// </summary>
+    public Dictionary<string, decimal> RevenueByCurrency { get; set; } = new();
+
+    /// <summary>
+    /// Revenue growth over time (last 12 months)
+    /// </summary>
+    public List<MonthlyRevenueDto> MonthlyRevenue { get; set; } = new();
+
+    /// <summary>
+    /// Percentage growth from previous month
+    /// </summary>
+    public decimal MonthOverMonthGrowth { get; set; }
+
+    /// <summary>
+    /// Number of paying customers (active non-trial subscriptions)
+    /// </summary>
+    public int PayingCustomers { get; set; }
+
+    /// <summary>
+    /// Total number of trial subscriptions
+    /// </summary>
+    public int TrialSubscriptions { get; set; }
+}
+
+/// <summary>
+/// Monthly revenue data point
+/// </summary>
+public class MonthlyRevenueDto
+{
+    public string Month { get; set; } = string.Empty;  // Format: "2024-01" or "Jan 2024"
+    public decimal Revenue { get; set; }
+    public int SubscriptionCount { get; set; }
+    public decimal AverageRevenuePerSubscription { get; set; }
 }
