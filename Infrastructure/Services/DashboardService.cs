@@ -201,6 +201,7 @@ public class DashboardService : IDashboardService
             TimeSeries = await GetTimeSeriesDataAsync(companies, subscriptions, admins),
             Revenue = await GetRevenueDataAsync(subscriptions, companies),
             Lifecycle = await GetLifecycleDataAsync(companies, subscriptions),
+            Trends = await GetTrendsDataAsync(companies, subscriptions, admins),
             GeneratedAtUtc = DateTime.UtcNow
         };
     }
@@ -899,5 +900,125 @@ public class DashboardService : IDashboardService
         else if (ageInDays > 180) score += 5;
 
         return Math.Max(0, Math.Min(100, score));
+    }
+
+    /// <summary>
+    /// Calculate trend analysis and forecasting for all entities
+    /// </summary>
+    private async Task<TrendsDto> GetTrendsDataAsync(
+        List<Company> companies,
+        List<Subscription> subscriptions,
+        List<Admin> admins)
+    {
+        var now = DateTime.UtcNow;
+        var sevenDaysAgo = now.AddDays(-7);
+        var fourteenDaysAgo = now.AddDays(-14);
+        var thirtyDaysAgo = now.AddDays(-30);
+        var sixtyDaysAgo = now.AddDays(-60);
+
+        // Calculate company trends
+        var companyTrend = CalculateEntityTrend(
+            companies,
+            c => c.CreatedTimestamp,
+            now, sevenDaysAgo, fourteenDaysAgo, thirtyDaysAgo, sixtyDaysAgo
+        );
+
+        // Calculate subscription trends
+        var subscriptionTrend = CalculateEntityTrend(
+            subscriptions,
+            s => s.StartDateUtc,
+            now, sevenDaysAgo, fourteenDaysAgo, thirtyDaysAgo, sixtyDaysAgo
+        );
+
+        // Calculate admin trends
+        var adminTrend = CalculateEntityTrend(
+            admins,
+            a => a.CreatedTimestamp,
+            now, sevenDaysAgo, fourteenDaysAgo, thirtyDaysAgo, sixtyDaysAgo
+        );
+
+        // Calculate system health trend
+        var activeCompanies = companies.Count(c => !c.IsDeleted);
+        var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsDeleted);
+        var activeAdmins = admins.Count(a => a.IsActive && !a.IsDeleted);
+        var totalActive = activeCompanies + activeSubscriptions + activeAdmins;
+        var total = companies.Count + subscriptions.Count + admins.Count;
+        var healthPercent = total > 0 ? (decimal)totalActive / total * 100 : 0;
+
+        var systemHealthTrend = healthPercent >= 80 ? TrendDirection.StrongUp :
+                                healthPercent >= 60 ? TrendDirection.Up :
+                                healthPercent >= 40 ? TrendDirection.Stable :
+                                healthPercent >= 20 ? TrendDirection.Down :
+                                TrendDirection.StrongDown;
+
+        // Calculate growth velocity
+        var avgChangePercent = (companyTrend.ChangePercent + subscriptionTrend.ChangePercent + adminTrend.ChangePercent) / 3;
+        var growthVelocity = avgChangePercent > 10 ? "Accelerating" :
+                             avgChangePercent < -10 ? "Decelerating" :
+                             "Steady";
+
+        return await Task.FromResult(new TrendsDto
+        {
+            Companies = companyTrend,
+            Subscriptions = subscriptionTrend,
+            Admins = adminTrend,
+            SystemHealthTrend = systemHealthTrend,
+            GrowthVelocity = growthVelocity
+        });
+    }
+
+    /// <summary>
+    /// Calculate trend metrics for a specific entity type
+    /// </summary>
+    private EntityTrendDto CalculateEntityTrend<T>(
+        List<T> entities,
+        Func<T, DateTime> dateSelector,
+        DateTime now,
+        DateTime sevenDaysAgo,
+        DateTime fourteenDaysAgo,
+        DateTime thirtyDaysAgo,
+        DateTime sixtyDaysAgo)
+    {
+        var current = entities.Count;
+        var currentPeriod = entities.Count(e => dateSelector(e) >= thirtyDaysAgo);
+        var previousPeriod = entities.Count(e => dateSelector(e) >= sixtyDaysAgo && dateSelector(e) < thirtyDaysAgo);
+
+        // Calculate percentage change
+        var changePercent = previousPeriod > 0
+            ? ((decimal)(currentPeriod - previousPeriod) / previousPeriod) * 100
+            : currentPeriod > 0 ? 100 : 0;
+
+        // Determine trend direction
+        var direction = changePercent > 5 ? TrendDirection.StrongUp :
+                       changePercent > 1 ? TrendDirection.Up :
+                       changePercent > -1 ? TrendDirection.Stable :
+                       changePercent > -5 ? TrendDirection.Down :
+                       TrendDirection.StrongDown;
+
+        // Week-over-week change
+        var thisWeek = entities.Count(e => dateSelector(e) >= sevenDaysAgo);
+        var lastWeek = entities.Count(e => dateSelector(e) >= fourteenDaysAgo && dateSelector(e) < sevenDaysAgo);
+        var weekOverWeekChange = thisWeek - lastWeek;
+
+        // Month-over-month change
+        var monthOverMonthChange = currentPeriod - previousPeriod;
+
+        // Daily growth rate
+        var dailyGrowthRate = currentPeriod > 0 ? (decimal)currentPeriod / 30 : 0;
+
+        // Simple linear forecast (next 30 days)
+        var forecast30Days = current + (int)Math.Round(dailyGrowthRate * 30);
+
+        return new EntityTrendDto
+        {
+            Current = current,
+            Previous = previousPeriod,
+            ChangePercent = Math.Round(changePercent, 1),
+            Direction = direction,
+            WeekOverWeekChange = weekOverWeekChange,
+            MonthOverMonthChange = monthOverMonthChange,
+            Forecast30Days = Math.Max(0, forecast30Days),
+            DailyGrowthRate = Math.Round(dailyGrowthRate, 2)
+        };
     }
 }
