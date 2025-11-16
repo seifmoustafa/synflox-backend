@@ -198,6 +198,7 @@ public class DashboardService : IDashboardService
                 SubscriptionsLast24Hours = subscriptions.Count(s => s.StartDateUtc >= dayAgo),
                 AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
             },
+            TimeSeries = await GetTimeSeriesDataAsync(companies, subscriptions, admins),
             GeneratedAtUtc = DateTime.UtcNow
         };
     }
@@ -506,6 +507,64 @@ public class DashboardService : IDashboardService
             SubscriptionsLast24Hours = subscriptions.Count(s => s.StartDateUtc >= dayAgo),
             AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
         };
+    }
+
+    private async Task<TimeSeriesDto> GetTimeSeriesDataAsync(
+        List<Company> companies,
+        List<Subscription> subscriptions,
+        List<Admin> admins)
+    {
+        var last30Days = new List<DailyMetricDto>();
+        var startDate = DateTime.UtcNow.AddDays(-30).Date;
+
+        for (int i = 0; i < 30; i++)
+        {
+            var date = startDate.AddDays(i);
+            var nextDate = date.AddDays(1);
+
+            // Count entities created on this day
+            var companiesCreated = companies.Count(c => c.CreatedTimestamp.Date == date);
+            var subscriptionsCreated = subscriptions.Count(s => s.StartDateUtc.Date == date);
+            var adminsCreated = admins.Count(a => a.CreatedTimestamp.Date == date);
+
+            // Count active entities as of end of this day
+            var companiesActive = companies.Count(c => 
+                c.CreatedTimestamp <= nextDate && 
+                !c.IsDeleted &&
+                subscriptions.Any(s => 
+                    s.CompanyId == c.Id && 
+                    s.IsActive && 
+                    !s.IsExpired &&
+                    s.StartDateUtc <= nextDate
+                )
+            );
+
+            var subscriptionsActive = subscriptions.Count(s => 
+                s.StartDateUtc <= nextDate && 
+                !s.IsDeleted &&
+                s.IsActive && 
+                !s.IsExpired
+            );
+
+            var adminsActive = admins.Count(a => 
+                a.CreatedTimestamp <= nextDate && 
+                !a.IsDeleted &&
+                a.IsActive
+            );
+
+            last30Days.Add(new DailyMetricDto
+            {
+                Date = date,
+                CompaniesCreated = companiesCreated,
+                SubscriptionsCreated = subscriptionsCreated,
+                AdminsCreated = adminsCreated,
+                CompaniesActive = companiesActive,
+                SubscriptionsActive = subscriptionsActive,
+                AdminsActive = adminsActive
+            });
+        }
+
+        return new TimeSeriesDto { Last30Days = last30Days };
     }
 
     private LicenseStatus CalculateLicenseStatus(Subscription? subscription)

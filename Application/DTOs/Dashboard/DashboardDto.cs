@@ -36,6 +36,11 @@ public class DashboardDto
     public RecentActivityDto RecentActivity { get; set; } = new();
 
     /// <summary>
+    /// Time-series historical data (30 days)
+    /// </summary>
+    public TimeSeriesDto TimeSeries { get; set; } = new();
+
+    /// <summary>
     /// Dashboard generation timestamp
     /// </summary>
     public DateTime GeneratedAtUtc { get; set; } = DateTime.UtcNow;
@@ -121,4 +126,26 @@ public class RecentActivityDto
     public int CompaniesLast24Hours { get; set; }
     public int SubscriptionsLast24Hours { get; set; }
     public int AdminsLast24Hours { get; set; }
+}
+
+/// <summary>
+/// Time-series data for 30-day historical tracking
+/// </summary>
+public class TimeSeriesDto
+{
+    public List<DailyMetricDto> Last30Days { get; set; } = new();
+}
+
+/// <summary>
+/// Daily metrics for historical tracking
+/// </summary>
+public class DailyMetricDto
+{
+    public DateTime Date { get; set; }
+    public int CompaniesCreated { get; set; }
+    public int SubscriptionsCreated { get; set; }
+    public int AdminsCreated { get; set; }
+    public int CompaniesActive { get; set; }
+    public int SubscriptionsActive { get; set; }
+    public int AdminsActive { get; set; }
 }
