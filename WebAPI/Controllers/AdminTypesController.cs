@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Application.DTOs.AdminType;
+using Application.DTOs.Responses;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,15 @@ public class AdminTypesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var (types, metadata) = await _service.GetAllAsync(page, pageSize, search);
+        var pagination = new PaginationDto(metadata.ItemsCount, metadata.PageSize, metadata.CurrentPage);
+        return Ok(new { data = types, pagination });
+    }
+    
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllNoPagination()
     {
         var types = await _service.GetAllAsync();
         return Ok(types);

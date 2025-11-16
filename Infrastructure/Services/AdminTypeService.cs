@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using AutoMapper;
 using Application.DTOs.AdminType;
 using Application.Services;
 using Domain.Entities.Authentication;
 using Domain.Interfaces;
+using Domain.Entities.Common;
 
 namespace Infrastructure.Services;
 
@@ -25,6 +27,21 @@ public class AdminTypeService : IAdminTypeService
     {
         var entities = await _repo.GetAllAsync();
         return _mapper.Map<IEnumerable<AdminTypeDto>>(entities);
+    }
+
+    public async Task<(IEnumerable<AdminTypeDto>, PaginationMetadata)> GetAllAsync(int page, int pageSize, string? search)
+    {
+        // Use repository's paginated method with search on AdminTypeName
+        var (entities, metadata) = await _repo.GetAllAsync(
+            includes: null,
+            pageNumber: page,
+            pageSize: pageSize,
+            search: search,
+            searchColumns: at => at.AdminTypeName
+        );
+
+        var dtos = _mapper.Map<IEnumerable<AdminTypeDto>>(entities);
+        return (dtos, metadata);
     }
 
     public async Task<AdminTypeDto?> GetByIdAsync(GetAdminTypeByIdRequest request)
