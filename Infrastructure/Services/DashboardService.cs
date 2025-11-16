@@ -65,10 +65,10 @@ public class DashboardService : IDashboardService
             }
         }
 
-        // Calculate company stats
-        var activeCompanies = 0;
-        var suspendedCompanies = 0;
-        var expiredCompanies = 0;
+        // Calculate company stats (categorized by subscription/license status)
+        var companiesWithActiveLicense = 0;
+        var companiesWithSuspendedLicense = 0;
+        var companiesWithExpiredLicense = 0;
 
         foreach (var company in companies)
         {
@@ -76,11 +76,11 @@ public class DashboardService : IDashboardService
             var status = CalculateLicenseStatus(subscription);
 
             if (status == LicenseStatus.Active)
-                activeCompanies++;
+                companiesWithActiveLicense++;
             else if (status == LicenseStatus.Suspended)
-                suspendedCompanies++;
+                companiesWithSuspendedLicense++;
             else if (status == LicenseStatus.Expired)
-                expiredCompanies++;
+                companiesWithExpiredLicense++;
         }
 
         // Calculate subscription stats
@@ -133,17 +133,17 @@ public class DashboardService : IDashboardService
             alertMessages.Add($"{expiringToday} subscription(s) expiring today");
         if (expiring7Days > 0)
             alertMessages.Add($"{expiring7Days} subscription(s) expiring within 7 days");
-        if (suspendedCompanies > 0)
-            alertMessages.Add($"{suspendedCompanies} company(ies) suspended");
-        if (expiredCompanies > 0)
-            alertMessages.Add($"{expiredCompanies} company(ies) expired");
+        if (companiesWithSuspendedLicense > 0)
+            alertMessages.Add($"{companiesWithSuspendedLicense} company(ies) with suspended license");
+        if (companiesWithExpiredLicense > 0)
+            alertMessages.Add($"{companiesWithExpiredLicense} company(ies) with expired/no license");
 
         return new DashboardDto
         {
             Overview = new OverviewStatsDto
             {
                 TotalCompanies = companies.Count,
-                ActiveCompanies = activeCompanies,
+                ActiveCompanies = companiesWithActiveLicense,
                 TotalSubscriptions = subscriptions.Count,
                 ActiveSubscriptions = activeSubscriptions,
                 TotalAdmins = admins.Count,
@@ -152,9 +152,9 @@ public class DashboardService : IDashboardService
             Companies = new CompanyStatsDto
             {
                 Total = companies.Count,
-                Active = activeCompanies,
-                Suspended = suspendedCompanies,
-                Expired = expiredCompanies,
+                ActiveLicense = companiesWithActiveLicense,
+                SuspendedLicense = companiesWithSuspendedLicense,
+                ExpiredLicense = companiesWithExpiredLicense,
                 CreatedToday = companies.Count(c => c.CreatedTimestamp.Date == today),
                 CreatedThisWeek = companies.Count(c => c.CreatedTimestamp >= weekAgo),
                 CreatedThisMonth = companies.Count(c => c.CreatedTimestamp >= monthAgo)
@@ -187,8 +187,8 @@ public class DashboardService : IDashboardService
             {
                 SubscriptionsExpiringToday = expiringToday,
                 SubscriptionsExpiringThisWeek = expiring7Days,
-                SuspendedCompanies = suspendedCompanies,
-                ExpiredCompanies = expiredCompanies,
+                CompaniesWithSuspendedLicense = companiesWithSuspendedLicense,
+                CompaniesWithExpiredLicense = companiesWithExpiredLicense,
                 InactiveAdmins = admins.Count(a => !a.IsActive),
                 Messages = alertMessages
             },
@@ -281,9 +281,9 @@ public class DashboardService : IDashboardService
             }
         }
 
-        var activeCompanies = 0;
-        var suspendedCompanies = 0;
-        var expiredCompanies = 0;
+        var companiesWithActiveLicense = 0;
+        var companiesWithSuspendedLicense = 0;
+        var companiesWithExpiredLicense = 0;
 
         foreach (var company in companies)
         {
@@ -291,19 +291,19 @@ public class DashboardService : IDashboardService
             var status = CalculateLicenseStatus(subscription);
 
             if (status == LicenseStatus.Active)
-                activeCompanies++;
+                companiesWithActiveLicense++;
             else if (status == LicenseStatus.Suspended)
-                suspendedCompanies++;
+                companiesWithSuspendedLicense++;
             else if (status == LicenseStatus.Expired)
-                expiredCompanies++;
+                companiesWithExpiredLicense++;
         }
 
         return new CompanyStatsDto
         {
             Total = companies.Count,
-            Active = activeCompanies,
-            Suspended = suspendedCompanies,
-            Expired = expiredCompanies,
+            ActiveLicense = companiesWithActiveLicense,
+            SuspendedLicense = companiesWithSuspendedLicense,
+            ExpiredLicense = companiesWithExpiredLicense,
             CreatedToday = companies.Count(c => c.CreatedTimestamp.Date == today),
             CreatedThisWeek = companies.Count(c => c.CreatedTimestamp >= weekAgo),
             CreatedThisMonth = companies.Count(c => c.CreatedTimestamp >= monthAgo)
@@ -432,8 +432,8 @@ public class DashboardService : IDashboardService
             }
         }
 
-        var suspendedCompanies = 0;
-        var expiredCompanies = 0;
+        var companiesWithSuspendedLicense = 0;
+        var companiesWithExpiredLicense = 0;
 
         foreach (var company in companies)
         {
@@ -441,9 +441,9 @@ public class DashboardService : IDashboardService
             var status = CalculateLicenseStatus(subscription);
 
             if (status == LicenseStatus.Suspended)
-                suspendedCompanies++;
+                companiesWithSuspendedLicense++;
             else if (status == LicenseStatus.Expired)
-                expiredCompanies++;
+                companiesWithExpiredLicense++;
         }
 
         var expiringToday = 0;
@@ -464,17 +464,17 @@ public class DashboardService : IDashboardService
             alertMessages.Add($"{expiringToday} subscription(s) expiring today");
         if (expiring7Days > 0)
             alertMessages.Add($"{expiring7Days} subscription(s) expiring within 7 days");
-        if (suspendedCompanies > 0)
-            alertMessages.Add($"{suspendedCompanies} company(ies) suspended");
-        if (expiredCompanies > 0)
-            alertMessages.Add($"{expiredCompanies} company(ies) expired");
+        if (companiesWithSuspendedLicense > 0)
+            alertMessages.Add($"{companiesWithSuspendedLicense} company(ies) with suspended license");
+        if (companiesWithExpiredLicense > 0)
+            alertMessages.Add($"{companiesWithExpiredLicense} company(ies) with expired/no license");
 
         return new AlertsDto
         {
             SubscriptionsExpiringToday = expiringToday,
             SubscriptionsExpiringThisWeek = expiring7Days,
-            SuspendedCompanies = suspendedCompanies,
-            ExpiredCompanies = expiredCompanies,
+            CompaniesWithSuspendedLicense = companiesWithSuspendedLicense,
+            CompaniesWithExpiredLicense = companiesWithExpiredLicense,
             InactiveAdmins = admins.Count(a => !a.IsActive),
             Messages = alertMessages
         };

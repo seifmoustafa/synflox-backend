@@ -55,14 +55,14 @@ public class OverviewStatsDto
 }
 
 /// <summary>
-/// Company statistics
+/// Company statistics categorized by their subscription/license status
 /// </summary>
 public class CompanyStatsDto
 {
     public int Total { get; set; }
-    public int Active { get; set; }
-    public int Suspended { get; set; }
-    public int Expired { get; set; }
+    public int ActiveLicense { get; set; }  // Companies with active subscription
+    public int SuspendedLicense { get; set; }  // Companies with suspended subscription
+    public int ExpiredLicense { get; set; }  // Companies with expired/no subscription
     public int CreatedToday { get; set; }
     public int CreatedThisWeek { get; set; }
     public int CreatedThisMonth { get; set; }
@@ -107,8 +107,8 @@ public class AlertsDto
 {
     public int SubscriptionsExpiringToday { get; set; }
     public int SubscriptionsExpiringThisWeek { get; set; }
-    public int SuspendedCompanies { get; set; }
-    public int ExpiredCompanies { get; set; }
+    public int CompaniesWithSuspendedLicense { get; set; }  // Companies that have suspended subscription
+    public int CompaniesWithExpiredLicense { get; set; }  // Companies with expired or no subscription
     public int InactiveAdmins { get; set; }
     public List<string> Messages { get; set; } = new();
 }
