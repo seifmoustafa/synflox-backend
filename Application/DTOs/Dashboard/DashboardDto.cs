@@ -46,6 +46,11 @@ public class DashboardDto
     public RevenueDto Revenue { get; set; } = new();
 
     /// <summary>
+    /// Company lifecycle and churn analytics
+    /// </summary>
+    public LifecycleDto Lifecycle { get; set; } = new();
+
+    /// <summary>
     /// Dashboard generation timestamp
     /// </summary>
     public DateTime GeneratedAtUtc { get; set; } = DateTime.UtcNow;
@@ -222,4 +227,128 @@ public class MonthlyRevenueDto
     public decimal Revenue { get; set; }
     public int SubscriptionCount { get; set; }
     public decimal AverageRevenuePerSubscription { get; set; }
+}
+
+/// <summary>
+/// Company lifecycle and churn analytics
+/// </summary>
+public class LifecycleDto
+{
+    /// <summary>
+    /// Companies in each lifecycle stage
+    /// </summary>
+    public LifecycleStageDto Stages { get; set; } = new();
+
+    /// <summary>
+    /// Churn analysis and risk metrics
+    /// </summary>
+    public ChurnDto Churn { get; set; } = new();
+
+    /// <summary>
+    /// Customer health distribution (0-100 score)
+    /// </summary>
+    public HealthDistributionDto HealthDistribution { get; set; } = new();
+
+    /// <summary>
+    /// Lifecycle transition metrics
+    /// </summary>
+    public List<LifecycleTransitionDto> Transitions { get; set; } = new();
+}
+
+/// <summary>
+/// Company count by lifecycle stage
+/// </summary>
+public class LifecycleStageDto
+{
+    /// <summary>
+    /// New companies (created within last 30 days)
+    /// </summary>
+    public int New { get; set; }
+
+    /// <summary>
+    /// Active companies with healthy subscriptions
+    /// </summary>
+    public int Active { get; set; }
+
+    /// <summary>
+    /// At-risk companies (expiring soon, suspended, or inactive)
+    /// </summary>
+    public int AtRisk { get; set; }
+
+    /// <summary>
+    /// Churned companies (expired subscriptions, no longer active)
+    /// </summary>
+    public int Churned { get; set; }
+
+    /// <summary>
+    /// Returning companies (previously churned, now active again)
+    /// </summary>
+    public int Returning { get; set; }
+}
+
+/// <summary>
+/// Churn analysis metrics
+/// </summary>
+public class ChurnDto
+{
+    /// <summary>
+    /// Overall churn rate percentage
+    /// </summary>
+    public decimal ChurnRate { get; set; }
+
+    /// <summary>
+    /// Number of companies churned this month
+    /// </summary>
+    public int ChurnedThisMonth { get; set; }
+
+    /// <summary>
+    /// Number of companies at high risk of churning
+    /// </summary>
+    public int HighRiskCount { get; set; }
+
+    /// <summary>
+    /// Retention rate percentage
+    /// </summary>
+    public decimal RetentionRate { get; set; }
+
+    /// <summary>
+    /// Average customer lifetime in days
+    /// </summary>
+    public double AverageLifetimeDays { get; set; }
+
+    /// <summary>
+    /// Companies by risk score ranges
+    /// </summary>
+    public RiskDistributionDto RiskDistribution { get; set; } = new();
+}
+
+/// <summary>
+/// Risk score distribution
+/// </summary>
+public class RiskDistributionDto
+{
+    public int Low { get; set; }        // Score 0-33 (healthy)
+    public int Medium { get; set; }     // Score 34-66 (monitor)
+    public int High { get; set; }       // Score 67-100 (critical)
+}
+
+/// <summary>
+/// Health score distribution
+/// </summary>
+public class HealthDistributionDto
+{
+    public int Excellent { get; set; }  // Score 80-100
+    public int Good { get; set; }       // Score 60-79
+    public int Fair { get; set; }       // Score 40-59
+    public int Poor { get; set; }       // Score 0-39
+}
+
+/// <summary>
+/// Lifecycle stage transition data
+/// </summary>
+public class LifecycleTransitionDto
+{
+    public string FromStage { get; set; } = string.Empty;
+    public string ToStage { get; set; } = string.Empty;
+    public int Count { get; set; }
 }

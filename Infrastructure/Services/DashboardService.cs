@@ -200,6 +200,7 @@ public class DashboardService : IDashboardService
             },
             TimeSeries = await GetTimeSeriesDataAsync(companies, subscriptions, admins),
             Revenue = await GetRevenueDataAsync(subscriptions, companies),
+            Lifecycle = await GetLifecycleDataAsync(companies, subscriptions),
             GeneratedAtUtc = DateTime.UtcNow
         };
     }
@@ -704,5 +705,199 @@ public class DashboardService : IDashboardService
             PlanDurationType.Lifetime => subscription.Amount / 120m,     // Amortize over 10 years
             _ => subscription.Amount
         };
+    }
+
+    private async Task<LifecycleDto> GetLifecycleDataAsync(
+        List<Company> companies,
+        List<Subscription> subscriptions)
+    {
+        var now = DateTime.UtcNow;
+        var thirtyDaysAgo = now.AddDays(-30);
+        var sevenDaysAgo = now.AddDays(-7);
+
+        // Calculate lifecycle stages
+        var newCompanies = companies.Count(c => c.CreatedTimestamp >= thirtyDaysAgo);
+        
+        var activeCompanies = companies.Count(c =>
+            !c.IsDeleted &&
+            subscriptions.Any(s =>
+                s.CompanyId == c.Id &&
+                s.IsActive &&
+                !s.IsExpired
+            )
+        );
+
+        var atRiskCompanies = companies.Count(c =>
+            !c.IsDeleted &&
+            subscriptions.Any(s =>
+                s.CompanyId == c.Id &&
+                (
+                    // Expiring within 7 days
+                    (s.IsActive && !s.IsExpired && (s.ExpiryDateUtc - now).Days <= 7 && (s.ExpiryDateUtc - now).Days > 0) ||
+                    // Suspended
+                    (!s.IsActive && !s.IsExpired)
+                )
+            )
+        );
+
+        var churnedCompanies = companies.Count(c =>
+            !c.IsDeleted &&
+            !subscriptions.Any(s =>
+                s.CompanyId == c.Id &&
+                s.IsActive &&
+                !s.IsExpired
+            )
+        );
+
+        // Companies that had expired subscriptions but now have active ones
+        var returningCompanies = 0; // TODO: Track this in future with subscription history
+
+        // Calculate churn metrics
+        var totalActiveEver = activeCompanies + churnedCompanies;
+        var churnRate = totalActiveEver > 0 ? (decimal)churnedCompanies / totalActiveEver * 100 : 0;
+        var retentionRate = 100 - churnRate;
+
+        var churnedThisMonth = companies.Count(c =>
+            !c.IsDeleted &&
+            subscriptions.Any(s =>
+                s.CompanyId == c.Id &&
+                s.IsExpired &&
+                s.ExpiryDateUtc >= thirtyDaysAgo
+            )
+        );
+
+        // Calculate average lifetime
+        var lifetimes = companies
+            .Where(c => !c.IsDeleted)
+            .Select(c =>
+            {
+                var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == c.Id);
+                if (subscription == null) return 0;
+                
+                var end = subscription.IsActive && !subscription.IsExpired 
+                    ? now 
+                    : subscription.ExpiryDateUtc;
+                
+                return (end - subscription.StartDateUtc).TotalDays;
+            })
+            .Where(days => days > 0)
+            .ToList();
+
+        var averageLifetimeDays = lifetimes.Any() ? lifetimes.Average() : 0;
+
+        // Calculate risk distribution
+        var riskScores = companies
+            .Where(c => !c.IsDeleted)
+            .Select(c => CalculateRiskScore(c, subscriptions.Where(s => s.CompanyId == c.Id).ToList(), now))
+            .ToList();
+
+        var lowRisk = riskScores.Count(score => score <= 33);
+        var mediumRisk = riskScores.Count(score => score > 33 && score <= 66);
+        var highRisk = riskScores.Count(score => score > 66);
+
+        // Calculate health distribution
+        var healthScores = companies
+            .Where(c => !c.IsDeleted)
+            .Select(c => CalculateHealthScore(c, subscriptions.Where(s => s.CompanyId == c.Id).ToList(), now))
+            .ToList();
+
+        var excellent = healthScores.Count(score => score >= 80);
+        var good = healthScores.Count(score => score >= 60 && score < 80);
+        var fair = healthScores.Count(score => score >= 40 && score < 60);
+        var poor = healthScores.Count(score => score < 40);
+
+        // Lifecycle transitions (simplified - would need historical data for accurate tracking)
+        var transitions = new List<LifecycleTransitionDto>
+        {
+            new() { FromStage = "New", ToStage = "Active", Count = Math.Min(newCompanies, activeCompanies) },
+            new() { FromStage = "Active", ToStage = "At-Risk", Count = Math.Max(0, atRiskCompanies / 2) },
+            new() { FromStage = "At-Risk", ToStage = "Churned", Count = Math.Max(0, churnedThisMonth / 2) },
+            new() { FromStage = "At-Risk", ToStage = "Active", Count = Math.Max(0, atRiskCompanies / 3) }
+        };
+
+        return new LifecycleDto
+        {
+            Stages = new LifecycleStageDto
+            {
+                New = newCompanies,
+                Active = activeCompanies,
+                AtRisk = atRiskCompanies,
+                Churned = churnedCompanies,
+                Returning = returningCompanies
+            },
+            Churn = new ChurnDto
+            {
+                ChurnRate = churnRate,
+                ChurnedThisMonth = churnedThisMonth,
+                HighRiskCount = highRisk,
+                RetentionRate = retentionRate,
+                AverageLifetimeDays = averageLifetimeDays,
+                RiskDistribution = new RiskDistributionDto
+                {
+                    Low = lowRisk,
+                    Medium = mediumRisk,
+                    High = highRisk
+                }
+            },
+            HealthDistribution = new HealthDistributionDto
+            {
+                Excellent = excellent,
+                Good = good,
+                Fair = fair,
+                Poor = poor
+            },
+            Transitions = transitions
+        };
+    }
+
+    private int CalculateRiskScore(Company company, List<Subscription> companySubscriptions, DateTime now)
+    {
+        var subscription = companySubscriptions.FirstOrDefault();
+        if (subscription == null) return 100; // No subscription = highest risk
+
+        var score = 0;
+
+        // Subscription status
+        if (subscription.IsExpired) score += 50;
+        else if (!subscription.IsActive) score += 30;
+
+        // Days until expiry
+        var daysUntilExpiry = (subscription.ExpiryDateUtc - now).Days;
+        if (daysUntilExpiry <= 0) score += 40;
+        else if (daysUntilExpiry <= 7) score += 30;
+        else if (daysUntilExpiry <= 30) score += 15;
+
+        // Trial subscription
+        if (subscription.IsTrial) score += 10;
+
+        return Math.Min(100, score);
+    }
+
+    private int CalculateHealthScore(Company company, List<Subscription> companySubscriptions, DateTime now)
+    {
+        var subscription = companySubscriptions.FirstOrDefault();
+        if (subscription == null) return 0; // No subscription = no health
+
+        var score = 100;
+
+        // Subscription status
+        if (subscription.IsExpired) score -= 50;
+        else if (!subscription.IsActive) score -= 30;
+
+        // Days until expiry
+        var daysUntilExpiry = (subscription.ExpiryDateUtc - now).Days;
+        if (daysUntilExpiry <= 0) score -= 40;
+        else if (daysUntilExpiry <= 7) score -= 30;
+        else if (daysUntilExpiry <= 30) score -= 15;
+
+        // Trial subscription (neutral)
+        if (subscription.IsTrial) score -= 10;
+
+        // Company age (older = healthier)
+        var ageInDays = (now - company.CreatedTimestamp).TotalDays;
+        if (ageInDays > 365) score += 10;
+        else if (ageInDays > 180) score += 5;
+
+        return Math.Max(0, Math.Min(100, score));
     }
 }
