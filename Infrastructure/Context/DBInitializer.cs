@@ -55,7 +55,7 @@ namespace Infrastructure.Context
                     LastName = "Admin",
                     PhoneNumber = "0000000000",
                     Username = "superadmin",
-                    Password = services.GetRequiredService<IPasswordHasher>().HashPassword("password"),
+                    Password = services.GetRequiredService<IPasswordHasher>().HashPassword("P@ssw0rd"),
                     Notes = "Super System Admin",
                     AdminTypeId = superAdminUserType.Id,
                 };

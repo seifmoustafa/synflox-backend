@@ -1,13 +1,16 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Application.DTOs.Authentication;
 using Application.DTOs.Admin;
+using Application.DTOs.Authentication;
 using Application.Services;
 using AutoMapper;
 using Domain.Entities.Authentication;
-using Domain.Interfaces;
+using Domain.Entities.Common;
 using Domain.Exceptions;
+using Domain.Interfaces;
+using Infrastructure.Authentication;
+using OtpNet;
 
 namespace Infrastructure.Services
 {
@@ -74,6 +77,16 @@ namespace Infrastructure.Services
                 };
             }
 
+            // Security: Check if admin is active and not deleted
+            if (!admin.IsActive || admin.IsDeleted)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["Account.Deactivated"]
+                };
+            }
+
             bool checkPassword = _passwordHasher.VerifyPassword(password, admin.Password);
             if (!checkPassword)
             {
@@ -84,8 +97,115 @@ namespace Infrastructure.Services
                 };
             }
 
+            // Check if 2FA is enabled
+            if (admin.IsTwoFactorEnabled)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    Requires2FA = true,
+                    Message = _localizer["2FA.Required"],
+                    ErrorMessage = _localizer["2FA.Required"]
+                };
+            }
+
             admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
                 ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
+
+            // Update login tracking
+            admin.LastLoginAt = DateTime.UtcNow;
+            admin.LoginCount++;
+            await _adminRepository.UpdateAsync(admin);
+            await _unitOfWork.SaveChangesAsync();
+
+            return await GenerateTokensAsync(
+                admin,
+                _jwtTokenGenerator.GenerateToken,
+                _jwtTokenGenerator.GenerateRefreshToken);
+        }
+
+        public async Task<AuthenticationResponse> Verify2FAAsync(string username, string password, string twoFactorCode)
+        {
+            var admin = await _adminRepository.GetByUserNameAsync(username);
+            if (admin == null)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["InvalidAdminCredentials"]
+                };
+            }
+
+            // Security: Check if admin is active and not deleted
+            if (!admin.IsActive || admin.IsDeleted)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["Account.Deactivated"]
+                };
+            }
+
+            // Verify password
+            bool checkPassword = _passwordHasher.VerifyPassword(password, admin.Password);
+            if (!checkPassword)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["InvalidAdminCredentials"]
+                };
+            }
+
+            // Check if 2FA is enabled
+            if (!admin.IsTwoFactorEnabled || string.IsNullOrEmpty(admin.TwoFactorSecret))
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["2FA.NotEnabled"]
+                };
+            }
+
+            // Prevent code reuse: Check if code was used in last 90 seconds
+            if (admin.LastTwoFactorCodeUsedAt.HasValue)
+            {
+                var timeSinceLastUse = DateTime.UtcNow - admin.LastTwoFactorCodeUsedAt.Value;
+                if (timeSinceLastUse.TotalSeconds < 90) // TOTP window is 90 seconds (±60s)
+                {
+                    return new AuthenticationResponse
+                    {
+                        Success = false,
+                        ErrorMessage = _localizer["2FA.CodeAlreadyUsed"]
+                    };
+                }
+            }
+
+            // Verify TOTP code
+            var secretBytes = Base32Encoding.ToBytes(admin.TwoFactorSecret);
+            var totp = new Totp(secretBytes);
+            var isValid = totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2));
+
+            if (!isValid)
+            {
+                return new AuthenticationResponse
+                {
+                    Success = false,
+                    ErrorMessage = _localizer["2FA.InvalidCode"]
+                };
+            }
+
+            // Track code usage to prevent reuse
+            admin.LastTwoFactorCodeUsedAt = DateTime.UtcNow;
+
+            admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
+                ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
+
+            // Update login tracking
+            admin.LastLoginAt = DateTime.UtcNow;
+            admin.LoginCount++;
+            await _adminRepository.UpdateAsync(admin);
+            await _unitOfWork.SaveChangesAsync();
 
             return await GenerateTokensAsync(
                 admin,

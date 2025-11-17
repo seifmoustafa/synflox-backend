@@ -819,6 +819,75 @@ public class EmailService : IEmailService
         await SendEmailAsync(toEmail, subject, body);
     }
 
+    // ===== ADMIN SECURITY NOTIFICATION EMAILS =====
+
+    public async Task SendEmailChangedNotificationAsync(string oldEmail, string newEmail, string adminName, string? language = null)
+    {
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔐 Email Address Changed - SYNFLOX";
+        var title = "Email Address Changed";
+        
+        var message = $@"Hello {adminName},
+            <br><br>
+            Your email address has been successfully changed.
+            <br><br>
+            <strong>📧 Previous Email:</strong> {oldEmail}<br>
+            <strong>✅ New Email:</strong> {newEmail}<br>
+            <strong>📅 Changed At:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC
+            <br><br>
+            <strong>🔒 Security Notice:</strong><br>
+            • This notification has been sent to both your old and new email addresses<br>
+            • If you did not make this change, please contact support immediately<br>
+            • Your account security may be compromised
+            <br><br>
+            <strong>🛡️ Next Steps:</strong><br>
+            • Verify that you can access your account with the new email<br>
+            • Update your email in any third-party systems<br>
+            • Consider enabling Two-Factor Authentication for extra security
+            <br><br>
+            Thank you for keeping your account secure!";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#2196F3", language);
+        
+        // Send to BOTH old and new email addresses
+        await SendEmailAsync(oldEmail, subject, body);
+        await SendEmailAsync(newEmail, subject, body);
+    }
+
+    public async Task SendPasswordChangedNotificationAsync(string toEmail, string adminName, string? language = null)
+    {
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔐 Password Changed - SYNFLOX";
+        var title = "Password Changed";
+        
+        var message = $@"Hello {adminName},
+            <br><br>
+            Your password has been successfully changed.
+            <br><br>
+            <strong>📅 Changed At:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+            <strong>📧 Account Email:</strong> {toEmail}
+            <br><br>
+            <strong>🔒 Security Notice:</strong><br>
+            • If you did not make this change, your account may be compromised<br>
+            • Contact support immediately if this was unauthorized<br>
+            • Consider enabling Two-Factor Authentication
+            <br><br>
+            <strong>🛡️ Security Tips:</strong><br>
+            • Use a strong, unique password for your account<br>
+            • Never share your password with anyone<br>
+            • Change your password regularly<br>
+            • Enable 2FA for maximum security
+            <br><br>
+            Thank you for keeping your account secure!";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#FF9800", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
     // ===== CUSTOM EMAIL METHODS =====
 
     public async Task<CustomEmailResponse> SendCustomEmailAsync(CustomEmailRequest request, string? language = null)

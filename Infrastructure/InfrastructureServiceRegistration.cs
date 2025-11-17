@@ -189,7 +189,11 @@ public static class InfrastructureServiceRegistration
         // Infrastructure assembly are found correctly
         services.AddLocalization();
         services.AddScoped<ILocalizationService, LocalizationService>();
-        services.AddScoped<IAdminService, AdminService>();
+        
+        // Admin services - Split for Single Responsibility Principle
+        services.AddScoped<IAdminService, AdminCrudService>();         // CRUD operations (SuperAdmin only)
+        services.AddScoped<IAdminProfileService, AdminProfileService>(); // Profile operations (current user)
+        
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<ILicenseService, LicenseService>();

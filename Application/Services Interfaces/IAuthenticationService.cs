@@ -31,5 +31,10 @@ namespace Application.Services
         /// Changes the password of another administrator.
         /// </summary>
         Task ChangeAdminPasswordAsync(ChangePasswordByIdRequest request);
+
+        /// <summary>
+        /// Verifies 2FA code and completes login for admins with 2FA enabled.
+        /// </summary>
+        Task<AuthenticationResponse> Verify2FAAsync(string username, string password, string twoFactorCode);
     }
 }

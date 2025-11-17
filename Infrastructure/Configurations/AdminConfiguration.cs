@@ -13,6 +13,12 @@ namespace Infrastructure.Configurations
                 .IsUnique()
                 .HasDatabaseName("IX_Admins_Username");
             
+            // Unique index for email (prevent duplicate emails)
+            builder.HasIndex(a => a.Email)
+                .IsUnique()
+                .HasDatabaseName("IX_Admins_Email")
+                .HasFilter("[Email] IS NOT NULL"); // Allow null emails but enforce uniqueness on non-null
+            
             // Index for admin type lookups
             builder.HasIndex(a => a.AdminTypeId)
                 .HasDatabaseName("IX_Admins_AdminTypeId");

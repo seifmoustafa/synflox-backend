@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Domain.Enums;
 
 namespace Application.DTOs.Admin;
@@ -65,18 +66,46 @@ public class ProfileDto
 /// </summary>
 public class UpdateProfileRequest
 {
+    [StringLength(50, MinimumLength = 2)]
     public string? FirstName { get; set; }
+
+    [StringLength(50, MinimumLength = 2)]
     public string? LastName { get; set; }
+
+    [EmailAddress]
+    [StringLength(100)]
     public string? Email { get; set; }
+
+    [Phone]
+    [StringLength(20)]
     public string? PhoneNumber { get; set; }
+
     public Gender? Gender { get; set; }
+
     public DateTime? DateOfBirth { get; set; }
+
+    [StringLength(500)]
     public string? Bio { get; set; }
+
+    [StringLength(100)]
     public string? JobTitle { get; set; }
+
+    [StringLength(100)]
     public string? Department { get; set; }
+
+    [StringLength(100)]
     public string? Location { get; set; }
+
+    [Url]
+    [StringLength(200)]
     public string? LinkedInUrl { get; set; }
+
+    [Url]
+    [StringLength(200)]
     public string? TwitterUrl { get; set; }
+
+    [EmailAddress]
+    [StringLength(100)]
     public string? BackupEmail { get; set; }
 }
 
@@ -85,10 +114,19 @@ public class UpdateProfileRequest
 /// </summary>
 public class UpdatePreferencesRequest
 {
+    [StringLength(5)] // "en" or "ar"
     public string? PreferredLanguage { get; set; }
+
+    [StringLength(50)]
     public string? Timezone { get; set; }
+
+    [StringLength(10)] // "light" or "dark"
     public string? ThemePreference { get; set; }
+
+    [StringLength(20)]
     public string? DateFormat { get; set; }
+
+    [StringLength(5)] // "12h" or "24h"
     public string? TimeFormat { get; set; }
 }
 
@@ -109,6 +147,8 @@ public class UpdateNotificationPreferencesRequest
 /// </summary>
 public class UploadProfilePictureRequest
 {
+    [Required]
+    [StringLength(10000000)] // ~7MB max base64 (5MB actual image)
     public required string Base64Image { get; set; }
 }
 
@@ -117,6 +157,9 @@ public class UploadProfilePictureRequest
 /// </summary>
 public class Enable2FARequest
 {
+    [Required]
+    [StringLength(6, MinimumLength = 6, ErrorMessage = "2FA code must be exactly 6 digits")]
+    [RegularExpression(@"^\d{6}$", ErrorMessage = "2FA code must be 6 digits")]
     public required string VerificationCode { get; set; }
 }
 

@@ -16,5 +16,9 @@ namespace Application.DTOs.Authentication
         public string RefreshToken { get; set; }
 
         public string ErrorMessage { get; set; }
+
+        // 2FA Support
+        public bool Requires2FA { get; set; }
+        public string? Message { get; set; }
     }
 }

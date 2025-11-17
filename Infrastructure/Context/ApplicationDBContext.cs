@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Application.Services;
 using Domain.Entities;
 using Domain.Entities.Authentication;
 using Domain.Entities.ClientAccess;
@@ -19,8 +21,13 @@ namespace Infrastructure.Context
     /// </summary>
     public class ApplicationDBContext : DbContext
     {
-        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options)
-            : base(options) { }
+        private readonly ICurrentUserService? _currentUserService;
+
+        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options, ICurrentUserService? currentUserService = null)
+            : base(options) 
+        {
+            _currentUserService = currentUserService;
+        }
 
         #region Admin
         public DbSet<Admin> Admins { get; set; }
@@ -183,18 +190,42 @@ namespace Infrastructure.Context
                 .ChangeTracker.Entries()
                 .Where(e => e.Entity is AuditEntity<Guid> || e.Entity is AuditEntity<int>);
 
+            // Get current user ID (null if not authenticated or system operation)
+            Guid? currentUserId = null;
+            try
+            {
+                currentUserId = _currentUserService?.UserId;
+            }
+            catch
+            {
+                // CurrentUserService may throw if no user is authenticated (migrations, background jobs, etc.)
+                // In this case, CreatedBy/UpdatedBy/DeletedBy will remain null
+            }
+
             foreach (var entry in entries)
             {
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        ((dynamic)entry.Entity).CreatedTimestamp = DateTime.Now;
+                        ((dynamic)entry.Entity).CreatedTimestamp = DateTime.UtcNow; // ✅ UTC for consistency
+                        if (currentUserId.HasValue)
+                        {
+                            ((dynamic)entry.Entity).CreatedBy = currentUserId.Value;
+                        }
                         break;
                     case EntityState.Modified:
-                        ((dynamic)entry.Entity).UpdatedTimestamp = DateTime.Now;
+                        ((dynamic)entry.Entity).UpdatedTimestamp = DateTime.UtcNow; // ✅ UTC for consistency
+                        if (currentUserId.HasValue)
+                        {
+                            ((dynamic)entry.Entity).UpdatedBy = currentUserId.Value;
+                        }
                         break;
                     case EntityState.Deleted:
-                        ((dynamic)entry.Entity).DeletedTimestamp = DateTime.Now;
+                        ((dynamic)entry.Entity).DeletedTimestamp = DateTime.UtcNow; // ✅ UTC for consistency
+                        if (currentUserId.HasValue)
+                        {
+                            ((dynamic)entry.Entity).DeletedBy = currentUserId.Value;
+                        }
                         break;
                 }
             }

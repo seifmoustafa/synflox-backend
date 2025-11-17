@@ -38,6 +38,33 @@ public class AdminAuthenticationController : ControllerBase
             return Ok(response);
         }
 
+        // If 2FA is required, return 200 OK with Requires2FA flag
+        if (response.Requires2FA)
+        {
+            return Ok(response);
+        }
+
+        return Unauthorized(new ApiResponse<string>(StatusCodes.Status401Unauthorized,
+            response.ErrorMessage));
+    }
+
+    [HttpPost("verify-2fa")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Verify2FA([FromBody] Verify2FARequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await _authenticationService.Verify2FAAsync(
+            request.Username, 
+            request.Password, 
+            request.TwoFactorCode);
+
+        if (response.Success)
+        {
+            return Ok(response);
+        }
+
         return Unauthorized(new ApiResponse<string>(StatusCodes.Status401Unauthorized,
             response.ErrorMessage));
     }

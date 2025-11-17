@@ -35,7 +35,7 @@ public class AdminMappingProfile : Profile
             .ForMember(d => d.AdminTypeId,
                 opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.AdminTypeId))
             .ForMember(d => d.AdminTypeName,
-                opt => opt.MapFrom(s => s.AdminType.AdminTypeName));
+                opt => opt.MapFrom(s => s.AdminType != null ? s.AdminType.AdminTypeName : "Unknown"));
 
         // Profile update request mappings (null-safe updates)
         CreateMap<UpdateProfileRequest, Admin>()

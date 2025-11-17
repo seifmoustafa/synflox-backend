@@ -39,6 +39,10 @@ public interface IEmailService
     Task SendCompanyDeactivatedEmailAsync(string toEmail, string companyName, string reason, string? language = null);
     Task SendCompanyDeletedEmailAsync(string toEmail, string companyName, string? language = null);
     
+    // Admin security emails
+    Task SendEmailChangedNotificationAsync(string oldEmail, string newEmail, string adminName, string? language = null);
+    Task SendPasswordChangedNotificationAsync(string toEmail, string adminName, string? language = null);
+    
     // Custom email methods
     Task<CustomEmailResponse> SendCustomEmailAsync(CustomEmailRequest request, string? language = null);
     Task<BulkCustomEmailResponse> SendBulkCustomEmailAsync(BulkCustomEmailRequest request, string? language = null);

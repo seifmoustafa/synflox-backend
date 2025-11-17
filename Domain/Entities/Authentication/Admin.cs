@@ -87,6 +87,8 @@ namespace Domain.Entities.Authentication
         [StringLength(500)]
         public string? TwoFactorSecret { get; set; }
 
+        public DateTime? LastTwoFactorCodeUsedAt { get; set; } // Prevents code reuse
+
         // ===== Notification Preferences =====
         public bool EmailNotificationsEnabled { get; set; } = true;
 

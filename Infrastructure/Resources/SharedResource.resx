@@ -526,4 +526,120 @@
   <data name="Company.NotFound" xml:space="preserve">
     <value>Company not found</value>
   </data>
+  <data name="SuperAdmin.CannotDelete" xml:space="preserve">
+    <value>Root superadmin cannot be deleted</value>
+  </data>
+  <data name="SuperAdmin.CannotDeactivate" xml:space="preserve">
+    <value>Root superadmin cannot be deactivated</value>
+  </data>
+  <data name="SuperAdmin.CannotChangeUsername" xml:space="preserve">
+    <value>Root superadmin username cannot be changed</value>
+  </data>
+  <data name="SuperAdmin.CannotDeleteSelf" xml:space="preserve">
+    <value>Root superadmin cannot delete their own account</value>
+  </data>
+  
+  <!-- Two-Factor Authentication -->
+  <data name="2FA.Required" xml:space="preserve">
+    <value>Two-factor authentication code is required</value>
+  </data>
+  <data name="2FA.NotEnabled" xml:space="preserve">
+    <value>Two-factor authentication is not enabled for this account</value>
+  </data>
+  <data name="2FA.InvalidCode" xml:space="preserve">
+    <value>Invalid two-factor authentication code</value>
+  </data>
+  <data name="2FA.CodeAlreadyUsed" xml:space="preserve">
+    <value>This authentication code has already been used. Please wait for a new code.</value>
+  </data>
+  <data name="2FAEnabled" xml:space="preserve">
+    <value>Two-factor authentication enabled successfully</value>
+  </data>
+  <data name="Invalid2FACode" xml:space="preserve">
+    <value>Invalid verification code</value>
+  </data>
+  
+  <!-- Account Status -->
+  <data name="Account.Deactivated" xml:space="preserve">
+    <value>Your account has been deactivated. Please contact administrator.</value>
+  </data>
+  
+  <!-- Admin & AdminType -->
+  <data name="Admin.NotFound" xml:space="preserve">
+    <value>Admin not found</value>
+  </data>
+  <data name="AdminTypeNotFound" xml:space="preserve">
+    <value>Admin type not found</value>
+  </data>
+  
+  <!-- Date of Birth Validation -->
+  <data name="DateOfBirth.FutureDate" xml:space="preserve">
+    <value>Date of birth cannot be in the future</value>
+  </data>
+  <data name="DateOfBirth.MustBe18" xml:space="preserve">
+    <value>You must be at least 18 years old</value>
+  </data>
+  <data name="DateOfBirth.Invalid" xml:space="preserve">
+    <value>Invalid date of birth</value>
+  </data>
+  
+  <!-- Email Validation -->
+  <data name="Email.AlreadyInUse" xml:space="preserve">
+    <value>Email address is already in use</value>
+  </data>
+  <data name="Email.BackupCannotMatchPrimary" xml:space="preserve">
+    <value>Backup email cannot be the same as primary email</value>
+  </data>
+  
+  <!-- Language & Preferences -->
+  <data name="Language.Invalid" xml:space="preserve">
+    <value>Invalid language selection. Only English (en) and Arabic (ar) are supported.</value>
+  </data>
+  <data name="Theme.Invalid" xml:space="preserve">
+    <value>Invalid theme selection. Only light, dark, and auto are supported.</value>
+  </data>
+  <data name="TimeZone.Invalid" xml:space="preserve">
+    <value>Invalid timezone</value>
+  </data>
+  
+  <!-- Module Management -->
+  <data name="Module.InUse" xml:space="preserve">
+    <value>Module is currently in use and cannot be deleted</value>
+  </data>
+  <data name="Module.NameExists" xml:space="preserve">
+    <value>Module name already exists</value>
+  </data>
+  
+  <!-- Profile Picture -->
+  <data name="ProfilePicture.InvalidFormat" xml:space="preserve">
+    <value>Invalid profile picture format</value>
+  </data>
+  <data name="ProfilePicture.TooLarge" xml:space="preserve">
+    <value>Profile picture must be 5MB or less</value>
+  </data>
+  
+  <!-- Project Management -->
+  <data name="Project.InUse" xml:space="preserve">
+    <value>Project is currently in use and cannot be deleted</value>
+  </data>
+  <data name="Project.NameExists" xml:space="preserve">
+    <value>Project name already exists</value>
+  </data>
+  
+  <!-- Subscription Status -->
+  <data name="Subscription.Status.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Subscription.Status.Expired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="Subscription.Status.GracePeriod" xml:space="preserve">
+    <value>Grace Period</value>
+  </data>
+  <data name="Subscription.Status.Suspended" xml:space="preserve">
+    <value>Suspended</value>
+  </data>
+  <data name="Subscription.Status.TrialActive" xml:space="preserve">
+    <value>Trial Active</value>
+  </data>
 </root>
