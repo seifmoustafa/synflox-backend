@@ -87,7 +87,10 @@ namespace Domain.Entities.Authentication
         [StringLength(500)]
         public string? TwoFactorSecret { get; set; }
 
-        public DateTime? LastTwoFactorCodeUsedAt { get; set; } // Prevents code reuse
+        [StringLength(64)] // SHA256 produces 64-character hex string
+        public string? LastTwoFactorCodeUsed { get; set; } // Stores SHA256 hash of last used code (NOT plain text)
+        
+        public DateTime? LastTwoFactorCodeUsedAt { get; set; } // Timestamp when last code was used
 
         // ===== Notification Preferences =====
         public bool EmailNotificationsEnabled { get; set; } = true;

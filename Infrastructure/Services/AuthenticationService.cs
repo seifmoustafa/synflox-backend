@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Application.DTOs.Admin;
 using Application.DTOs.Authentication;
@@ -167,21 +169,7 @@ namespace Infrastructure.Services
                 };
             }
 
-            // Prevent code reuse: Check if code was used in last 90 seconds
-            if (admin.LastTwoFactorCodeUsedAt.HasValue)
-            {
-                var timeSinceLastUse = DateTime.UtcNow - admin.LastTwoFactorCodeUsedAt.Value;
-                if (timeSinceLastUse.TotalSeconds < 90) // TOTP window is 90 seconds (±60s)
-                {
-                    return new AuthenticationResponse
-                    {
-                        Success = false,
-                        ErrorMessage = _localizer["2FA.CodeAlreadyUsed"]
-                    };
-                }
-            }
-
-            // Verify TOTP code
+            // Verify TOTP code first (before checking reuse)
             var secretBytes = Base32Encoding.ToBytes(admin.TwoFactorSecret);
             var totp = new Totp(secretBytes);
             var isValid = totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2));
@@ -195,7 +183,37 @@ namespace Infrastructure.Services
                 };
             }
 
-            // Track code usage to prevent reuse
+            // ⭐ SECURITY: Prevent SAME code reuse within TOTP window (60 seconds)
+            // Hash the code for defense in depth (even if DB compromised, codes can't be derived)
+            var hashedCode = HashTwoFactorCode(twoFactorCode);
+            
+            // Inline cleanup: Clear expired tracking data (older than 60 seconds)
+            if (admin.LastTwoFactorCodeUsedAt.HasValue)
+            {
+                var timeSinceLastUse = DateTime.UtcNow - admin.LastTwoFactorCodeUsedAt.Value;
+                
+                if (timeSinceLastUse.TotalSeconds >= 60)
+                {
+                    // Expired: Clear old data (no longer needed)
+                    admin.LastTwoFactorCodeUsed = null;
+                    admin.LastTwoFactorCodeUsedAt = null;
+                }
+                else if (!string.IsNullOrEmpty(admin.LastTwoFactorCodeUsed))
+                {
+                    // Within 60s: Check if SAME code was used (compare hashes)
+                    if (admin.LastTwoFactorCodeUsed == hashedCode)
+                    {
+                        return new AuthenticationResponse
+                        {
+                            Success = false,
+                            ErrorMessage = _localizer["2FA.CodeAlreadyUsed"]
+                        };
+                    }
+                }
+            }
+
+            // Track code usage to prevent reuse (store HASHED code + timestamp)
+            admin.LastTwoFactorCodeUsed = hashedCode; // SHA256 hash, not plain text
             admin.LastTwoFactorCodeUsedAt = DateTime.UtcNow;
 
             admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
@@ -328,6 +346,17 @@ namespace Infrastructure.Services
                 Success = true,
                 RefreshToken = refreshToken.Token
             };
+        }
+
+        /// <summary>
+        /// Hash 2FA code using SHA256 for secure storage
+        /// Defense in depth: Even if DB is compromised, codes can't be derived
+        /// </summary>
+        private static string HashTwoFactorCode(string code)
+        {
+            using var sha256 = SHA256.Create();
+            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(code));
+            return Convert.ToHexString(hashBytes).ToLowerInvariant();
         }
     }
 }
