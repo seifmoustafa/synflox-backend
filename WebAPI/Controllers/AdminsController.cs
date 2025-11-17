@@ -41,22 +41,81 @@ public class AdminsController : ControllerBase
         return CreatedAtAction(nameof(CreateAdmin), new { id = result.Id }, result);
     }
  
+    // ===== Profile Management Endpoints =====
+
+    /// <summary>
+    /// Get current user profile with full information
+    /// </summary>
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {
-        // Use decrypted ID directly - bypass request DTO mapping for internal calls
-        var admin = await _adminService.GetByIdAsync(_currentUserService.UserId);
-        return admin is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(admin);
+        var profile = await _adminService.GetProfileAsync(_currentUserService.UserId);
+        return profile is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(profile);
     }
 
-    [HttpPut("me")]
-    public async Task<IActionResult> UpdateMe([FromBody] UpdateAdminRequest updateData)
+    /// <summary>
+    /// Get current user profile statistics
+    /// </summary>
+    [HttpGet("me/statistics")]
+    public async Task<IActionResult> GetMyStatistics()
     {
-        // Use decrypted ID directly - bypass request DTO mapping for internal calls
-        var updated = await _adminService.UpdateAsync(_currentUserService.UserId, updateData);
+        var stats = await _adminService.GetProfileStatisticsAsync(_currentUserService.UserId);
+        return Ok(stats);
+    }
+
+    /// <summary>
+    /// Update current user basic profile information
+    /// </summary>
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest updateData)
+    {
+        var updated = await _adminService.UpdateProfileAsync(_currentUserService.UserId, updateData);
         return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
     }
 
+    /// <summary>
+    /// Update current user preferences (language, theme, timezone, etc.)
+    /// </summary>
+    [HttpPut("me/preferences")]
+    public async Task<IActionResult> UpdateMyPreferences([FromBody] UpdatePreferencesRequest request)
+    {
+        var updated = await _adminService.UpdatePreferencesAsync(_currentUserService.UserId, request);
+        return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
+    }
+
+    /// <summary>
+    /// Update current user notification preferences
+    /// </summary>
+    [HttpPut("me/notifications")]
+    public async Task<IActionResult> UpdateMyNotificationPreferences([FromBody] UpdateNotificationPreferencesRequest request)
+    {
+        var updated = await _adminService.UpdateNotificationPreferencesAsync(_currentUserService.UserId, request);
+        return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
+    }
+
+    /// <summary>
+    /// Upload profile picture for current user
+    /// </summary>
+    [HttpPost("me/profile-picture")]
+    public async Task<IActionResult> UploadProfilePicture([FromBody] UploadProfilePictureRequest request)
+    {
+        var updated = await _adminService.UploadProfilePictureAsync(_currentUserService.UserId, request);
+        return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
+    }
+
+    /// <summary>
+    /// Delete profile picture for current user
+    /// </summary>
+    [HttpDelete("me/profile-picture")]
+    public async Task<IActionResult> DeleteProfilePicture()
+    {
+        var updated = await _adminService.DeleteProfilePictureAsync(_currentUserService.UserId);
+        return updated is null ? NotFound(new { message = _localizer["UserNotFound"] }) : Ok(updated);
+    }
+
+    /// <summary>
+    /// Change current user password
+    /// </summary>
     [HttpPut("me/password")]
     public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordRequest request)
     {
@@ -65,6 +124,39 @@ public class AdminsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Enable 2FA for current user
+    /// </summary>
+    [HttpPost("me/2fa/enable")]
+    public async Task<IActionResult> Enable2FA()
+    {
+        var result = await _adminService.Generate2FASecretAsync(_currentUserService.UserId);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Verify and activate 2FA for current user
+    /// </summary>
+    [HttpPost("me/2fa/verify")]
+    public async Task<IActionResult> Verify2FA([FromBody] Enable2FARequest request)
+    {
+        var result = await _adminService.Verify2FAAsync(_currentUserService.UserId, request.VerificationCode);
+        return result ? Ok(new { message = _localizer["2FAEnabled"] }) : BadRequest(new { message = _localizer["Invalid2FACode"] });
+    }
+
+    /// <summary>
+    /// Disable 2FA for current user
+    /// </summary>
+    [HttpPost("me/2fa/disable")]
+    public async Task<IActionResult> Disable2FA()
+    {
+        await _adminService.Disable2FAAsync(_currentUserService.UserId);
+        return Ok(new { message = _localizer["2FADisabled"] });
+    }
+
+    /// <summary>
+    /// Delete current user account (soft delete)
+    /// </summary>
     [HttpDelete("me")]
     public async Task<IActionResult> DeleteMe()
     {

@@ -28,6 +28,24 @@ public class AdminMappingProfile : Profile
                 opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.AdminTypeId))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
+        // ProfileDto mapping (comprehensive profile with encrypted IDs)
+        CreateMap<Admin, ProfileDto>()
+            .ForMember(d => d.Id,
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
+            .ForMember(d => d.AdminTypeId,
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.AdminTypeId))
+            .ForMember(d => d.AdminTypeName,
+                opt => opt.MapFrom(s => s.AdminType.AdminTypeName));
+
+        // Profile update request mappings (null-safe updates)
+        CreateMap<UpdateProfileRequest, Admin>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<UpdatePreferencesRequest, Admin>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<UpdateNotificationPreferencesRequest, Admin>();
+
         CreateMap<AdminType, AdminTypeDto>()
             .ForMember(d => d.Id,
                 opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
