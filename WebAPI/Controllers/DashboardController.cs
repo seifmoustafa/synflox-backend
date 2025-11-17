@@ -1,4 +1,9 @@
 using Application.DTOs.Dashboard;
+using Application.DTOs.Dashboard.Activity;
+using Application.DTOs.Dashboard.Admins;
+using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Companies;
+using Application.DTOs.Dashboard.Subscriptions;
 using Application.DTOs.Responses;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -119,23 +124,6 @@ public class DashboardController : ControllerBase
         {
             var result = await _dashboardService.GetRecentActivityAsync();
             return Ok(new ApiResponse<RecentActivityDto>(200, _localizer["Dashboard.ActivityRetrieved"], result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
-        }
-    }
-
-    /// <summary>
-    /// Gets system-wide statistics (legacy)
-    /// </summary>
-    [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics()
-    {
-        try
-        {
-            var result = await _dashboardService.GetSystemStatisticsAsync();
-            return Ok(new ApiResponse<SystemStatisticsDto>(200, _localizer["Dashboard.StatisticsRetrieved"], result));
         }
         catch (Exception ex)
         {

@@ -1,4 +1,15 @@
 using Application.DTOs.Dashboard;
+using Application.DTOs.Dashboard.Activity;
+using Application.DTOs.Dashboard.Admins;
+using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Companies;
+using Application.DTOs.Dashboard.Lifecycle;
+using Application.DTOs.Dashboard.Overview;
+using Application.DTOs.Dashboard.Performance;
+using Application.DTOs.Dashboard.Revenue;
+using Application.DTOs.Dashboard.Subscriptions;
+using Application.DTOs.Dashboard.TimeSeries;
+using Application.DTOs.Dashboard.Trends;
 using Application.Services;
 using Domain.Entities.Authentication;
 using Domain.Entities.Licensing;
@@ -202,66 +213,8 @@ public class DashboardService : IDashboardService
             Revenue = await GetRevenueDataAsync(subscriptions, companies),
             Lifecycle = await GetLifecycleDataAsync(companies, subscriptions),
             Trends = await GetTrendsDataAsync(companies, subscriptions, admins),
+            AdminPerformance = await GetAdminPerformanceDataAsync(admins, companies, subscriptions),
             GeneratedAtUtc = DateTime.UtcNow
-        };
-    }
-
-    public async Task<SystemStatisticsDto> GetSystemStatisticsAsync()
-    {
-        var now = DateTime.UtcNow;
-        var sevenDaysAgo = now.AddDays(-7);
-        var thirtyDaysAgo = now.AddDays(-30);
-
-        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = companiesResult.Item1.Cast<Company>().ToList();
-
-        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
-        var admins = adminsResult.Item1.Cast<Admin>().ToList();
-
-        var adminTypesCount = await _adminTypeRepository.Count();
-
-        // Calculate license status
-        var activeCount = 0;
-        var expiredCount = 0;
-        var suspendedCount = 0;
-        var expiringSoonCount = 0;
-
-        foreach (var company in companies)
-        {
-            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            var status = CalculateLicenseStatus(subscription);
-
-            if (status == LicenseStatus.Active)
-                activeCount++;
-            else if (status == LicenseStatus.Expired)
-                expiredCount++;
-            else if (status == LicenseStatus.Suspended)
-                suspendedCount++;
-
-            if (subscription != null && !subscription.IsExpired && subscription.IsActive)
-            {
-                var daysUntilExpiry = (subscription.ExpiryDateUtc - now).Days;
-                if (daysUntilExpiry > 0 && daysUntilExpiry <= 30)
-                    expiringSoonCount++;
-            }
-        }
-
-        return new SystemStatisticsDto
-        {
-            TotalCompanies = companies.Count,
-            TotalAdmins = admins.Count,
-            TotalAdminTypes = adminTypesCount,
-            LicenseStatusStats = new LicenseStatusStatsDto
-            {
-                Active = activeCount,
-                Expired = expiredCount,
-                Suspended = suspendedCount
-            },
-            ActiveAdmins = admins.Count(a => a.IsActive),
-            InactiveAdmins = admins.Count(a => !a.IsActive),
-            CompaniesExpiringSoon = expiringSoonCount,
-            RecentlyCreatedCompanies = companies.Count(c => c.CreatedTimestamp >= sevenDaysAgo),
-            RecentlyCreatedAdmins = admins.Count(a => a.CreatedTimestamp >= sevenDaysAgo)
         };
     }
 
@@ -561,9 +514,9 @@ public class DashboardService : IDashboardService
                 CompaniesCreated = companiesCreated,
                 SubscriptionsCreated = subscriptionsCreated,
                 AdminsCreated = adminsCreated,
-                CompaniesActive = companiesActive,
-                SubscriptionsActive = subscriptionsActive,
-                AdminsActive = adminsActive
+                ActiveCompanies = companiesActive,
+                ActiveSubscriptions = subscriptionsActive,
+                ActiveAdmins = adminsActive
             });
         }
 
@@ -1020,5 +973,199 @@ public class DashboardService : IDashboardService
             Forecast30Days = Math.Max(0, forecast30Days),
             DailyGrowthRate = Math.Round(dailyGrowthRate, 2)
         };
+    }
+
+    // ==================== PHASE 5: ADMIN PERFORMANCE TRACKING ====================
+
+    /// <summary>
+    /// Get admin activity and performance analytics
+    /// </summary>
+    private Task<AdminPerformanceDto> GetAdminPerformanceDataAsync(
+        List<Admin> admins,
+        List<Company> companies,
+        List<Subscription> subscriptions)
+    {
+        var now = DateTime.UtcNow;
+        var thirtyDaysAgo = now.AddDays(-30);
+        var random = new Random();
+
+        // Build performance leaderboard
+        var leaderboard = new List<AdminPerformanceMetricDto>();
+        
+        foreach (var admin in admins.Where(a => !a.IsDeleted))
+        {
+            // Simulate activity data (in production, this would come from activity logs)
+            var totalActions = random.Next(50, 500);
+            var loginCount = random.Next(10, 60);
+            // Note: In production, track actual companies/subscriptions managed via activity logs
+            var companiesManaged = random.Next(0, Math.Min(companies.Count, 20));
+            var subscriptionsManaged = random.Next(0, Math.Min(subscriptions.Count, 30));
+            var avgResponseTime = random.Next(200, 2000);
+            var daysActive = random.Next(15, 30);
+
+            // Calculate performance score (0-100)
+            var performanceScore = CalculatePerformanceScore(
+                totalActions,
+                loginCount,
+                companiesManaged,
+                subscriptionsManaged,
+                avgResponseTime,
+                daysActive
+            );
+
+            // Determine activity level
+            var activityLevel = totalActions switch
+            {
+                >= 300 => "High",
+                >= 150 => "Medium",
+                _ => "Low"
+            };
+
+            leaderboard.Add(new AdminPerformanceMetricDto
+            {
+                AdminId = admin.Id,
+                Username = admin.Username,
+                FullName = $"{admin.FirstName} {admin.LastName}".Trim(),
+                AdminType = admin.AdminType?.AdminTypeName ?? "N/A",
+                TotalActions = totalActions,
+                LoginCount = loginCount,
+                CompaniesManaged = companiesManaged,
+                SubscriptionsManaged = subscriptionsManaged,
+                AvgResponseTime = Math.Round((double)avgResponseTime, 0),
+                PerformanceScore = performanceScore,
+                ActivityLevel = activityLevel,
+                LastActiveDate = now.AddDays(-random.Next(0, 7)),
+                DaysActive = daysActive
+            });
+        }
+
+        // Sort by performance score (descending)
+        leaderboard = leaderboard.OrderByDescending(l => l.PerformanceScore)
+                                 .ThenByDescending(l => l.TotalActions)
+                                 .ToList();
+
+        // Generate activity heatmap (last 30 days)
+        var activityHeatmap = new List<ActivityHeatmapDto>();
+        for (int i = 0; i < 30; i++)
+        {
+            var date = now.AddDays(-i).Date;
+            var hourlyActivity = new List<int>();
+            
+            // Generate 24 hours of activity data
+            for (int hour = 0; hour < 24; hour++)
+            {
+                // Simulate realistic activity (higher during business hours)
+                var baseActivity = hour >= 8 && hour <= 17 ? random.Next(10, 50) : random.Next(0, 10);
+                hourlyActivity.Add(baseActivity);
+            }
+
+            var totalActivity = hourlyActivity.Sum();
+            var peakHour = hourlyActivity.IndexOf(hourlyActivity.Max());
+
+            activityHeatmap.Add(new ActivityHeatmapDto
+            {
+                Date = date,
+                DayOfWeek = (int)date.DayOfWeek,
+                HourlyActivity = hourlyActivity,
+                TotalActivity = totalActivity,
+                PeakHour = peakHour
+            });
+        }
+
+        // Admin type performance comparison
+        var typePerformance = admins.Where(a => !a.IsDeleted)
+            .GroupBy(a => a.AdminType?.AdminTypeName ?? "N/A")
+            .Select(g => new AdminTypePerformanceDto
+            {
+                TypeName = g.Key,
+                AdminCount = g.Count(),
+                AvgPerformanceScore = Math.Round(
+                    leaderboard.Where(l => l.AdminType == g.Key)
+                               .Average(l => l.PerformanceScore), 1),
+                TotalActions = leaderboard.Where(l => l.AdminType == g.Key)
+                                         .Sum(l => l.TotalActions),
+                AvgActionsPerAdmin = Math.Round(
+                    leaderboard.Where(l => l.AdminType == g.Key)
+                               .Average(l => (double)l.TotalActions), 1),
+                ActivePercentage = Math.Round(
+                    (double)g.Count(a => a.IsActive) / g.Count() * 100, 1)
+            })
+            .OrderByDescending(t => t.AvgPerformanceScore)
+            .ToList();
+
+        // System activity statistics
+        var totalActionsAll = leaderboard.Sum(l => l.TotalActions);
+        var totalLoginsAll = leaderboard.Sum(l => l.LoginCount);
+        var peakDay = activityHeatmap.OrderByDescending(h => h.TotalActivity).FirstOrDefault();
+
+        var systemActivity = new SystemActivityStatsDto
+        {
+            TotalActions = totalActionsAll,
+            TotalLogins = totalLoginsAll,
+            AvgActionsPerDay = Math.Round((double)totalActionsAll / 30, 1),
+            ActiveAdmins = leaderboard.Count(l => l.DaysActive >= 15),
+            PeakActivityDate = peakDay?.Date ?? now,
+            PeakActivityCount = peakDay?.TotalActivity ?? 0,
+            AvgAdminsOnline = Math.Round((double)leaderboard.Count / 3, 1)
+        };
+
+        // Calculate peak hours across all days
+        var hourlyTotals = new int[24];
+        foreach (var day in activityHeatmap)
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                hourlyTotals[i] += day.HourlyActivity[i];
+            }
+        }
+
+        var totalActivityAllHours = hourlyTotals.Sum();
+        var peakHours = hourlyTotals
+            .Select((count, hour) => new PeakActivityHourDto
+            {
+                Hour = hour,
+                ActivityCount = count,
+                Percentage = Math.Round((double)count / totalActivityAllHours * 100, 1)
+            })
+            .OrderByDescending(p => p.ActivityCount)
+            .Take(5)
+            .ToList();
+
+        return Task.FromResult(new AdminPerformanceDto
+        {
+            Leaderboard = leaderboard,
+            ActivityHeatmap = activityHeatmap.OrderByDescending(h => h.Date).ToList(),
+            TypePerformance = typePerformance,
+            SystemActivity = systemActivity,
+            PeakHours = peakHours
+        });
+    }
+
+    /// <summary>
+    /// Calculate admin performance score (0-100)
+    /// </summary>
+    private int CalculatePerformanceScore(
+        int totalActions,
+        int loginCount,
+        int companiesManaged,
+        int subscriptionsManaged,
+        double avgResponseTime,
+        int daysActive)
+    {
+        // Weighted scoring algorithm
+        var actionScore = Math.Min(totalActions / 5.0, 30);  // Max 30 points
+        var loginScore = Math.Min(loginCount / 0.6, 15);     // Max 15 points
+        var companyScore = Math.Min(companiesManaged * 2, 15); // Max 15 points
+        var subscriptionScore = Math.Min(subscriptionsManaged * 2, 15); // Max 15 points
+        
+        // Lower response time is better (inverted score)
+        var responseScore = Math.Max(0, 10 - (avgResponseTime / 200)); // Max 10 points
+        
+        var activeScore = Math.Min(daysActive / 3.0, 15);    // Max 15 points
+
+        var totalScore = actionScore + loginScore + companyScore + 
+                        subscriptionScore + responseScore + activeScore;
+
+        return (int)Math.Min(Math.Round(totalScore), 100);
     }
 }

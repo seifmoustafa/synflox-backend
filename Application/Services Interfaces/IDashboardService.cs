@@ -1,4 +1,9 @@
 using Application.DTOs.Dashboard;
+using Application.DTOs.Dashboard.Activity;
+using Application.DTOs.Dashboard.Admins;
+using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Companies;
+using Application.DTOs.Dashboard.Subscriptions;
 
 namespace Application.Services;
 
@@ -36,10 +41,5 @@ public interface IDashboardService
     /// Gets recent activity summary
     /// </summary>
     Task<RecentActivityDto> GetRecentActivityAsync();
-
-    /// <summary>
-    /// Gets system-wide statistics (legacy)
-    /// </summary>
-    Task<SystemStatisticsDto> GetSystemStatisticsAsync();
 }
 
