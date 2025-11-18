@@ -25,20 +25,34 @@ namespace WebAPI.Configurations
                         return RateLimitPartition.GetNoLimiter("exempt");
                     }
 
-                    // Create device fingerprint: IP + User-Agent
-                    // This ensures each device gets its own rate limit, even on same network
-                    var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                    var userAgent = context.Request.Headers.UserAgent.ToString();
+                    // Get the most specific client IP address available
+                    // Priority: X-Forwarded-For (real client IP) > X-Real-IP > Connection IP
+                    string clientIp;
                     
-                    // Create a unique identifier for this device
-                    // Use first 50 chars of user agent to avoid extremely long keys
-                    var deviceFingerprint = $"{ipAddress}:{(string.IsNullOrEmpty(userAgent) ? "no-agent" : userAgent.Substring(0, Math.Min(50, userAgent.Length)))}";
+                    // Check if behind reverse proxy (nginx, load balancer, etc.)
+                    var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(forwardedFor))
+                    {
+                        // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
+                        // Take the first one (original client)
+                        clientIp = forwardedFor.Split(',')[0].Trim();
+                    }
+                    else
+                    {
+                        // Check X-Real-IP header (some proxies use this)
+                        var realIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+                        clientIp = !string.IsNullOrEmpty(realIp) 
+                            ? realIp 
+                            : context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    }
 
+                    // Rate limit per client IP (per device)
+                    // Same device = same IP = same limit (regardless of browser)
                     return RateLimitPartition.GetFixedWindowLimiter(
-                        deviceFingerprint,
+                        clientIp,
                         _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 100,  // Increased from 5 to 100 requests per minute per device
+                            PermitLimit = 100,  // 100 requests per minute per device (all browsers combined)
                             Window = TimeSpan.FromMinutes(1),
                             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                             QueueLimit = 0
@@ -51,11 +65,22 @@ namespace WebAPI.Configurations
                         .GetRequiredService<ILoggerFactory>()
                         .CreateLogger("RateLimiter");
                     
-                    var ip = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                    var userAgent = context.HttpContext.Request.Headers.UserAgent.ToString();
-                    var deviceInfo = string.IsNullOrEmpty(userAgent) ? "no-agent" : userAgent.Substring(0, Math.Min(50, userAgent.Length));
+                    // Get the same client IP logic for logging
+                    var forwardedFor = context.HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+                    string clientIp;
+                    if (!string.IsNullOrEmpty(forwardedFor))
+                    {
+                        clientIp = forwardedFor.Split(',')[0].Trim();
+                    }
+                    else
+                    {
+                        var realIp = context.HttpContext.Request.Headers["X-Real-IP"].FirstOrDefault();
+                        clientIp = !string.IsNullOrEmpty(realIp) 
+                            ? realIp 
+                            : context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    }
                     
-                    logger.LogWarning("Rate limit exceeded for device: IP={IP}, UserAgent={UserAgent}", ip, deviceInfo);
+                    logger.LogWarning("Rate limit exceeded for client IP: {ClientIP}", clientIp);
 
                     context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                     context.HttpContext.Response.ContentType = "application/json";
