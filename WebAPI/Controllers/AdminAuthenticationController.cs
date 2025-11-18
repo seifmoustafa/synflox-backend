@@ -151,4 +151,20 @@ public class AdminAuthenticationController : ControllerBase
 
         return Ok(new ApiResponse<string>(StatusCodes.Status200OK, message));
     }
+
+    /// <summary>
+    /// Validate magic link token from email for one-click password reset
+    /// Returns OTP code for auto-fill in reset form
+    /// </summary>
+    [HttpPost("validate-magic-link")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ValidateMagicLink([FromBody] ValidateMagicLinkRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await _passwordResetService.ValidateMagicLinkAsync(request);
+
+        return Ok(new ApiResponse<MagicLinkValidationResponse>(StatusCodes.Status200OK, "Token validated successfully", response));
+    }
 }

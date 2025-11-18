@@ -32,5 +32,13 @@ namespace Application.Services
         /// <param name="request">Email, OTP, and new password</param>
         /// <returns>Success message</returns>
         Task<string> ResetPasswordAsync(ResetPasswordRequest request);
+
+        /// <summary>
+        /// Validate magic link token from email and return OTP for auto-fill
+        /// Used when admin clicks magic link in email instead of manual OTP entry
+        /// </summary>
+        /// <param name="request">Encrypted magic link token</param>
+        /// <returns>Validation response with email and OTP</returns>
+        Task<MagicLinkValidationResponse> ValidateMagicLinkAsync(ValidateMagicLinkRequest request);
     }
 }

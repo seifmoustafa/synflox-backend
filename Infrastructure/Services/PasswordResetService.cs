@@ -95,11 +95,16 @@ namespace Infrastructure.Services
             await _resetTokenRepository.AddAsync(resetToken);
             await _unitOfWork.SaveChangesAsync();
 
-            // Send password reset OTP email to admin
+            // Generate magic link token for one-click reset
+            var encryptionKey = DeriveEncryptionKey();
+            var magicToken = GenerateMagicLinkToken(resetToken.Id, admin.Email, otp, resetToken.ExpiresAt, encryptionKey);
+
+            // Send password reset OTP email with both manual OTP and magic link
             await _emailService.SendPasswordResetOtpEmailAsync(
                 admin.Email, 
                 admin.Username, 
                 otp, 
+                magicToken,
                 OTP_EXPIRY_MINUTES, 
                 ipAddress ?? "Unknown");
 
@@ -228,6 +233,136 @@ namespace Infrastructure.Services
             using var sha256 = SHA256.Create();
             var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(otp));
             return Convert.ToHexString(hashBytes).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Generate magic link token for one-click password reset
+        /// Token format: {TokenId}|{Email}|{ExpiresAt}|{OTP} encrypted with AES
+        /// </summary>
+        private static string GenerateMagicLinkToken(Guid tokenId, string email, string otp, DateTime expiresAt, byte[] encryptionKey)
+        {
+            var tokenData = $"{tokenId}|{email}|{expiresAt:O}|{otp}";
+            
+            using var aes = Aes.Create();
+            aes.Key = encryptionKey;
+            aes.GenerateIV();
+            
+            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            var plainBytes = Encoding.UTF8.GetBytes(tokenData);
+            var encryptedBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+            
+            // Combine IV + encrypted data for transmission
+            var combined = new byte[aes.IV.Length + encryptedBytes.Length];
+            Buffer.BlockCopy(aes.IV, 0, combined, 0, aes.IV.Length);
+            Buffer.BlockCopy(encryptedBytes, 0, combined, aes.IV.Length, encryptedBytes.Length);
+            
+            return Convert.ToBase64String(combined).Replace('+', '-').Replace('/', '_').Replace("=", "");
+        }
+
+        /// <summary>
+        /// Decrypt and parse magic link token
+        /// </summary>
+        private static (Guid tokenId, string email, DateTime expiresAt, string otp) DecryptMagicLinkToken(string token, byte[] encryptionKey)
+        {
+            // Restore Base64 URL-safe characters
+            token = token.Replace('-', '+').Replace('_', '/');
+            var padding = (4 - token.Length % 4) % 4;
+            token += new string('=', padding);
+            
+            var combined = Convert.FromBase64String(token);
+            
+            using var aes = Aes.Create();
+            aes.Key = encryptionKey;
+            
+            // Extract IV (first 16 bytes)
+            var iv = new byte[16];
+            Buffer.BlockCopy(combined, 0, iv, 0, 16);
+            aes.IV = iv;
+            
+            // Extract encrypted data
+            var encryptedBytes = new byte[combined.Length - 16];
+            Buffer.BlockCopy(combined, 16, encryptedBytes, 0, encryptedBytes.Length);
+            
+            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            var decryptedBytes = decryptor.TransformFinalBlock(encryptedBytes, 0, encryptedBytes.Length);
+            var tokenData = Encoding.UTF8.GetString(decryptedBytes);
+            
+            // Parse token data
+            var parts = tokenData.Split('|');
+            return (
+                Guid.Parse(parts[0]),
+                parts[1],
+                DateTime.Parse(parts[2], null, System.Globalization.DateTimeStyles.RoundtripKind),
+                parts[3]
+            );
+        }
+
+        public async Task<MagicLinkValidationResponse> ValidateMagicLinkAsync(ValidateMagicLinkRequest request)
+        {
+            try
+            {
+                // Get encryption key from configuration (same as ID encryption)
+                var encryptionKey = DeriveEncryptionKey();
+                
+                // Decrypt and parse token
+                var (tokenId, email, expiresAt, otp) = DecryptMagicLinkToken(request.Token, encryptionKey);
+                
+                // Check if token expired
+                if (DateTime.UtcNow > expiresAt)
+                {
+                    throw new InvalidOtpException(_localizer["Password.OtpExpired"]);
+                }
+                
+                // Find admin by email
+                var admin = (await _adminRepository.FindAsync(a => a.Email == email && !a.IsDeleted))
+                    .FirstOrDefault();
+                
+                if (admin == null)
+                {
+                    throw new NotFoundException(_localizer["UserNotFound"]);
+                }
+                
+                // Get token from database
+                var token = await _resetTokenRepository.GetByIdAsync(tokenId, null);
+                
+                if (token == null || token.IsUsed || token.IsExpired)
+                {
+                    throw new InvalidOtpException(_localizer["Password.InvalidOtp"]);
+                }
+                
+                // Verify token belongs to this admin
+                if (token.AdminId != admin.Id)
+                {
+                    throw new InvalidOtpException(_localizer["Password.InvalidOtp"]);
+                }
+                
+                // Return validation response with OTP for auto-fill
+                var remainingMinutes = (int)(expiresAt - DateTime.UtcNow).TotalMinutes;
+                
+                return new MagicLinkValidationResponse
+                {
+                    Email = email,
+                    OtpCode = otp,
+                    IsValid = true,
+                    ExpiryMinutes = remainingMinutes
+                };
+            }
+            catch (Exception ex) when (ex is not InvalidOtpException && ex is not NotFoundException)
+            {
+                // Invalid token format or decryption failed
+                throw new InvalidOtpException(_localizer["Password.InvalidOtp"]);
+            }
+        }
+
+        /// <summary>
+        /// Derive encryption key from configuration (should match ID encryption settings)
+        /// </summary>
+        private byte[] DeriveEncryptionKey()
+        {
+            // Use a consistent key - in production, get from IOptions<EncryptionSettings>
+            var keyString = "SYNFLOX_MAGIC_LINK_ENCRYPTION_KEY_32BYTES";
+            using var sha256 = SHA256.Create();
+            return sha256.ComputeHash(Encoding.UTF8.GetBytes(keyString));
         }
     }
 }

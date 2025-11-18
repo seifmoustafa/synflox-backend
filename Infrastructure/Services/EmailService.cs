@@ -888,7 +888,7 @@ public class EmailService : IEmailService
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendPasswordResetOtpEmailAsync(string toEmail, string adminName, string otpCode, int expiryMinutes, string ipAddress, string? language = null)
+    public async Task SendPasswordResetOtpEmailAsync(string toEmail, string adminName, string otpCode, string magicLinkToken, int expiryMinutes, string ipAddress, string? language = null)
     {
         // Set culture for localization
         _localizationHelper.SetCulture(language);
@@ -896,13 +896,32 @@ public class EmailService : IEmailService
         var subject = "🔐 Password Reset Code - SYNFLOX Admin";
         var title = "Password Reset Requested";
         
+        // Build magic link URL
+        var baseUrl = _configuration["BaseUrl"] ?? "https://localhost:3000";
+        var magicLinkUrl = $"{baseUrl}/reset-password?token={magicLinkToken}";
+        
         var message = $@"Hello {adminName},
             <br><br>
-            A password reset was requested for your SYNFLOX admin account. Use the code below to reset your password:
+            A password reset was requested for your SYNFLOX admin account. Choose your preferred method to reset your password:
             <br><br>
-            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; text-align: center; margin: 25px 0;'>
-                <div style='font-size: 42px; font-weight: 700; color: white; letter-spacing: 8px; font-family: monospace;'>{otpCode}</div>
-                <p style='color: rgba(255,255,255,0.9); margin: 15px 0 0 0; font-size: 14px;'>Enter this code to reset your password</p>
+            <div style='border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #f8f9fa;'>
+                <h3 style='margin: 0 0 15px 0; color: #2d3748; font-size: 18px;'>🚀 METHOD 1: One-Click Reset (Fastest!)</h3>
+                <p style='margin: 0 0 15px 0; color: #4a5568; font-size: 14px;'>Click the button below to instantly verify and reset your password:</p>
+                <div style='text-align: center; margin: 20px 0;'>
+                    <a href='{magicLinkUrl}' style='display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);'>
+                        🔐 Reset Password Now
+                    </a>
+                </div>
+                <p style='margin: 10px 0 0 0; color: #718096; font-size: 12px; text-align: center;'>This link expires in {expiryMinutes} minutes and can only be used once</p>
+            </div>
+            <br>
+            <div style='border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #ffffff;'>
+                <h3 style='margin: 0 0 15px 0; color: #2d3748; font-size: 18px;'>📝 METHOD 2: Manual Code Entry</h3>
+                <p style='margin: 0 0 15px 0; color: #4a5568; font-size: 14px;'>Or enter this code on the reset password page:</p>
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; text-align: center; margin: 20px 0;'>
+                    <div style='font-size: 42px; font-weight: 700; color: white; letter-spacing: 10px; font-family: monospace;'>{otpCode}</div>
+                    <p style='color: rgba(255,255,255,0.9); margin: 12px 0 0 0; font-size: 14px;'>Enter this code to reset your password</p>
+                </div>
             </div>
             <br>
             <strong>⏰ Code Expires In:</strong> {expiryMinutes} minutes<br>
@@ -911,8 +930,8 @@ public class EmailService : IEmailService
             <br><br>
             <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 20px 0;'>
                 <strong>⚠️ Security Notice:</strong><br>
-                • This code is for single use only<br>
-                • Never share this code with anyone<br>
+                • Both methods are secure and work only once<br>
+                • Never share your code or link with anyone<br>
                 • If you didn't request this, ignore this email<br>
                 • Your password remains unchanged until you complete the reset
             </div>
