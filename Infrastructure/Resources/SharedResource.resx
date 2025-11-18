@@ -642,4 +642,27 @@
   <data name="Subscription.Status.TrialActive" xml:space="preserve">
     <value>Trial Active</value>
   </data>
+  
+  <!-- Password Reset -->
+  <data name="Password.OtpSent" xml:space="preserve">
+    <value>If an account with that email exists, we've sent a password reset code. Please check your email.</value>
+  </data>
+  <data name="Password.OtpVerified" xml:space="preserve">
+    <value>Code verified successfully. You can now reset your password.</value>
+  </data>
+  <data name="Password.ResetSuccess" xml:space="preserve">
+    <value>Password reset successfully. You can now log in with your new password.</value>
+  </data>
+  <data name="Password.InvalidOtp" xml:space="preserve">
+    <value>Invalid or expired code. Please try again.</value>
+  </data>
+  <data name="Password.OtpExpired" xml:space="preserve">
+    <value>Code has expired. Please request a new one.</value>
+  </data>
+  <data name="Password.TooManyRequests" xml:space="preserve">
+    <value>Too many password reset requests. Please try again later.</value>
+  </data>
+  <data name="Password.TooManyAttempts" xml:space="preserve">
+    <value>Too many failed attempts. Please request a new code.</value>
+  </data>
 </root>

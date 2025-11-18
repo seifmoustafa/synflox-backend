@@ -42,6 +42,8 @@ public interface IEmailService
     // Admin security emails
     Task SendEmailChangedNotificationAsync(string oldEmail, string newEmail, string adminName, string? language = null);
     Task SendPasswordChangedNotificationAsync(string toEmail, string adminName, string? language = null);
+    Task SendPasswordResetOtpEmailAsync(string toEmail, string adminName, string otpCode, int expiryMinutes, string ipAddress, string? language = null);
+    Task SendPasswordResetSuccessEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null);
     
     // Custom email methods
     Task<CustomEmailResponse> SendCustomEmailAsync(CustomEmailRequest request, string? language = null);

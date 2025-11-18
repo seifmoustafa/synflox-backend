@@ -642,4 +642,27 @@
   <data name="Subscription.Status.TrialActive" xml:space="preserve">
     <value>فترة تجريبية نشطة</value>
   </data>
+  
+  <!-- إعادة تعيين كلمة المرور -->
+  <data name="Password.OtpSent" xml:space="preserve">
+    <value>إذا كان هناك حساب بهذا البريد الإلكتروني، فقد أرسلنا رمز إعادة تعيين كلمة المرور. يرجى التحقق من بريدك الإلكتروني.</value>
+  </data>
+  <data name="Password.OtpVerified" xml:space="preserve">
+    <value>تم التحقق من الرمز بنجاح. يمكنك الآن إعادة تعيين كلمة المرور الخاصة بك.</value>
+  </data>
+  <data name="Password.ResetSuccess" xml:space="preserve">
+    <value>تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.</value>
+  </data>
+  <data name="Password.InvalidOtp" xml:space="preserve">
+    <value>رمز غير صحيح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Password.OtpExpired" xml:space="preserve">
+    <value>انتهت صلاحية الرمز. يرجى طلب رمز جديد.</value>
+  </data>
+  <data name="Password.TooManyRequests" xml:space="preserve">
+    <value>طلبات إعادة تعيين كلمة المرور كثيرة جدًا. يرجى المحاولة مرة أخرى لاحقًا.</value>
+  </data>
+  <data name="Password.TooManyAttempts" xml:space="preserve">
+    <value>محاولات فاشلة كثيرة جدًا. يرجى طلب رمز جديد.</value>
+  </data>
 </root>

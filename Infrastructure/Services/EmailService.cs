@@ -888,6 +888,90 @@ public class EmailService : IEmailService
         await SendEmailAsync(toEmail, subject, body);
     }
 
+    public async Task SendPasswordResetOtpEmailAsync(string toEmail, string adminName, string otpCode, int expiryMinutes, string ipAddress, string? language = null)
+    {
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔐 Password Reset Code - SYNFLOX Admin";
+        var title = "Password Reset Requested";
+        
+        var message = $@"Hello {adminName},
+            <br><br>
+            A password reset was requested for your SYNFLOX admin account. Use the code below to reset your password:
+            <br><br>
+            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; text-align: center; margin: 25px 0;'>
+                <div style='font-size: 42px; font-weight: 700; color: white; letter-spacing: 8px; font-family: monospace;'>{otpCode}</div>
+                <p style='color: rgba(255,255,255,0.9); margin: 15px 0 0 0; font-size: 14px;'>Enter this code to reset your password</p>
+            </div>
+            <br>
+            <strong>⏰ Code Expires In:</strong> {expiryMinutes} minutes<br>
+            <strong>🌐 Request IP:</strong> {ipAddress}<br>
+            <strong>📅 Request Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC
+            <br><br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 20px 0;'>
+                <strong>⚠️ Security Notice:</strong><br>
+                • This code is for single use only<br>
+                • Never share this code with anyone<br>
+                • If you didn't request this, ignore this email<br>
+                • Your password remains unchanged until you complete the reset
+            </div>
+            <br>
+            <strong>🛡️ Security Tips:</strong><br>
+            • Use a strong, unique password (min 8 characters)<br>
+            • Include uppercase, lowercase, numbers, and special characters<br>
+            • Don't reuse passwords from other accounts<br>
+            • Enable Two-Factor Authentication for maximum security
+            <br><br>
+            If you didn't request this password reset, please contact our support team immediately.";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#667eea", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task SendPasswordResetSuccessEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null)
+    {
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "✅ Password Reset Successful - SYNFLOX Admin";
+        var title = "Password Successfully Reset";
+        
+        var message = $@"Hello {adminName},
+            <br><br>
+            Your SYNFLOX admin account password has been successfully reset.
+            <br><br>
+            <strong>📅 Reset At:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+            <strong>🌐 Reset IP:</strong> {ipAddress}<br>
+            <strong>📧 Account Email:</strong> {toEmail}
+            <br><br>
+            <div style='background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 20px 0;'>
+                <strong>✅ What Changed:</strong><br>
+                • Your password has been updated<br>
+                • All active sessions have been terminated for security<br>
+                • You can now log in with your new password
+            </div>
+            <br>
+            <div style='background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 4px; margin: 20px 0;'>
+                <strong>🚨 Security Alert:</strong><br>
+                • If you did NOT make this change, your account may be compromised<br>
+                • Contact support immediately if this was unauthorized<br>
+                • Reset your password again using a secure device<br>
+                • Enable Two-Factor Authentication to protect your account
+            </div>
+            <br>
+            <strong>🛡️ Next Steps for Maximum Security:</strong><br>
+            • Log in with your new password<br>
+            • Enable Two-Factor Authentication (2FA) in your security settings<br>
+            • Review your recent account activity<br>
+            • Update your recovery email if needed
+            <br><br>
+            Thank you for keeping your SYNFLOX admin account secure!";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#28a745", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
     // ===== CUSTOM EMAIL METHODS =====
 
     public async Task<CustomEmailResponse> SendCustomEmailAsync(CustomEmailRequest request, string? language = null)

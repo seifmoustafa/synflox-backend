@@ -15,12 +15,16 @@ namespace WebAPI.Controllers;
 public class AdminAuthenticationController : ControllerBase
 {
     private readonly IAuthenticationService _authenticationService;
+    private readonly IPasswordResetService _passwordResetService;
     private readonly ICurrentUserService _currentUserService;
 
-    public AdminAuthenticationController(IAuthenticationService authenticationService,
+    public AdminAuthenticationController(
+        IAuthenticationService authenticationService,
+        IPasswordResetService passwordResetService,
         ICurrentUserService currentUserService)
     {
         _authenticationService = authenticationService;
+        _passwordResetService = passwordResetService;
         _currentUserService = currentUserService;
     }
 
@@ -97,5 +101,54 @@ public class AdminAuthenticationController : ControllerBase
         var userId = _currentUserService.UserId;
         await _authenticationService.Logout(userId);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Request password reset OTP to be sent to email
+    /// Rate limit: Max 3 requests per hour per email
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var message = await _passwordResetService.SendPasswordResetOtpAsync(request, ipAddress);
+
+        return Ok(new ApiResponse<string>(StatusCodes.Status200OK, message));
+    }
+
+    /// <summary>
+    /// Verify OTP code for password reset
+    /// Max 5 attempts allowed
+    /// </summary>
+    [HttpPost("verify-reset-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyResetOtp([FromBody] VerifyResetOtpRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var message = await _passwordResetService.VerifyResetOtpAsync(request);
+
+        return Ok(new ApiResponse<string>(StatusCodes.Status200OK, message));
+    }
+
+    /// <summary>
+    /// Reset password using verified OTP
+    /// Invalidates all sessions for security
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var message = await _passwordResetService.ResetPasswordAsync(request);
+
+        return Ok(new ApiResponse<string>(StatusCodes.Status200OK, message));
     }
 }

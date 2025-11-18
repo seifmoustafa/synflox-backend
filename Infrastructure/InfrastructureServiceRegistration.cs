@@ -145,6 +145,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
         // Configure distributed cache (Redis) if connection string provided and Redis is available
         // Otherwise, fallback to in-memory distributed cache
@@ -257,6 +258,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IMenuItemsRepository, MenuItemsRepository>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         
         // Subscription Engine Repositories (Phase 1)
         services.AddScoped<IProjectRepository, ProjectRepository>();
