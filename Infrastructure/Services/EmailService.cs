@@ -893,56 +893,86 @@ public class EmailService : IEmailService
         // Set culture for localization
         _localizationHelper.SetCulture(language);
         
-        var subject = "🔐 Password Reset Code - SYNFLOX Admin";
-        var title = "Password Reset Requested";
+        var subject = "Security Alert: Password Reset Request for Your SYNFLOX Account";
+        var title = "Password Reset Request";
         
-        // Build magic link URL
-        var baseUrl = _configuration["BaseUrl"] ?? "https://localhost:3000";
-        var magicLinkUrl = $"{baseUrl}/reset-password?token={magicLinkToken}";
+        // Build magic link URL using FRONTEND base URL
+        var frontendBaseUrl = _configuration["FrontendBaseUrl"];
+        var magicLinkUrl = $"{frontendBaseUrl}/reset-password?token={magicLinkToken}";
         
-        var message = $@"Hello {adminName},
+        var message = $@"Hi {adminName},
             <br><br>
-            A password reset was requested for your SYNFLOX admin account. Choose your preferred method to reset your password:
+            We received a request to reset the password for your SYNFLOX administrator account. If you made this request, you can reset your password using one of the methods below.
             <br><br>
-            <div style='border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #f8f9fa;'>
-                <h3 style='margin: 0 0 15px 0; color: #2d3748; font-size: 18px;'>🚀 METHOD 1: One-Click Reset (Fastest!)</h3>
-                <p style='margin: 0 0 15px 0; color: #4a5568; font-size: 14px;'>Click the button below to instantly verify and reset your password:</p>
-                <div style='text-align: center; margin: 20px 0;'>
-                    <a href='{magicLinkUrl}' style='display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);'>
-                        🔐 Reset Password Now
+            <div style='background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin: 24px 0;'>
+                <h3 style='margin: 0 0 16px 0; color: #1a202c; font-size: 17px; font-weight: 600;'>Reset Your Password</h3>
+                <p style='margin: 0 0 20px 0; color: #4a5568; font-size: 14px; line-height: 1.6;'>
+                    For your security, you can choose to reset your password using a secure link or by entering a verification code manually.
+                </p>
+                <div style='text-align: center; margin: 24px 0;'>
+                    <a href='{magicLinkUrl}' style='display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 15px; font-weight: 600; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);'>
+                        Reset Password
                     </a>
                 </div>
-                <p style='margin: 10px 0 0 0; color: #718096; font-size: 12px; text-align: center;'>This link expires in {expiryMinutes} minutes and can only be used once</p>
+                <p style='margin: 16px 0 0 0; color: #6c757d; font-size: 13px; text-align: center; line-height: 1.5;'>
+                    This link will expire in {expiryMinutes} minutes.<br>
+                    If the button doesn't work, copy and paste this link into your browser:<br>
+                    <span style='color: #667eea; word-break: break-all;'>{magicLinkUrl}</span>
+                </p>
             </div>
             <br>
-            <div style='border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #ffffff;'>
-                <h3 style='margin: 0 0 15px 0; color: #2d3748; font-size: 18px;'>📝 METHOD 2: Manual Code Entry</h3>
-                <p style='margin: 0 0 15px 0; color: #4a5568; font-size: 14px;'>Or enter this code on the reset password page:</p>
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; text-align: center; margin: 20px 0;'>
-                    <div style='font-size: 42px; font-weight: 700; color: white; letter-spacing: 10px; font-family: monospace;'>{otpCode}</div>
-                    <p style='color: rgba(255,255,255,0.9); margin: 12px 0 0 0; font-size: 14px;'>Enter this code to reset your password</p>
+            <div style='background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin: 24px 0;'>
+                <h3 style='margin: 0 0 16px 0; color: #1a202c; font-size: 17px; font-weight: 600;'>Or Use This Verification Code</h3>
+                <p style='margin: 0 0 16px 0; color: #4a5568; font-size: 14px; line-height: 1.6;'>
+                    If you prefer, you can reset your password by entering this verification code on the password reset page:
+                </p>
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;'>
+                    <div style='font-size: 36px; font-weight: 700; color: white; letter-spacing: 8px; font-family: Consolas, Monaco, monospace;'>{otpCode}</div>
                 </div>
+                <p style='margin: 16px 0 0 0; color: #6c757d; font-size: 13px; text-align: center;'>
+                    This code will expire in {expiryMinutes} minutes
+                </p>
             </div>
             <br>
-            <strong>⏰ Code Expires In:</strong> {expiryMinutes} minutes<br>
-            <strong>🌐 Request IP:</strong> {ipAddress}<br>
-            <strong>📅 Request Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC
-            <br><br>
-            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 20px 0;'>
-                <strong>⚠️ Security Notice:</strong><br>
-                • Both methods are secure and work only once<br>
-                • Never share your code or link with anyone<br>
-                • If you didn't request this, ignore this email<br>
-                • Your password remains unchanged until you complete the reset
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Security Alert</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    <strong>If you didn't request this password reset, please take action immediately:</strong><br>
+                    • Your password has NOT been changed yet<br>
+                    • Someone may be trying to access your account<br>
+                    • We recommend securing your account by enabling Two-Factor Authentication<br>
+                    • Contact our support team if you notice any suspicious activity
+                </p>
             </div>
             <br>
-            <strong>🛡️ Security Tips:</strong><br>
-            • Use a strong, unique password (min 8 characters)<br>
-            • Include uppercase, lowercase, numbers, and special characters<br>
-            • Don't reuse passwords from other accounts<br>
-            • Enable Two-Factor Authentication for maximum security
-            <br><br>
-            If you didn't request this password reset, please contact our support team immediately.";
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Request Details:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+                    <strong>IP Address:</strong> {ipAddress}<br>
+                    <strong>Account:</strong> {toEmail}
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>🛡️ Protect Your Account</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    • Never share your password or verification codes with anyone<br>
+                    • SYNFLOX will never ask you for your password via email<br>
+                    • Use a strong, unique password that you don't use elsewhere<br>
+                    • Enable Two-Factor Authentication for an extra layer of security<br>
+                    • Keep your recovery information up to date
+                </p>
+            </div>
+            <br>
+            <p style='margin: 24px 0 0 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                If you have any questions or concerns about your account security, please don't hesitate to contact our support team.
+            </p>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
         
         var body = BuildLocalizedEmailTemplate(adminName, title, message, "#667eea", language);
         await SendEmailAsync(toEmail, subject, body);
@@ -953,39 +983,60 @@ public class EmailService : IEmailService
         // Set culture for localization
         _localizationHelper.SetCulture(language);
         
-        var subject = "✅ Password Reset Successful - SYNFLOX Admin";
-        var title = "Password Successfully Reset";
+        var subject = "Your SYNFLOX Password Has Been Changed";
+        var title = "Password Changed Successfully";
         
-        var message = $@"Hello {adminName},
+        var message = $@"Hi {adminName},
             <br><br>
-            Your SYNFLOX admin account password has been successfully reset.
+            This email confirms that the password for your SYNFLOX administrator account was successfully changed.
             <br><br>
-            <strong>📅 Reset At:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>🌐 Reset IP:</strong> {ipAddress}<br>
-            <strong>📧 Account Email:</strong> {toEmail}
-            <br><br>
-            <div style='background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 20px 0;'>
-                <strong>✅ What Changed:</strong><br>
-                • Your password has been updated<br>
-                • All active sessions have been terminated for security<br>
-                • You can now log in with your new password
+            <div style='background-color: #d4edda; border-left: 4px solid #28a745; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #155724; font-size: 14px; font-weight: 600;'>✅ Password Changed</p>
+                <p style='margin: 0; color: #155724; font-size: 13px; line-height: 1.6;'>
+                    Your password has been successfully updated. You can now sign in to your account using your new password.
+                </p>
             </div>
             <br>
-            <div style='background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 4px; margin: 20px 0;'>
-                <strong>🚨 Security Alert:</strong><br>
-                • If you did NOT make this change, your account may be compromised<br>
-                • Contact support immediately if this was unauthorized<br>
-                • Reset your password again using a secure device<br>
-                • Enable Two-Factor Authentication to protect your account
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Change Details:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+                    <strong>IP Address:</strong> {ipAddress}<br>
+                    <strong>Account:</strong> {toEmail}
+                </p>
             </div>
             <br>
-            <strong>🛡️ Next Steps for Maximum Security:</strong><br>
-            • Log in with your new password<br>
-            • Enable Two-Factor Authentication (2FA) in your security settings<br>
-            • Review your recent account activity<br>
-            • Update your recovery email if needed
-            <br><br>
-            Thank you for keeping your SYNFLOX admin account secure!";
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Didn't Make This Change?</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    If you didn't change your password, <strong>someone else may have access to your account.</strong> Please take these steps immediately:<br><br>
+                    <strong>1.</strong> Reset your password again using a device and network you trust<br>
+                    <strong>2.</strong> Contact our support team immediately<br>
+                    <strong>3.</strong> Review your recent account activity for suspicious behavior<br>
+                    <strong>4.</strong> Enable Two-Factor Authentication for added security
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>�️ Keep Your Account Secure</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    <strong>Protect your account with these security best practices:</strong><br><br>
+                    • <strong>Enable Two-Factor Authentication</strong> – Add an extra layer of protection<br>
+                    • <strong>Use a strong password</strong> – Combine uppercase, lowercase, numbers, and symbols<br>
+                    • <strong>Never reuse passwords</strong> – Use a unique password for each account<br>
+                    • <strong>Keep recovery info updated</strong> – Ensure your backup email is current<br>
+                    • <strong>Be cautious of phishing</strong> – SYNFLOX will never ask for your password via email
+                </p>
+            </div>
+            <br>
+            <p style='margin: 24px 0 0 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                If you have any questions or concerns about your account security, please contact our support team.
+            </p>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
         
         var body = BuildLocalizedEmailTemplate(adminName, title, message, "#28a745", language);
         await SendEmailAsync(toEmail, subject, body);
