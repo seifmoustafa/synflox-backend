@@ -52,7 +52,7 @@ namespace WebAPI.Configurations
                         clientIp,
                         _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 100,  // 100 requests per minute per device (all browsers combined)
+                            PermitLimit = 10000,  // 10000 requests per minute per device (DEV MODE - very high limit)
                             Window = TimeSpan.FromMinutes(1),
                             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                             QueueLimit = 0

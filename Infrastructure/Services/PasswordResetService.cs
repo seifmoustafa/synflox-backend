@@ -23,8 +23,8 @@ namespace Infrastructure.Services
 
         private const int OTP_LENGTH = 6;
         private const int OTP_EXPIRY_MINUTES = 15;
-        private const int MAX_REQUESTS_PER_HOUR = 3;
-        private const int MAX_OTP_ATTEMPTS = 5;
+        private const int MAX_REQUESTS_PER_HOUR = 1000;  // DEV MODE: Very high limit for testing
+        private const int MAX_OTP_ATTEMPTS = 100;  // DEV MODE: Very high limit for testing
 
         public PasswordResetService(
             IAdminRepository adminRepository,

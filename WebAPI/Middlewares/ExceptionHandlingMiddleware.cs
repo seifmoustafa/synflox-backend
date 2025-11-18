@@ -34,6 +34,8 @@ namespace WebAPI.Middlewares
                 [typeof(JsonException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
                 [typeof(InvalidDataException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
                 [typeof(ArgumentException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
+                [typeof(InvalidOtpException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
+                [typeof(TooManyAttemptsException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
 
                 [typeof(NotFoundException)] = (StatusCodes.Status404NotFound, LogLevel.Warning),
                 [typeof(KeyNotFoundException)] = (StatusCodes.Status404NotFound, LogLevel.Warning),
