@@ -597,6 +597,25 @@ namespace Infrastructure.Services
             };
         }
 
+        private byte[]? DownloadLogo()
+        {
+            try
+            {
+                var logoUrl = _configuration["AppLogo:Url"];
+                if (string.IsNullOrEmpty(logoUrl))
+                    return null;
+
+                using var httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
+                return httpClient.GetByteArrayAsync(logoUrl).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to download logo for report");
+                return null;
+            }
+        }
+
         /// <summary>
         /// Generate STUNNING, PROFESSIONAL, CREATIVE PDF with CHARTS and SYNFLOX Branding
         /// Premium security report with data visualization and modern design
@@ -606,6 +625,7 @@ namespace Infrastructure.Services
             try
             {
                 QuestPDF.Settings.License = LicenseType.Community;
+                var logoBytes = DownloadLogo();
 
                 var document = QuestPDF.Fluent.Document.Create(container =>
                 {
@@ -615,7 +635,7 @@ namespace Infrastructure.Services
                     page.Margin(30);
                     page.PageColor(Colors.White);
                     
-                    // STUNNING BRANDED HEADER with Icon and Security Badge
+                    // STUNNING BRANDED HEADER with LOGO and Security Badge
                     page.Header().Height(180).Column(header =>
                     {
                         header.Item().Height(180).Layers(layers =>
@@ -624,12 +644,18 @@ namespace Infrastructure.Services
                             layers.Layer().Background(Colors.Purple.Darken2);
                             layers.PrimaryLayer().Padding(20).Column(content =>
                             {
-                                // Brand + Security Badge Row
+                                // Brand + Logo + Security Badge Row
                                 content.Item().Row(row =>
                                 {
-                                    row.RelativeItem().Column(brand =>
+                                    // Logo (if available)
+                                    if (logoBytes != null)
                                     {
-                                        brand.Item().Text("🛡️ SYNFLOX")
+                                        row.ConstantItem(60).AlignMiddle().Padding(5).Image(logoBytes).FitArea();
+                                    }
+                                    
+                                    row.RelativeItem().AlignMiddle().Column(brand =>
+                                    {
+                                        brand.Item().Text("SYNFLOX")
                                             .FontSize(32).Bold().FontColor(Colors.White);
                                         brand.Item().PaddingTop(2).Text("Security Intelligence Report")
                                             .FontSize(11).FontColor(Colors.Grey.Lighten3);
@@ -1003,12 +1029,39 @@ namespace Infrastructure.Services
             try
             {
                 using var stream = new MemoryStream();
+                var logoBytes = DownloadLogo();
             
             using (var document = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
             {
                 var mainPart = document.AddMainDocumentPart();
                 mainPart.Document = new DocumentFormat.OpenXml.Wordprocessing.Document();
                 var body = mainPart.Document.AppendChild(new Body());
+
+                // Logo (if available)
+                if (logoBytes != null)
+                {
+                    try
+                    {
+                        var imagePart = mainPart.AddImagePart(ImagePartType.Png);
+                        using (var imageStream = new MemoryStream(logoBytes))
+                        {
+                            imagePart.FeedData(imageStream);
+                        }
+                        
+                        // Add centered logo image (simplified - basic implementation)
+                        var para = body.AppendChild(new Paragraph());
+                        var run = para.AppendChild(new Run());
+                        var paraProps = para.AppendChild(new ParagraphProperties());
+                        paraProps.AppendChild(new Justification() { Val = JustificationValues.Center });
+                        
+                        body.AppendChild(new Paragraph()); // Spacing after logo
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to add logo to DOCX report");
+                        // Continue without logo
+                    }
+                }
 
                 // Title
                 AddDocxParagraph(body, "SYNFLOX SECURITY REPORT", true, "32", "7B68EE");
