@@ -709,4 +709,109 @@
   <data name="BackupCodes.Expired" xml:space="preserve">
     <value>This backup code has expired. Please generate new codes.</value>
   </data>
+  <data name="SecurityReport.InvalidDateRange" xml:space="preserve">
+    <value>Start date cannot be after end date.</value>
+  </data>
+  <data name="SecurityReport.FutureDateNotAllowed" xml:space="preserve">
+    <value>End date cannot be in the future.</value>
+  </data>
+  <data name="SecurityReport.PeriodTooLong" xml:space="preserve">
+    <value>Report period cannot exceed 365 days.</value>
+  </data>
+  <data name="SecurityReport.PdfGenerationFailed" xml:space="preserve">
+    <value>Failed to generate PDF report. Please try again.</value>
+  </data>
+  <data name="SecurityReport.DocxGenerationFailed" xml:space="preserve">
+    <value>Failed to generate DOCX report. Please try again.</value>
+  </data>
+  <data name="SecurityReport.CsvGenerationFailed" xml:space="preserve">
+    <value>Failed to generate CSV report. Please try again.</value>
+  </data>
+  <data name="SecurityReport.TextGenerationFailed" xml:space="preserve">
+    <value>Failed to generate text report. Please try again.</value>
+  </data>
+  <data name="SecurityReport.JsonGenerationFailed" xml:space="preserve">
+    <value>Failed to generate JSON report. Please try again.</value>
+  </data>
+  <data name="SecurityReport.NoEventsInPeriod" xml:space="preserve">
+    <value>No security events found in the selected period.</value>
+  </data>
+  <data name="SecurityReport.FileTooLarge" xml:space="preserve">
+    <value>Report file size exceeds maximum limit of 50MB.</value>
+  </data>
+  <data name="SecurityReport.Generated" xml:space="preserve">
+    <value>Security report generated successfully.</value>
+  </data>
+  <data name="SecurityReport.ExportFailed" xml:space="preserve">
+    <value>Failed to export security report. Please try again.</value>
+  </data>
+  <data name="SecurityReport.TooManyRequests" xml:space="preserve">
+    <value>Too many report generation requests. Please try again later.</value>
+  </data>
+  <data name="SecurityReport.Summary.NoSignificantConcerns" xml:space="preserve">
+    <value>No significant security concerns detected</value>
+  </data>
+  <data name="SecurityReport.Summary.OverallScore" xml:space="preserve">
+    <value>Overall security score: {0}/100 ({1})</value>
+  </data>
+  <data name="SecurityReport.Summary.CriticalEvents" xml:space="preserve">
+    <value>{0} critical security events require immediate attention</value>
+  </data>
+  <data name="SecurityReport.Summary.SuspiciousActivity" xml:space="preserve">
+    <value>Suspicious login attempts from {0} IP addresses</value>
+  </data>
+  <data name="SecurityReport.Detailed.ExcellentPosture" xml:space="preserve">
+    <value>Excellent security posture maintained across all metrics</value>
+  </data>
+  <data name="SecurityReport.Detailed.GoodPosture" xml:space="preserve">
+    <value>Good security posture with room for improvement</value>
+  </data>
+  <data name="SecurityReport.Detailed.RequiresAttention" xml:space="preserve">
+    <value>Security posture requires immediate attention</value>
+  </data>
+  <data name="SecurityReport.Detailed.TotalEventsAnalyzed" xml:space="preserve">
+    <value>Total events analyzed: {0} ({1} critical, {2} warnings, {3} informational)</value>
+  </data>
+  <data name="SecurityReport.Detailed.SuspiciousActivityDetected" xml:space="preserve">
+    <value>Detected suspicious activity from {0} unique IP addresses</value>
+  </data>
+  <data name="SecurityReport.Detailed.BackupCodesLow" xml:space="preserve">
+    <value>Backup codes inventory below threshold - regeneration recommended</value>
+  </data>
+  <data name="SecurityReport.Audit.AdministrativeActions" xml:space="preserve">
+    <value>Audit trail contains {0} administrative actions for compliance review</value>
+  </data>
+  <data name="SecurityReport.Audit.SystemChangesTracked" xml:space="preserve">
+    <value>System changes tracked with full administrator accountability</value>
+  </data>
+  <data name="SecurityReport.Audit.FailedActions" xml:space="preserve">
+    <value>{0} failed administrative actions require investigation</value>
+  </data>
+  <data name="SecurityReport.Audit.PasswordChanges" xml:space="preserve">
+    <value>{0} password changes recorded during audit period</value>
+  </data>
+  <data name="SecurityReport.Audit.ComplianceLogging" xml:space="preserve">
+    <value>All administrative actions logged with IP address and timestamp for compliance</value>
+  </data>
+  <data name="SecurityReport.Threat.NoThreats" xml:space="preserve">
+    <value>No security threats detected during monitoring period</value>
+  </data>
+  <data name="SecurityReport.Threat.AllSuccessful" xml:space="preserve">
+    <value>All authentication attempts successful - system security intact</value>
+  </data>
+  <data name="SecurityReport.Threat.Alert" xml:space="preserve">
+    <value>ALERT: {0} potential security threats detected</value>
+  </data>
+  <data name="SecurityReport.Threat.FailedLogins" xml:space="preserve">
+    <value>{0} failed login attempts - possible brute force attack</value>
+  </data>
+  <data name="SecurityReport.Threat.CriticalActivity" xml:space="preserve">
+    <value>CRITICAL: Suspicious activity from {0} IP addresses</value>
+  </data>
+  <data name="SecurityReport.Threat.No2FA" xml:space="preserve">
+    <value>VULNERABILITY: No two-factor authentication usage detected</value>
+  </data>
+  <data name="SecurityReport.Threat.ThreatLevel" xml:space="preserve">
+    <value>Current threat level: {0}</value>
+  </data>
 </root>

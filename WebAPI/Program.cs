@@ -73,7 +73,7 @@ builder.Services.AddScoped<Application.Services.ISecurityNotificationService>(sp
 });
 
 builder.Services.AddAuthorizationPolicies();
-builder.Services.AddAuthenticationRateLimiter();
+builder.Services.AddAuthenticationRateLimiter(builder.Configuration);
 #endregion
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -4,6 +4,7 @@ using Application.DTOs.Security;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System;
 using System.Threading.Tasks;
 
@@ -283,8 +284,10 @@ public class AdminProfileController : ControllerBase
     /// <summary>
     /// Export security report in specified format (PDF/Excel/JSON)
     /// Comprehensive security report with executive summary, threat assessment, recommendations
+    /// Rate Limited: DEV=1000/hour | PRODUCTION=10/hour per user
     /// </summary>
     [HttpPost("me/security/report/export")]
+    [EnableRateLimiting("SecurityReports")]
     public async Task<IActionResult> ExportSecurityReport([FromBody] SecurityReportRequest request)
     {
         if (!ModelState.IsValid)

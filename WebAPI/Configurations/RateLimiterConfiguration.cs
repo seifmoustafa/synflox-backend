@@ -1,6 +1,7 @@
 using Application.DTOs.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading.RateLimiting;
@@ -9,8 +10,11 @@ namespace WebAPI.Configurations
 {
     public static class RateLimiterConfiguration
     {
-        public static IServiceCollection AddAuthenticationRateLimiter(this IServiceCollection services)
+        public static IServiceCollection AddAuthenticationRateLimiter(this IServiceCollection services, IConfiguration configuration)
         {
+            var environment = configuration["ASPNETCORE_ENVIRONMENT"] ?? "Development";
+            var isDevelopment = environment == "Development";
+
             services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
@@ -52,8 +56,29 @@ namespace WebAPI.Configurations
                         clientIp,
                         _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 10000,  // 10000 requests per minute per device (DEV MODE - very high limit)
+                            // DEV: 10000 requests/min (unlimited) | PRODUCTION: 100 requests/min
+                            PermitLimit = isDevelopment ? 10000 : 100,
                             Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        });
+                });
+
+                // SECURITY REPORTS RATE LIMITING POLICY
+                // Prevents abuse of report generation (expensive operation)
+                options.AddPolicy("SecurityReports", context =>
+                {
+                    var userId = context.User?.FindFirst("sub")?.Value 
+                        ?? context.User?.FindFirst("UserId")?.Value 
+                        ?? "anonymous";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        $"security-reports-{userId}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            // DEV: 1000 reports/hour (unlimited) | PRODUCTION: 10 reports/hour
+                            PermitLimit = isDevelopment ? 1000 : 10,
+                            Window = TimeSpan.FromHours(1),
                             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                             QueueLimit = 0
                         });

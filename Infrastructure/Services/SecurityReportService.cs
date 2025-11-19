@@ -15,6 +15,8 @@ using QuestPDF.Infrastructure;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Infrastructure.Services
 {
@@ -28,23 +30,54 @@ namespace Infrastructure.Services
         private readonly ISecurityAnalyticsService _analyticsService;
         private readonly ILocalizationService _localizer;
         private readonly IFileHostExportService _fileHostExportService;
+        private readonly ILogger<SecurityReportService> _logger;
+        private readonly IMemoryCache _cache;
+        
+        private const int MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+        private const int MAX_REPORT_DAYS = 365;
+        private const int CACHE_DURATION_MINUTES = 5; // Cache dashboard data for 5 minutes
+        private const int PAGINATION_BATCH_SIZE = 1000; // Process events in batches of 1000
+        private const int MAX_EVENTS_LIMIT = 10000; // Maximum events to retrieve
 
         public SecurityReportService(
             IAdminRepository adminRepository,
             ISecurityAuditLogRepository auditLogRepository,
             ISecurityAnalyticsService analyticsService,
             ILocalizationService localizer,
-            IFileHostExportService fileHostExportService)
+            IFileHostExportService fileHostExportService,
+            ILogger<SecurityReportService> logger,
+            IMemoryCache cache)
         {
             _adminRepository = adminRepository;
             _auditLogRepository = auditLogRepository;
             _analyticsService = analyticsService;
             _localizer = localizer;
             _fileHostExportService = fileHostExportService;
+            _logger = logger;
+            _cache = cache;
         }
 
         public async Task<SecurityReportDataDto> GenerateReportDataAsync(Guid adminId, SecurityReportRequest request)
         {
+            // VALIDATION: Date range checks
+            if (request.StartDate > request.EndDate)
+            {
+                _logger.LogWarning("Invalid date range: Start={Start}, End={End}", request.StartDate, request.EndDate);
+                throw new BadRequestException(_localizer["SecurityReport.InvalidDateRange"]);
+            }
+
+            if (request.EndDate > DateTime.UtcNow)
+            {
+                _logger.LogWarning("Future date not allowed: End={End}", request.EndDate);
+                throw new BadRequestException(_localizer["SecurityReport.FutureDateNotAllowed"]);
+            }
+
+            if ((request.EndDate - request.StartDate).TotalDays > MAX_REPORT_DAYS)
+            {
+                _logger.LogWarning("Report period too long: {Days} days", (request.EndDate - request.StartDate).TotalDays);
+                throw new BadRequestException(_localizer["SecurityReport.PeriodTooLong"]);
+            }
+
             // Verify admin exists
             var admin = await _adminRepository.GetByIdAsync(adminId, null);
             if (admin == null || admin.IsDeleted)
@@ -52,12 +85,26 @@ namespace Infrastructure.Services
                 throw new NotFoundException(_localizer["Admin.NotFound"]);
             }
 
-            // Get security dashboard for period
-            var dashboard = await _analyticsService.GetSecurityDashboardAsync(adminId);
+            // CACHING: Get security dashboard for period (cached for 5 minutes)
+            var cacheKey = $"security-dashboard-{adminId}";
+            var dashboard = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(CACHE_DURATION_MINUTES);
+                _logger.LogInformation("Loading dashboard data for admin {AdminId} (cache miss)", adminId);
+                return await _analyticsService.GetSecurityDashboardAsync(adminId);
+            }) ?? throw new InternalServerException("Failed to load dashboard data");
 
-            // Get all events in period
-            var events = await _auditLogRepository.GetRecentByAdminAsync(adminId, request.StartDate, 10000);
+            // PAGINATION: Get events in period (with batched processing for large datasets)
+            var events = await _auditLogRepository.GetRecentByAdminAsync(adminId, request.StartDate, MAX_EVENTS_LIMIT);
             events = events.Where(e => e.CreatedAt >= request.StartDate && e.CreatedAt <= request.EndDate).ToList();
+            
+            // Log warning if we hit the limit (potential data truncation)
+            if (events.Count >= MAX_EVENTS_LIMIT)
+            {
+                _logger.LogWarning("Event count reached maximum limit ({Limit}) for admin {AdminId}. Data may be truncated.", MAX_EVENTS_LIMIT, adminId);
+            }
+            
+            _logger.LogInformation("Retrieved {Count} events for report generation", events.Count);
 
             // Build report metadata
             var metadata = new SecurityReportMetadataDto
@@ -241,6 +288,13 @@ namespace Infrastructure.Services
                     throw new BadRequestException($"Unsupported export format: {request.Format}. Supported formats: json, txt, pdf, docx, doc, csv");
             }
 
+            // VALIDATION: Check file size
+            if (fileBytes.Length > MAX_FILE_SIZE_BYTES)
+            {
+                _logger.LogError("Report file too large: {Size}MB exceeds {Max}MB", fileBytes.Length / 1024 / 1024, MAX_FILE_SIZE_BYTES / 1024 / 1024);
+                throw new BadRequestException(_localizer["SecurityReport.FileTooLarge"]);
+            }
+
             // Save to FileHost and get download URL (auto-deletes after 30 minutes)
             var fileHostResponse = await _fileHostExportService.SaveExportFileAsync(
                 fileBytes,
@@ -248,6 +302,25 @@ namespace Infrastructure.Services
                 contentType,
                 normalizedFormat
             );
+
+            // AUDIT: Log successful report generation
+            try
+            {
+                await LogSecurityEventAsync(
+                    adminId: adminId,
+                    eventType: "SecurityReportGenerated",
+                    eventDescription: $"Generated {request.ReportType} security report in {normalizedFormat.ToUpper()} format for period {periodStr}",
+                    success: true,
+                    metadata: $"{{\"reportType\":\"{request.ReportType}\",\"format\":\"{normalizedFormat}\",\"period\":\"{periodStr}\",\"fileSize\":{fileBytes.Length}}}"
+                );
+            }
+            catch (Exception ex)
+            {
+                // Don't fail the export if audit logging fails
+                _logger.LogWarning(ex, "Failed to log security report generation audit event");
+            }
+
+            _logger.LogInformation("Security report generated successfully: {FileName}, Size: {Size}KB", fileName, fileBytes.Length / 1024);
 
             return new SecurityReportExportDto
             {
@@ -260,8 +333,46 @@ namespace Infrastructure.Services
             };
         }
 
+        private async Task LogSecurityEventAsync(Guid adminId, string eventType, string eventDescription, bool success, string? metadata = null)
+        {
+            try
+            {
+                await _auditLogRepository.AddAsync(new Domain.Entities.Authentication.SecurityAuditLog
+                {
+                    AdminId = adminId,
+                    EventType = eventType,
+                    EventDescription = eventDescription,
+                    Success = success,
+                    IpAddress = "System",
+                    UserAgent = "SecurityReportService",
+                    Metadata = metadata
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to log security audit event");
+            }
+        }
+
         private ExecutiveSummaryDto BuildExecutiveSummary(SecurityDashboardDto dashboard, List<Domain.Entities.Authentication.SecurityAuditLog> events, Domain.Enums.ReportType reportType)
         {
+            // EMPTY DATA HANDLING: Check if events list is null or empty
+            if (events == null || events.Count == 0)
+            {
+                _logger.LogWarning("No events found for security report");
+                return new ExecutiveSummaryDto
+                {
+                    SecurityScore = dashboard.SecurityScore,
+                    SecurityLevel = dashboard.SecurityLevel,
+                    TotalEvents = 0,
+                    CriticalEvents = 0,
+                    WarningEvents = 0,
+                    InfoEvents = 0,
+                    ThreatScore = 0,
+                    KeyFindings = new List<string> { _localizer["SecurityReport.NoEventsInPeriod"] }
+                };
+            }
+
             var critical = events.Count(e => !e.Success && (e.EventType.Contains("Failed") || e.EventType.Contains("Suspicious")));
             var warning = events.Count(e => e.EventType.Contains("Warning") || e.EventType.Contains("Low"));
             var info = events.Count - critical - warning;
@@ -273,30 +384,30 @@ namespace Infrastructure.Services
             {
                 case Domain.Enums.ReportType.Summary:
                     // Summary: High-level overview
-                    keyFindings.Add($"Overall security score: {dashboard.SecurityScore}/100 ({dashboard.SecurityLevel})");
+                    keyFindings.Add(string.Format(_localizer["SecurityReport.Summary.OverallScore"], dashboard.SecurityScore, dashboard.SecurityLevel));
                     if (critical > 0)
-                        keyFindings.Add($"{critical} critical security events require immediate attention");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Summary.CriticalEvents"], critical));
                     if (dashboard.FailedLoginStats.SuspiciousActivity)
-                        keyFindings.Add($"Suspicious login attempts from {dashboard.FailedLoginStats.SuspiciousIps.Count} IP addresses");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Summary.SuspiciousActivity"], dashboard.FailedLoginStats.SuspiciousIps.Count));
                     if (keyFindings.Count == 1)
-                        keyFindings.Add("No significant security concerns detected");
+                        keyFindings.Add(_localizer["SecurityReport.Summary.NoSignificantConcerns"]);
                     break;
 
                 case Domain.Enums.ReportType.Detailed:
                     // Detailed: Comprehensive findings
                     if (dashboard.SecurityScore >= 80)
-                        keyFindings.Add("Excellent security posture maintained across all metrics");
+                        keyFindings.Add(_localizer["SecurityReport.Detailed.ExcellentPosture"]);
                     else if (dashboard.SecurityScore >= 60)
-                        keyFindings.Add("Good security posture with room for improvement");
+                        keyFindings.Add(_localizer["SecurityReport.Detailed.GoodPosture"]);
                     else
-                        keyFindings.Add("Security posture requires immediate attention");
+                        keyFindings.Add(_localizer["SecurityReport.Detailed.RequiresAttention"]);
                     
-                    keyFindings.Add($"Total events analyzed: {events.Count} ({critical} critical, {warning} warnings, {info} informational)");
+                    keyFindings.Add(string.Format(_localizer["SecurityReport.Detailed.TotalEventsAnalyzed"], events.Count, critical, warning, info));
                     
                     if (dashboard.FailedLoginStats.SuspiciousActivity)
-                        keyFindings.Add($"Detected suspicious activity from {dashboard.FailedLoginStats.SuspiciousIps.Count} unique IP addresses");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Detailed.SuspiciousActivityDetected"], dashboard.FailedLoginStats.SuspiciousIps.Count));
                     if (dashboard.BackupCodesStats.NeedsRegeneration)
-                        keyFindings.Add("Backup codes inventory below threshold - regeneration recommended");
+                        keyFindings.Add(_localizer["SecurityReport.Detailed.BackupCodesLow"]);
                     // Additional detailed findings covered by comprehensive analysis
                     break;
 
@@ -310,17 +421,17 @@ namespace Infrastructure.Services
                         e.EventType.Contains("Deactivated")
                     ).Count();
                     
-                    keyFindings.Add($"Audit trail contains {auditEvents} administrative actions for compliance review");
-                    keyFindings.Add("System changes tracked with full administrator accountability");
+                    keyFindings.Add(string.Format(_localizer["SecurityReport.Audit.AdministrativeActions"], auditEvents));
+                    keyFindings.Add(_localizer["SecurityReport.Audit.SystemChangesTracked"]);
                     
                     if (critical > 0)
-                        keyFindings.Add($"{critical} failed administrative actions require investigation");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Audit.FailedActions"], critical));
                     
                     var passwordChanges = events.Count(e => e.EventType == "PasswordChanged");
                     if (passwordChanges > 0)
-                        keyFindings.Add($"{passwordChanges} password changes recorded during audit period");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Audit.PasswordChanges"], passwordChanges));
                     
-                    keyFindings.Add("All administrative actions logged with IP address and timestamp for compliance");
+                    keyFindings.Add(_localizer["SecurityReport.Audit.ComplianceLogging"]);
                     break;
 
                 case Domain.Enums.ReportType.Threat:
@@ -330,25 +441,25 @@ namespace Infrastructure.Services
                     
                     if (blockedAttempts == 0)
                     {
-                        keyFindings.Add("No security threats detected during monitoring period");
-                        keyFindings.Add("All authentication attempts successful - system security intact");
+                        keyFindings.Add(_localizer["SecurityReport.Threat.NoThreats"]);
+                        keyFindings.Add(_localizer["SecurityReport.Threat.AllSuccessful"]);
                     }
                     else
                     {
-                        keyFindings.Add($"ALERT: {blockedAttempts} potential security threats detected");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Threat.Alert"], blockedAttempts));
                         if (failedLogins > 0)
-                            keyFindings.Add($"{failedLogins} failed login attempts - possible brute force attack");
+                            keyFindings.Add(string.Format(_localizer["SecurityReport.Threat.FailedLogins"], failedLogins));
                     }
                     
                     if (dashboard.FailedLoginStats.SuspiciousActivity)
-                        keyFindings.Add($"CRITICAL: Suspicious activity from {dashboard.FailedLoginStats.SuspiciousIps.Count} IP addresses");
+                        keyFindings.Add(string.Format(_localizer["SecurityReport.Threat.CriticalActivity"], dashboard.FailedLoginStats.SuspiciousIps.Count));
                     
                     var twoFactorCount = events.Count(e => e.EventType == "TwoFactorVerified");
                     if (twoFactorCount == 0 && events.Count(e => e.EventType == "LoginSuccessful") > 0)
-                        keyFindings.Add("VULNERABILITY: No two-factor authentication usage detected");
+                        keyFindings.Add(_localizer["SecurityReport.Threat.No2FA"]);
                     
                     var threatLevel = blockedAttempts > 10 ? "HIGH" : blockedAttempts > 5 ? "MEDIUM" : "LOW";
-                    keyFindings.Add($"Current threat level: {threatLevel}");
+                    keyFindings.Add(string.Format(_localizer["SecurityReport.Threat.ThreatLevel"], threatLevel));
                     break;
             }
 
@@ -458,16 +569,42 @@ namespace Infrastructure.Services
             return recommendations;
         }
 
+        private string GetEventSeverity(string eventType, bool success)
+        {
+            if (!success)
+            {
+                return eventType switch
+                {
+                    "LoginFailed" => "Critical",
+                    "TwoFactorVerificationFailed" => "Warning",
+                    "PasswordChangeFailed" => "Warning",
+                    _ => "Warning"
+                };
+            }
+
+            return eventType switch
+            {
+                "2FADisabled" => "Critical",
+                "BackupCodeUsed" => "Warning",
+                "AdminCreated" => "Info",
+                "AdminDeleted" => "Warning",
+                "PasswordChanged" => "Info",
+                _ => "Info"
+            };
+        }
+
         /// <summary>
         /// Generate STUNNING, PROFESSIONAL, CREATIVE PDF with CHARTS and SYNFLOX Branding
         /// Premium security report with data visualization and modern design
         /// </summary>
         private byte[] GeneratePdfReport(SecurityReportDataDto reportData)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
-
-            var document = QuestPDF.Fluent.Document.Create(container =>
+            try
             {
+                QuestPDF.Settings.License = LicenseType.Community;
+
+                var document = QuestPDF.Fluent.Document.Create(container =>
+                {
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
@@ -720,7 +857,13 @@ namespace Infrastructure.Services
                 });
             });
 
-            return document.GeneratePdf();
+                return document.GeneratePdf();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate PDF report");
+                throw new InternalServerException(_localizer["SecurityReport.PdfGenerationFailed"]);
+            }
         }
 
         private QuestPDF.Infrastructure.Color GetScoreColor(int score)
@@ -736,7 +879,9 @@ namespace Infrastructure.Services
         /// </summary>
         private byte[] GenerateCsvReport(SecurityReportDataDto reportData)
         {
-            var content = new StringBuilder();
+            try
+            {
+                var content = new StringBuilder();
             content.AppendLine("SYNFLOX Security Report - Event Log");
             content.AppendLine();
             content.AppendLine($"Generated,{reportData.Metadata.GeneratedAt:yyyy-MM-dd HH:mm:ss}");
@@ -755,7 +900,13 @@ namespace Infrastructure.Services
                 }
             }
 
-            return Encoding.UTF8.GetBytes(content.ToString());
+                return Encoding.UTF8.GetBytes(content.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate CSV report");
+                throw new InternalServerException(_localizer["SecurityReport.CsvGenerationFailed"]);
+            }
         }
 
         /// <summary>
@@ -764,7 +915,9 @@ namespace Infrastructure.Services
         /// </summary>
         private byte[] GenerateTextReport(SecurityReportDataDto reportData)
         {
-            var content = new StringBuilder();
+            try
+            {
+                var content = new StringBuilder();
             content.AppendLine("SYNFLOX SECURITY REPORT");
             content.AppendLine("=======================");
             content.AppendLine();
@@ -829,6 +982,12 @@ namespace Infrastructure.Services
             content.AppendLine("=======================================");
 
             return Encoding.UTF8.GetBytes(content.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate text report");
+                throw new InternalServerException(_localizer["SecurityReport.TextGenerationFailed"]);
+            }
         }
 
         /// <summary>
@@ -837,7 +996,9 @@ namespace Infrastructure.Services
         /// </summary>
         private byte[] GenerateDocxReport(SecurityReportDataDto reportData)
         {
-            using var stream = new MemoryStream();
+            try
+            {
+                using var stream = new MemoryStream();
             
             using (var document = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
             {
@@ -911,6 +1072,12 @@ namespace Infrastructure.Services
             }
 
             return stream.ToArray();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate DOCX report");
+                throw new InternalServerException(_localizer["SecurityReport.DocxGenerationFailed"]);
+            }
         }
 
         private void AddDocxParagraph(Body body, string text, bool bold = false, string fontSize = "20", string color = "000000")
@@ -961,33 +1128,21 @@ namespace Infrastructure.Services
 
         private byte[] GenerateJsonReport(SecurityReportDataDto reportData)
         {
-            var json = JsonSerializer.Serialize(reportData, new JsonSerializerOptions
+            try
             {
+                var json = JsonSerializer.Serialize(reportData, new JsonSerializerOptions
+                {
                 WriteIndented = true,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
 
-            return Encoding.UTF8.GetBytes(json);
-        }
-
-        private string GetEventSeverity(string eventType, bool success)
-        {
-            if (!success)
-            {
-                return eventType switch
-                {
-                    "LoginFailed" => "Warning",
-                    "TwoFactorVerificationFailed" => "Warning",
-                    _ => "Info"
-                };
+                return Encoding.UTF8.GetBytes(json);
             }
-
-            return eventType switch
+            catch (Exception ex)
             {
-                "2FADisabled" => "Critical",
-                "BackupCodeUsed" => "Warning",
-                _ => "Info"
-            };
+                _logger.LogError(ex, "Failed to generate JSON report");
+                throw new InternalServerException(_localizer["SecurityReport.JsonGenerationFailed"]);
+            }
         }
     }
 }

@@ -709,4 +709,109 @@
   <data name="BackupCodes.Expired" xml:space="preserve">
     <value>انتهت صلاحية رمز النسخ الاحتياطي هذا. يرجى إنشاء رموز جديدة.</value>
   </data>
+  <data name="SecurityReport.InvalidDateRange" xml:space="preserve">
+    <value>تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية.</value>
+  </data>
+  <data name="SecurityReport.FutureDateNotAllowed" xml:space="preserve">
+    <value>تاريخ النهاية لا يمكن أن يكون في المستقبل.</value>
+  </data>
+  <data name="SecurityReport.PeriodTooLong" xml:space="preserve">
+    <value>فترة التقرير لا يمكن أن تتجاوز 365 يومًا.</value>
+  </data>
+  <data name="SecurityReport.PdfGenerationFailed" xml:space="preserve">
+    <value>فشل إنشاء تقرير PDF. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="SecurityReport.DocxGenerationFailed" xml:space="preserve">
+    <value>فشل إنشاء تقرير DOCX. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="SecurityReport.CsvGenerationFailed" xml:space="preserve">
+    <value>فشل إنشاء تقرير CSV. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="SecurityReport.TextGenerationFailed" xml:space="preserve">
+    <value>فشل إنشاء تقرير نصي. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="SecurityReport.JsonGenerationFailed" xml:space="preserve">
+    <value>فشل إنشاء تقرير JSON. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="SecurityReport.NoEventsInPeriod" xml:space="preserve">
+    <value>لم يتم العثور على أحداث أمنية في الفترة المحددة.</value>
+  </data>
+  <data name="SecurityReport.FileTooLarge" xml:space="preserve">
+    <value>حجم ملف التقرير يتجاوز الحد الأقصى 50 ميجابايت.</value>
+  </data>
+  <data name="SecurityReport.Generated" xml:space="preserve">
+    <value>تم إنشاء تقرير الأمان بنجاح.</value>
+  </data>
+  <data name="SecurityReport.ExportFailed" xml:space="preserve">
+    <value>فشل تصدير تقرير الأمان. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="SecurityReport.TooManyRequests" xml:space="preserve">
+    <value>طلبات إنشاء تقارير كثيرة جدًا. يرجى المحاولة مرة أخرى لاحقًا.</value>
+  </data>
+  <data name="SecurityReport.Summary.NoSignificantConcerns" xml:space="preserve">
+    <value>لم يتم اكتشاف مخاوف أمنية كبيرة</value>
+  </data>
+  <data name="SecurityReport.Summary.OverallScore" xml:space="preserve">
+    <value>درجة الأمان الإجمالية: {0}/100 ({1})</value>
+  </data>
+  <data name="SecurityReport.Summary.CriticalEvents" xml:space="preserve">
+    <value>{0} حدث أمني حرج يتطلب اهتمامًا فوريًا</value>
+  </data>
+  <data name="SecurityReport.Summary.SuspiciousActivity" xml:space="preserve">
+    <value>محاولات تسجيل دخول مشبوهة من {0} عنوان IP</value>
+  </data>
+  <data name="SecurityReport.Detailed.ExcellentPosture" xml:space="preserve">
+    <value>وضع أمني ممتاز عبر جميع المقاييس</value>
+  </data>
+  <data name="SecurityReport.Detailed.GoodPosture" xml:space="preserve">
+    <value>وضع أمني جيد مع مجال للتحسين</value>
+  </data>
+  <data name="SecurityReport.Detailed.RequiresAttention" xml:space="preserve">
+    <value>الوضع الأمني يتطلب اهتمامًا فوريًا</value>
+  </data>
+  <data name="SecurityReport.Detailed.TotalEventsAnalyzed" xml:space="preserve">
+    <value>إجمالي الأحداث المحللة: {0} ({1} حرجة، {2} تحذيرات، {3} معلوماتية)</value>
+  </data>
+  <data name="SecurityReport.Detailed.SuspiciousActivityDetected" xml:space="preserve">
+    <value>تم اكتشاف نشاط مشبوه من {0} عنوان IP فريد</value>
+  </data>
+  <data name="SecurityReport.Detailed.BackupCodesLow" xml:space="preserve">
+    <value>مخزون رموز النسخ الاحتياطي أقل من الحد الأدنى - يوصى بإعادة التوليد</value>
+  </data>
+  <data name="SecurityReport.Audit.AdministrativeActions" xml:space="preserve">
+    <value>يحتوي سجل المراجعة على {0} إجراء إداري لمراجعة الامتثال</value>
+  </data>
+  <data name="SecurityReport.Audit.SystemChangesTracked" xml:space="preserve">
+    <value>تم تتبع تغييرات النظام مع مساءلة كاملة للمسؤولين</value>
+  </data>
+  <data name="SecurityReport.Audit.FailedActions" xml:space="preserve">
+    <value>{0} إجراء إداري فاشل يتطلب التحقيق</value>
+  </data>
+  <data name="SecurityReport.Audit.PasswordChanges" xml:space="preserve">
+    <value>تم تسجيل {0} تغيير في كلمة المرور خلال فترة المراجعة</value>
+  </data>
+  <data name="SecurityReport.Audit.ComplianceLogging" xml:space="preserve">
+    <value>تم تسجيل جميع الإجراءات الإدارية مع عنوان IP والطابع الزمني للامتثال</value>
+  </data>
+  <data name="SecurityReport.Threat.NoThreats" xml:space="preserve">
+    <value>لم يتم اكتشاف تهديدات أمنية خلال فترة المراقبة</value>
+  </data>
+  <data name="SecurityReport.Threat.AllSuccessful" xml:space="preserve">
+    <value>جميع محاولات المصادقة ناجحة - أمان النظام سليم</value>
+  </data>
+  <data name="SecurityReport.Threat.Alert" xml:space="preserve">
+    <value>تنبيه: تم اكتشاف {0} تهديد أمني محتمل</value>
+  </data>
+  <data name="SecurityReport.Threat.FailedLogins" xml:space="preserve">
+    <value>{0} محاولة تسجيل دخول فاشلة - هجوم محتمل بالقوة الغاشمة</value>
+  </data>
+  <data name="SecurityReport.Threat.CriticalActivity" xml:space="preserve">
+    <value>حرج: نشاط مشبوه من {0} عنوان IP</value>
+  </data>
+  <data name="SecurityReport.Threat.No2FA" xml:space="preserve">
+    <value>ثغرة: لم يتم اكتشاف استخدام المصادقة الثنائية</value>
+  </data>
+  <data name="SecurityReport.Threat.ThreatLevel" xml:space="preserve">
+    <value>مستوى التهديد الحالي: {0}</value>
+  </data>
 </root>
