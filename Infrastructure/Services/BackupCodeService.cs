@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,6 +12,12 @@ using Domain.Exceptions;
 using Domain.Interfaces;
 using Infrastructure.Authentication;
 using Microsoft.AspNetCore.Http;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace Infrastructure.Services
 {
@@ -26,6 +33,7 @@ namespace Infrastructure.Services
         private readonly ILocalizationService _localizer;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
+        private readonly IFileHostExportService _fileHostExportService;
 
         private const int BACKUP_CODES_COUNT = 10;
         private const int CODE_LENGTH = 8;
@@ -43,7 +51,8 @@ namespace Infrastructure.Services
             IRefreshTokenRepository refreshTokenRepository,
             ILocalizationService localizer,
             IUnitOfWork unitOfWork,
-            IEmailService emailService)
+            IEmailService emailService,
+            IFileHostExportService fileHostExportService)
         {
             _backupCodeRepository = backupCodeRepository;
             _adminRepository = adminRepository;
@@ -55,6 +64,7 @@ namespace Infrastructure.Services
             _localizer = localizer;
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _fileHostExportService = fileHostExportService;
         }
 
         public async Task<GenerateBackupCodesResponse> GenerateBackupCodesAsync(Guid adminId, string currentPassword)
@@ -467,7 +477,12 @@ namespace Infrastructure.Services
 
             var exportedAt = DateTime.UtcNow;
             var normalizedFormat = request.Format.ToLower();
-            string fileContent;
+            
+            // Normalize format aliases
+            if (normalizedFormat == "text") normalizedFormat = "txt";
+            if (normalizedFormat == "doc") normalizedFormat = "docx"; // Treat DOC as DOCX
+            
+            byte[] fileBytes;
             string contentType;
             string fileName;
 
@@ -475,26 +490,40 @@ namespace Infrastructure.Services
             switch (normalizedFormat)
             {
                 case "pdf":
-                    fileContent = GeneratePdfContent(request.Codes, admin.Username, exportedAt);
+                    fileBytes = GeneratePdfContent(request.Codes, admin.Username, exportedAt);
                     contentType = "application/pdf";
                     fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.pdf";
                     break;
 
-                case "text":
-                    fileContent = GenerateTextContent(request.Codes, admin.Username, exportedAt);
+                case "txt":
+                    fileBytes = GenerateTextContent(request.Codes, admin.Username, exportedAt);
                     contentType = "text/plain";
                     fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.txt";
                     break;
 
+                case "docx":
+                    fileBytes = GenerateDocxContent(request.Codes, admin.Username, exportedAt);
+                    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                    fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.docx";
+                    break;
+
                 case "json":
-                    fileContent = GenerateJsonContent(request.Codes, admin.Username, exportedAt);
+                    fileBytes = GenerateJsonContent(request.Codes, admin.Username, exportedAt);
                     contentType = "application/json";
                     fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.json";
                     break;
 
                 default:
-                    throw new BadRequestException($"Invalid export format: {request.Format}");
+                    throw new BadRequestException($"Unsupported export format: {request.Format}. Supported formats: json, txt, pdf, docx, doc");
             }
+
+            // Save to FileHost and get download URL (auto-deletes after 30 minutes)
+            var fileHostResponse = await _fileHostExportService.SaveExportFileAsync(
+                fileBytes,
+                fileName,
+                contentType,
+                normalizedFormat
+            );
 
             // AUDIT: Log backup codes export
             await LogSecurityEventAsync(
@@ -502,18 +531,18 @@ namespace Infrastructure.Services
                 eventType: "BackupCodesExported",
                 eventDescription: $"Backup codes exported in {normalizedFormat.ToUpper()} format",
                 success: true,
-                metadata: $"{{\"format\":\"{normalizedFormat}\",\"codesCount\":{request.Codes.Count}}}"
+                metadata: $"{{\"format\":\"{normalizedFormat}\",\"codesCount\":{request.Codes.Count},\"fileId\":\"{fileHostResponse.FileId}\"}}"
             );
 
             return new ExportBackupCodesResponse
             {
-                FileContent = fileContent,
+                FileContent = fileHostResponse.DownloadUrl, // Changed: Now returns download URL
                 ContentType = contentType,
                 FileName = fileName,
                 UnusedCodesCount = request.Codes.Count,
                 Format = normalizedFormat.ToUpper(),
                 ExportedAt = exportedAt,
-                Message = $"Backup codes exported successfully as {normalizedFormat.ToUpper()}"
+                Message = $"Backup codes exported successfully. Download URL expires in {fileHostResponse.MinutesUntilExpiry} minutes."
             };
         }
 
@@ -632,74 +661,286 @@ namespace Infrastructure.Services
         }
 
         /// <summary>
-        /// Generate PDF content (as base64 encoded text-based PDF)
-        /// Simple PDF format without external libraries
+        /// Generate REAL PDF content using QuestPDF library
+        /// Returns actual PDF file bytes
         /// </summary>
-        private string GeneratePdfContent(List<string> codes, string username, DateTime exportedAt)
+        /// <summary>
+        /// Generate STUNNING, PROFESSIONAL, CREATIVE PDF with SYNFLOX Branding
+        /// Premium design with visual elements and modern layout
+        /// </summary>
+        private byte[] GeneratePdfContent(List<string> codes, string username, DateTime exportedAt)
         {
-            // Simple text-based PDF structure
-            var content = $@"SYNFLOX BACKUP CODES
-====================
+            QuestPDF.Settings.License = LicenseType.Community;
 
-Account: {username}
-Generated: {exportedAt:yyyy-MM-dd HH:mm:ss} UTC
-Total Codes: {codes.Count}
+            var document = QuestPDF.Fluent.Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(30);
+                    page.PageColor(Colors.White);
+                    
+                    // STUNNING GRADIENT HEADER with BRANDING
+                    page.Header().Height(140).Column(header =>
+                    {
+                        // Purple gradient background effect
+                        header.Item().Height(140).Layers(layers =>
+                        {
+                            // Base purple
+                            layers.Layer().Background(Colors.Purple.Darken2);
+                            // Gradient overlay effect
+                            layers.PrimaryLayer().Padding(25).Column(content =>
+                            {
+                                // Logo/Brand area with icon
+                                content.Item().Row(row =>
+                                {
+                                    row.RelativeItem().Column(brand =>
+                                    {
+                                        brand.Item().Text("🔒 SYNFLOX")
+                                            .FontSize(32).Bold().FontColor(Colors.White);
+                                        brand.Item().PaddingTop(3).Text("Central Licensing System")
+                                            .FontSize(11).FontColor(Colors.Grey.Lighten3);
+                                    });
+                                    row.ConstantItem(80).AlignRight().Column(badge =>
+                                    {
+                                        badge.Item().Background(Colors.Orange.Medium).Padding(8).AlignCenter()
+                                            .Text("✓ SECURE").FontSize(9).Bold().FontColor(Colors.White);
+                                    });
+                                });
+                                
+                                content.Item().PaddingTop(15).AlignCenter().Column(title =>
+                                {
+                                    title.Item().Text("TWO-FACTOR AUTHENTICATION")
+                                        .FontSize(14).SemiBold().FontColor(Colors.Grey.Lighten4);
+                                    title.Item().PaddingTop(5).Text("BACKUP RECOVERY CODES")
+                                        .FontSize(28).Bold().FontColor(Colors.White);
+                                });
+                            });
+                        });
+                    });
 
-IMPORTANT SECURITY NOTES:
-- Store these codes in a secure location
-- Each code can only be used once
-- Generate new codes when running low
-- Never share these codes with anyone
+                    // MODERN CONTENT with CREATIVE LAYOUT
+                    page.Content().Padding(25).Column(column =>
+                    {
+                        // ACCOUNT INFO CARD - Modern Card Design
+                        column.Item().Border(2).BorderColor(Colors.Purple.Lighten2)
+                            .Background(Colors.Purple.Lighten5).Padding(20).Column(infoCard =>
+                        {
+                            infoCard.Item().Text("ⓘ Account Information").FontSize(12).SemiBold().FontColor(Colors.Purple.Darken2);
+                            infoCard.Item().PaddingTop(10).PaddingBottom(10).LineHorizontal(1).LineColor(Colors.Purple.Lighten3);
+                            
+                            infoCard.Item().Row(row =>
+                            {
+                                row.RelativeItem().Column(col =>
+                                {
+                                    col.Item().Text("👤 Account").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                    col.Item().PaddingTop(3).Text(username).FontSize(13).Bold().FontColor(Colors.Purple.Darken3);
+                                });
+                                row.RelativeItem().Column(col =>
+                                {
+                                    col.Item().Text("📅 Generated").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                    col.Item().PaddingTop(3).Text(exportedAt.ToString("MMM dd, yyyy HH:mm UTC"))
+                                        .FontSize(13).Bold().FontColor(Colors.Purple.Darken3);
+                                });
+                                row.RelativeItem().Column(col =>
+                                {
+                                    col.Item().Text("🔢 Total Codes").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                    col.Item().PaddingTop(3).Text($"{codes.Count} codes")
+                                        .FontSize(13).Bold().FontColor(Colors.Purple.Darken3);
+                                });
+                            });
+                        });
 
-BACKUP CODES:
--------------
-{string.Join(Environment.NewLine, codes.Select((code, index) => $"{index + 1,2}. {code}"))}
+                        // CRITICAL SECURITY ALERT - Eye-catching Design
+                        column.Item().PaddingTop(20).Border(3).BorderColor(Colors.Red.Darken1)
+                            .Background(Colors.Red.Lighten4).Padding(18).Column(alert =>
+                        {
+                            alert.Item().Row(row =>
+                            {
+                                row.ConstantItem(40).AlignMiddle().Text("⚠️").FontSize(28);
+                                row.RelativeItem().PaddingLeft(10).AlignMiddle().Text("CRITICAL SECURITY INSTRUCTIONS")
+                                    .FontSize(16).Bold().FontColor(Colors.Red.Darken3);
+                            });
+                            
+                            alert.Item().PaddingTop(12).PaddingBottom(8).LineHorizontal(2).LineColor(Colors.Red.Lighten2);
+                            
+                            alert.Item().PaddingTop(8).Column(instructions =>
+                            {
+                                instructions.Item().PaddingBottom(6).Row(row =>
+                                {
+                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Store these codes in a SECURE, ENCRYPTED location")
+                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                });
+                                instructions.Item().PaddingBottom(6).Row(row =>
+                                {
+                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Each code can ONLY be used ONCE - treat like passwords")
+                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                });
+                                instructions.Item().PaddingBottom(6).Row(row =>
+                                {
+                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("NEVER share codes with anyone - including SYNFLOX staff")
+                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                });
+                                instructions.Item().PaddingBottom(6).Row(row =>
+                                {
+                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Generate new codes when you have 3 or fewer remaining")
+                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                });
+                                instructions.Item().Row(row =>
+                                {
+                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Print this document and store offline in a safe place")
+                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                });
+                            });
+                        });
 
-============================================
-SYNFLOX Central Licensing System
-© 2025 - All Rights Reserved
-============================================";
+                        // BACKUP CODES - Premium Table Design
+                        column.Item().PaddingTop(25).Column(codesSection =>
+                        {
+                            codesSection.Item().Row(row =>
+                            {
+                                row.RelativeItem().Text("🔐 YOUR BACKUP CODES")
+                                    .FontSize(18).Bold().FontColor(Colors.Purple.Darken3);
+                                row.ConstantItem(100).AlignRight().Background(Colors.Green.Lighten4)
+                                    .Padding(6).AlignCenter().Text("✓ ACTIVE").FontSize(9).Bold().FontColor(Colors.Green.Darken2);
+                            });
+                            
+                            codesSection.Item().PaddingTop(3).Text("Use these codes to recover access if you lose your 2FA device")
+                                .FontSize(10).Italic().FontColor(Colors.Grey.Darken1);
+                        });
+                        
+                        column.Item().PaddingTop(15).Border(2).BorderColor(Colors.Purple.Medium).Column(tableWrapper =>
+                        {
+                            tableWrapper.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(60);
+                                    columns.RelativeColumn();
+                                    columns.ConstantColumn(100);
+                                });
 
-            // Convert to base64
-            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
-            return Convert.ToBase64String(bytes);
+                                // PREMIUM HEADER
+                                table.Header(header =>
+                                {
+                                    header.Cell().Background(Colors.Purple.Darken2).Padding(12)
+                                        .Text("#").FontSize(12).Bold().FontColor(Colors.White);
+                                    header.Cell().Background(Colors.Purple.Darken2).Padding(12)
+                                        .Text("BACKUP CODE").FontSize(12).Bold().FontColor(Colors.White);
+                                    header.Cell().Background(Colors.Purple.Darken2).Padding(12).AlignCenter()
+                                        .Text("STATUS").FontSize(12).Bold().FontColor(Colors.White);
+                                });
+
+                                // CODES with ALTERNATING COLORS and VISUAL APPEAL
+                                for (int i = 0; i < codes.Count; i++)
+                                {
+                                    var bgColor = i % 2 == 0 ? Colors.Grey.Lighten4 : Colors.White;
+                                    var numberColor = i % 2 == 0 ? Colors.Purple.Medium : Colors.Purple.Darken1;
+                                    
+                                    table.Cell().Background(bgColor).Border(1).BorderColor(Colors.Grey.Lighten2)
+                                        .Padding(12).AlignCenter().Text((i + 1).ToString())
+                                        .FontSize(13).SemiBold().FontColor(numberColor);
+                                    
+                                    table.Cell().Background(bgColor).Border(1).BorderColor(Colors.Grey.Lighten2)
+                                        .Padding(12).Text(codes[i])
+                                        .FontSize(16).FontFamily(QuestPDF.Helpers.Fonts.Courier).Bold()
+                                        .FontColor(Colors.Black);
+                                    
+                                    table.Cell().Background(bgColor).Border(1).BorderColor(Colors.Grey.Lighten2)
+                                        .Padding(12).AlignCenter().Background(Colors.Green.Lighten3)
+                                        .Padding(6).AlignCenter().Text("✓ Valid")
+                                        .FontSize(9).SemiBold().FontColor(Colors.Green.Darken2);
+                                }
+                            });
+                        });
+
+                        // USAGE INSTRUCTIONS - Helpful Guide
+                        column.Item().PaddingTop(20).Background(Colors.Blue.Lighten5).Border(1)
+                            .BorderColor(Colors.Blue.Lighten2).Padding(15).Column(usage =>
+                        {
+                            usage.Item().Text("📝 How to Use These Codes").FontSize(13).SemiBold().FontColor(Colors.Blue.Darken2);
+                            usage.Item().PaddingTop(10).Text("1. If you lose access to your 2FA device, use a backup code instead")
+                                .FontSize(10).FontColor(Colors.Blue.Darken3);
+                            usage.Item().PaddingTop(4).Text("2. Enter ONE code when prompted during login")
+                                .FontSize(10).FontColor(Colors.Blue.Darken3);
+                            usage.Item().PaddingTop(4).Text("3. Each code is single-use only and cannot be reused")
+                                .FontSize(10).FontColor(Colors.Blue.Darken3);
+                            usage.Item().PaddingTop(4).Text("4. Generate new codes before running out (3 codes remaining = regenerate)")
+                                .FontSize(10).FontColor(Colors.Blue.Darken3);
+                        });
+                    });
+
+                    // PREMIUM FOOTER with BRANDING
+                    page.Footer().Height(60).Column(footer =>
+                    {
+                        footer.Item().LineHorizontal(2).LineColor(Colors.Purple.Medium);
+                        footer.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(12).Row(row =>
+                        {
+                            row.RelativeItem().Column(left =>
+                            {
+                                left.Item().Text("SYNFLOX Central Licensing System")
+                                    .FontSize(11).Bold().FontColor(Colors.Purple.Darken2);
+                                left.Item().Text("© 2025 SYNFLOX - All Rights Reserved | Confidential Document")
+                                    .FontSize(8).FontColor(Colors.Grey.Darken1);
+                            });
+                            row.ConstantItem(120).AlignRight().AlignMiddle().Text($"Page 1 of 1")
+                                .FontSize(9).FontColor(Colors.Grey.Darken1);
+                        });
+                    });
+                });
+            });
+
+            return document.GeneratePdf();
         }
 
         /// <summary>
-        /// Generate plain text content (as base64 encoded)
+        /// Generate plain text content
+        /// Returns raw bytes for direct file writing
         /// </summary>
-        private string GenerateTextContent(List<string> codes, string username, DateTime exportedAt)
+        private byte[] GenerateTextContent(List<string> codes, string username, DateTime exportedAt)
         {
-            var content = $@"SYNFLOX BACKUP CODES
-====================
+            var content = new StringBuilder();
+            content.AppendLine("SYNFLOX BACKUP CODES");
+            content.AppendLine("====================");
+            content.AppendLine();
+            content.AppendLine($"Account: {username}");
+            content.AppendLine($"Generated: {exportedAt:yyyy-MM-dd HH:mm:ss} UTC");
+            content.AppendLine($"Total Codes: {codes.Count}");
+            content.AppendLine();
+            content.AppendLine("IMPORTANT SECURITY NOTES:");
+            content.AppendLine("- Store these codes in a secure location");
+            content.AppendLine("- Each code can only be used ONCE for 2FA login");
+            content.AppendLine("- Generate new codes when running low");
+            content.AppendLine("- NEVER share these codes with anyone");
+            content.AppendLine("- Keep this file encrypted and backed up securely");
+            content.AppendLine();
+            content.AppendLine("YOUR BACKUP CODES:");
+            content.AppendLine("------------------");
+            
+            foreach (var code in codes)
+            {
+                content.AppendLine(code);
+            }
+            
+            content.AppendLine();
+            content.AppendLine("============================================");
+            content.AppendLine("SYNFLOX Central Licensing System");
+            content.AppendLine("© 2025 - All Rights Reserved");
+            content.AppendLine("============================================");
 
-Account: {username}
-Generated: {exportedAt:yyyy-MM-dd HH:mm:ss} UTC
-Total Codes: {codes.Count}
-
-IMPORTANT SECURITY NOTES:
-- Store these codes in a secure location
-- Each code can only be used once
-- Generate new codes when running low
-- Never share these codes with anyone
-
-BACKUP CODES:
-{string.Join(Environment.NewLine, codes)}
-
-============================================
-SYNFLOX Central Licensing System
-© 2025 - All Rights Reserved
-============================================";
-
-            // Convert to base64
-            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
-            return Convert.ToBase64String(bytes);
+            return System.Text.Encoding.UTF8.GetBytes(content.ToString());
         }
 
         /// <summary>
-        /// Generate JSON content (as base64 encoded)
+        /// Generate JSON content
+        /// Returns raw bytes for direct file writing
         /// </summary>
-        private string GenerateJsonContent(List<string> codes, string username, DateTime exportedAt)
+        private byte[] GenerateJsonContent(List<string> codes, string username, DateTime exportedAt)
         {
             var jsonObject = new
             {
@@ -712,21 +953,219 @@ SYNFLOX Central Licensing System
                 security_notes = new[]
                 {
                     "Store these codes in a secure location",
-                    "Each code can only be used once",
+                    "Each code can only be used ONCE for 2FA login",
                     "Generate new codes when running low",
-                    "Never share these codes with anyone"
+                    "NEVER share these codes with anyone",
+                    "Keep this file encrypted and backed up securely"
                 },
                 copyright = "SYNFLOX Central Licensing System © 2025"
             };
 
             var content = System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions
             {
-                WriteIndented = true
+                WriteIndented = true,
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
             });
 
-            // Convert to base64
-            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
-            return Convert.ToBase64String(bytes);
+            return System.Text.Encoding.UTF8.GetBytes(content);
+        }
+
+        /// <summary>
+        /// Generate STUNNING, PROFESSIONAL, CREATIVE DOCX with SYNFLOX Branding
+        /// Premium Word document with enhanced design and visual appeal
+        /// </summary>
+        private byte[] GenerateDocxContent(List<string> codes, string username, DateTime exportedAt)
+        {
+            using var stream = new MemoryStream();
+            
+            // Create Word document
+            using (var document = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
+            {
+                var mainPart = document.AddMainDocumentPart();
+                mainPart.Document = new DocumentFormat.OpenXml.Wordprocessing.Document();
+                var body = mainPart.Document.AppendChild(new Body());
+
+                // BRANDED HEADER - Premium Title with Icon
+                AddStyledParagraph(body, "🔒 SYNFLOX", true, "48", "7B68EE", "center");
+                AddStyledParagraph(body, "Central Licensing System", false, "20", "808080", "center");
+                
+                // Main Title
+                body.AppendChild(new Paragraph()); // Spacing
+                AddStyledParagraph(body, "TWO-FACTOR AUTHENTICATION", true, "22", "9370DB", "center");
+                AddStyledParagraph(body, "BACKUP RECOVERY CODES", true, "36", "7B68EE", "center");
+                
+                // Divider
+                body.AppendChild(new Paragraph());
+                body.AppendChild(new Paragraph());
+
+                // ACCOUNT INFO BOX - Creative Card Design
+                AddStyledParagraph(body, "ⓘ Account Information", true, "22", "7B68EE");
+                AddStyledParagraph(body, "_______________________________________________________________", false, "18", "D8BFD8");
+                body.AppendChild(new Paragraph());
+                
+                AddStyledParagraph(body, $"👤  Account:  {username}", true, "20", "663399");
+                AddStyledParagraph(body, $"📅  Generated:  {exportedAt:MMM dd, yyyy HH:mm UTC}", true, "20", "663399");
+                AddStyledParagraph(body, $"🔢  Total Codes:  {codes.Count} recovery codes", true, "20", "663399");
+                
+                body.AppendChild(new Paragraph());
+                body.AppendChild(new Paragraph());
+
+                // CRITICAL SECURITY ALERT - Eye-catching Box
+                AddStyledParagraph(body, "⚠️  CRITICAL SECURITY INSTRUCTIONS", true, "28", "DC143C");
+                AddStyledParagraph(body, "_______________________________________________________________", false, "18", "FFB6C1");
+                body.AppendChild(new Paragraph());
+                
+                AddStyledParagraph(body, "✔  Store these codes in a SECURE, ENCRYPTED location", false, "20", "8B0000");
+                AddStyledParagraph(body, "✔  Each code can ONLY be used ONCE - treat like passwords", false, "20", "8B0000");
+                AddStyledParagraph(body, "✔  NEVER share codes with anyone - including SYNFLOX staff", false, "20", "8B0000");
+                AddStyledParagraph(body, "✔  Generate new codes when you have 3 or fewer remaining", false, "20", "8B0000");
+                AddStyledParagraph(body, "✔  Print this document and store offline in a safe place", false, "20", "8B0000");
+
+                body.AppendChild(new Paragraph());
+                body.AppendChild(new Paragraph());
+
+                // CODES SECTION HEADER - Premium Design
+                AddStyledParagraph(body, "🔐 YOUR BACKUP CODES", true, "30", "7B68EE");
+                AddStyledParagraph(body, "Use these codes to recover access if you lose your 2FA device", false, "18", "808080", "left", true);
+                
+                body.AppendChild(new Paragraph());
+
+                // PREMIUM TABLE with Enhanced Styling
+                var table = body.AppendChild(new Table());
+                var tableProps = table.AppendChild(new TableProperties());
+                
+                // Double border for premium look
+                tableProps.AppendChild(new TableBorders(
+                    new TopBorder() { Val = BorderValues.Double, Size = 12, Color = "7B68EE" },
+                    new BottomBorder() { Val = BorderValues.Double, Size = 12, Color = "7B68EE" },
+                    new LeftBorder() { Val = BorderValues.Double, Size = 12, Color = "7B68EE" },
+                    new RightBorder() { Val = BorderValues.Double, Size = 12, Color = "7B68EE" },
+                    new InsideHorizontalBorder() { Val = BorderValues.Single, Size = 8, Color = "D8BFD8" },
+                    new InsideVerticalBorder() { Val = BorderValues.Single, Size = 8, Color = "D8BFD8" }
+                ));
+
+                // Premium Table Header with Purple Background
+                var headerRow = table.AppendChild(new TableRow());
+                AddPremiumTableCell(headerRow, "#", true, "7B68EE", "FFFFFF");
+                AddPremiumTableCell(headerRow, "BACKUP CODE", true, "7B68EE", "FFFFFF");
+                AddPremiumTableCell(headerRow, "STATUS", true, "7B68EE", "FFFFFF");
+
+                // Code Rows with Alternating Colors
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    var codeRow = table.AppendChild(new TableRow());
+                    var bgColor = i % 2 == 0 ? "F5F5F5" : "FFFFFF";
+                    
+                    AddPremiumTableCell(codeRow, (i + 1).ToString(), false, bgColor, "663399", "20", false);
+                    AddPremiumTableCell(codeRow, codes[i], false, bgColor, "000000", "26", true, "Courier New");
+                    AddPremiumTableCell(codeRow, "✓ Valid", false, "90EE90", "006400", "16", true);
+                }
+
+                body.AppendChild(new Paragraph());
+                body.AppendChild(new Paragraph());
+
+                // USAGE INSTRUCTIONS - Helpful Blue Box
+                AddStyledParagraph(body, "📝 How to Use These Codes", true, "24", "4169E1");
+                AddStyledParagraph(body, "_______________________________________________________________", false, "18", "ADD8E6");
+                body.AppendChild(new Paragraph());
+                
+                AddStyledParagraph(body, "1. If you lose access to your 2FA device, use a backup code instead", false, "18", "000080");
+                AddStyledParagraph(body, "2. Enter ONE code when prompted during login", false, "18", "000080");
+                AddStyledParagraph(body, "3. Each code is single-use only and cannot be reused", false, "18", "000080");
+                AddStyledParagraph(body, "4. Generate new codes before running out (3 remaining = regenerate)", false, "18", "000080");
+
+                body.AppendChild(new Paragraph());
+                body.AppendChild(new Paragraph());
+
+                // PREMIUM FOOTER
+                AddStyledParagraph(body, "_______________________________________________________________", false, "18", "7B68EE");
+                AddStyledParagraph(body, "SYNFLOX Central Licensing System", true, "22", "7B68EE", "center");
+                AddStyledParagraph(body, "© 2025 SYNFLOX - All Rights Reserved | Confidential Document", false, "16", "808080", "center");
+
+                mainPart.Document.Save();
+            }
+
+            return stream.ToArray();
+        }
+
+        private void AddStyledParagraph(Body body, string text, bool bold = false, string fontSize = "20", string color = "000000", string alignment = "left", bool italic = false)
+        {
+            var para = body.AppendChild(new Paragraph());
+            
+            // Set alignment
+            if (alignment == "center")
+            {
+                para.AppendChild(new ParagraphProperties(new Justification() { Val = JustificationValues.Center }));
+            }
+            else if (alignment == "right")
+            {
+                para.AppendChild(new ParagraphProperties(new Justification() { Val = JustificationValues.Right }));
+            }
+            
+            var run = para.AppendChild(new Run());
+            run.AppendChild(new Text(text));
+            var props = run.AppendChild(new RunProperties());
+            
+            if (bold) props.AppendChild(new Bold());
+            if (italic) props.AppendChild(new Italic());
+            props.AppendChild(new FontSize() { Val = fontSize });
+            props.AppendChild(new DocumentFormat.OpenXml.Wordprocessing.Color() { Val = color });
+        }
+
+        private void AddPremiumTableCell(TableRow row, string text, bool isHeader = false, string bgColor = "FFFFFF", string textColor = "000000", string fontSize = "20", bool bold = false, string fontFamily = "Calibri")
+        {
+            var cell = row.AppendChild(new TableCell());
+            
+            // Cell properties with background color
+            var cellProps = cell.AppendChild(new TableCellProperties());
+            cellProps.AppendChild(new Shading() { Val = ShadingPatternValues.Clear, Fill = bgColor });
+            cellProps.AppendChild(new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center });
+            
+            var para = cell.AppendChild(new Paragraph());
+            
+            // Center align header cells
+            if (isHeader)
+            {
+                para.AppendChild(new ParagraphProperties(new Justification() { Val = JustificationValues.Center }));
+            }
+            
+            var run = para.AppendChild(new Run());
+            run.AppendChild(new Text(text));
+            var props = run.AppendChild(new RunProperties());
+            
+            if (isHeader || bold) props.AppendChild(new Bold());
+            props.AppendChild(new FontSize() { Val = fontSize });
+            props.AppendChild(new DocumentFormat.OpenXml.Wordprocessing.Color() { Val = textColor });
+            props.AppendChild(new RunFonts() { Ascii = fontFamily });
+        }
+
+        private void AddFormattedParagraph(Body body, string text, bool bold = false, string fontSize = "20")
+        {
+            var para = body.AppendChild(new Paragraph());
+            var run = para.AppendChild(new Run());
+            run.AppendChild(new Text(text));
+            var props = run.AppendChild(new RunProperties());
+            if (bold) props.AppendChild(new Bold());
+            props.AppendChild(new FontSize() { Val = fontSize });
+        }
+
+        private void AddTableCell(TableRow row, string text, bool isHeader = false, string fontFamily = "Calibri", string fontSize = "20", bool bold = false)
+        {
+            var cell = row.AppendChild(new TableCell());
+            var para = cell.AppendChild(new Paragraph());
+            var run = para.AppendChild(new Run());
+            run.AppendChild(new Text(text));
+            var props = run.AppendChild(new RunProperties());
+            
+            if (isHeader || bold) props.AppendChild(new Bold());
+            props.AppendChild(new FontSize() { Val = fontSize });
+            props.AppendChild(new RunFonts() { Ascii = fontFamily });
+            
+            if (isHeader)
+            {
+                var cellProps = cell.AppendChild(new TableCellProperties());
+                cellProps.AppendChild(new Shading() { Val = ShadingPatternValues.Clear, Fill = "D3D3D3" });
+            }
         }
     }
 }

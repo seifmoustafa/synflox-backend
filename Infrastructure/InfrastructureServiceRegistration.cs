@@ -152,6 +152,19 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdvancedSecurityAnalyticsService, AdvancedSecurityAnalyticsService>();
         services.AddScoped<ISecurityReportService, SecurityReportService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
+        
+        // HttpClient for IP Geolocation API calls
+        services.AddHttpClient();
+        
+        // IP Geolocation & User-Agent Parser (for real analytics)
+        services.AddSingleton<IIpGeolocationService, IpGeolocationService>();
+        services.AddSingleton<IUserAgentParserService, UserAgentParserService>();
+        
+        // FileHost Export Service (30-minute auto-cleanup)
+        services.AddScoped<IFileHostExportService, FileHostExportService>();
+        
+        // Background job for cleaning expired export files
+        services.AddHostedService<Infrastructure.BackgroundJobs.ExportFilesCleanupJob>();
         // Configure distributed cache (Redis) if connection string provided and Redis is available
         // Otherwise, fallback to in-memory distributed cache
         var cacheConnectionString = configuration.GetConnectionString("RedisConnection");

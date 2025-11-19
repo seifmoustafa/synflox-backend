@@ -17,15 +17,21 @@ namespace Infrastructure.Services
         private readonly IAdminRepository _adminRepository;
         private readonly ISecurityAuditLogRepository _auditLogRepository;
         private readonly ILocalizationService _localizer;
+        private readonly IIpGeolocationService _ipGeolocationService;
+        private readonly IUserAgentParserService _userAgentParser;
 
         public AdvancedSecurityAnalyticsService(
             IAdminRepository adminRepository,
             ISecurityAuditLogRepository auditLogRepository,
-            ILocalizationService localizer)
+            ILocalizationService localizer,
+            IIpGeolocationService ipGeolocationService,
+            IUserAgentParserService userAgentParser)
         {
             _adminRepository = adminRepository;
             _auditLogRepository = auditLogRepository;
             _localizer = localizer;
+            _ipGeolocationService = ipGeolocationService;
+            _userAgentParser = userAgentParser;
         }
 
         public async Task<AdvancedSecurityAnalyticsDto> GetAdvancedAnalyticsAsync(Guid adminId, DateTime startDate, DateTime endDate)
@@ -53,14 +59,14 @@ namespace Infrastructure.Services
             // Analyze backup codes
             var backupCodesAnalytics = AnalyzeBackupCodesUsage(events);
 
-            // Geographic distribution (mock - would need IP geolocation service)
-            var geographicDistribution = new List<GeographicLoginDto>();
+            // Geographic distribution (REAL - using IP geolocation)
+            var geographicDistribution = await AnalyzeGeographicDistributionAsync(events);
 
             // Activity by hour
             var activityByHour = AnalyzeActivityByHour(events);
 
-            // Device distribution (mock - would need user agent parsing)
-            var deviceDistribution = new List<DeviceAnalyticsDto>();
+            // Device distribution (REAL - using user-agent parsing)
+            var deviceDistribution = AnalyzeDeviceDistribution(events);
 
             // Threat level assessment
             var threatLevel = AssessThreatLevel(events, loginActivity);
@@ -264,6 +270,70 @@ namespace Infrastructure.Services
                 Threats = threats,
                 Recommendations = recommendations
             };
+        }
+
+        private async Task<List<GeographicLoginDto>> AnalyzeGeographicDistributionAsync(List<Domain.Entities.Authentication.SecurityAuditLog> events)
+        {
+            var loginEvents = events
+                .Where(e => e.EventType.Contains("Login") && !string.IsNullOrEmpty(e.IpAddress))
+                .GroupBy(e => e.IpAddress)
+                .ToList();
+
+            var geographicLogins = new List<GeographicLoginDto>();
+
+            foreach (var group in loginEvents)
+            {
+                var ipAddress = group.Key!;
+                var (country, city) = await _ipGeolocationService.GetLocationAsync(ipAddress);
+
+                geographicLogins.Add(new GeographicLoginDto
+                {
+                    IpAddress = ipAddress,
+                    Country = country,
+                    City = city,
+                    LoginCount = group.Count(),
+                    LastLogin = group.Max(e => e.CreatedAt)
+                });
+            }
+
+            return geographicLogins
+                .OrderByDescending(g => g.LoginCount)
+                .Take(10)
+                .ToList();
+        }
+
+        private List<DeviceAnalyticsDto> AnalyzeDeviceDistribution(List<Domain.Entities.Authentication.SecurityAuditLog> events)
+        {
+            var eventsWithUserAgent = events
+                .Where(e => !string.IsNullOrEmpty(e.UserAgent))
+                .ToList();
+
+            var deviceGroups = eventsWithUserAgent
+                .GroupBy(e => e.UserAgent)
+                .Select(g =>
+                {
+                    var (deviceType, browser) = _userAgentParser.Parse(g.Key!);
+                    return new
+                    {
+                        UserAgent = g.Key!,
+                        DeviceType = deviceType,
+                        Browser = browser,
+                        Count = g.Count()
+                    };
+                })
+                .GroupBy(x => new { x.DeviceType, x.Browser })
+                .Select(g => new DeviceAnalyticsDto
+                {
+                    UserAgent = g.First().UserAgent,
+                    DeviceType = g.Key.DeviceType,
+                    Browser = g.Key.Browser,
+                    UsageCount = g.Sum(x => x.Count)
+                })
+                .OrderByDescending(d => d.UsageCount)
+                .Take(10)
+                .ToList();
+
+            return deviceGroups;
         }
 
         private string GetSecurityLevel(int score)

@@ -1,5 +1,7 @@
+using Domain.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Application.DTOs.Security
 {
@@ -9,9 +11,9 @@ namespace Application.DTOs.Security
     public class SecurityReportRequest
     {
         /// <summary>
-        /// Report type: "summary", "detailed", "audit", "threat"
+        /// Report type: Summary, Detailed, Audit, or Threat
         /// </summary>
-        public required string ReportType { get; set; }
+        public required ReportType ReportType { get; set; }
 
         /// <summary>
         /// Start date for report period
@@ -24,8 +26,10 @@ namespace Application.DTOs.Security
         public DateTime EndDate { get; set; }
 
         /// <summary>
-        /// Export format: "pdf", "excel", "json"
+        /// Export format: json, txt, pdf, docx, doc, csv
         /// </summary>
+        [Required(ErrorMessage = "Format is required")]
+        [RegularExpression("^(json|txt|text|pdf|docx|doc|csv)$", ErrorMessage = "Format must be one of: json, txt, pdf, docx, doc, csv")]
         public required string Format { get; set; }
 
         /// <summary>
@@ -117,7 +121,7 @@ namespace Application.DTOs.Security
     public class SecurityReportMetadataDto
     {
         public required string ReportId { get; set; }
-        public required string ReportType { get; set; }
+        public required Domain.Enums.ReportType ReportType { get; set; }
         public DateTime GeneratedAt { get; set; }
         public DateTime PeriodStart { get; set; }
         public DateTime PeriodEnd { get; set; }

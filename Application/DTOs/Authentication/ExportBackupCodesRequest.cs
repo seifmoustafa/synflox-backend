@@ -20,10 +20,10 @@ namespace Application.DTOs.Authentication
         public required List<string> Codes { get; set; }
 
         /// <summary>
-        /// Export format: "pdf", "text", or "json"
+        /// Export format: json, txt, pdf, docx, doc
         /// </summary>
         [Required(ErrorMessage = "Format is required")]
-        [RegularExpression("^(pdf|text|json)$", ErrorMessage = "Format must be 'pdf', 'text', or 'json'")]
+        [RegularExpression("^(json|txt|text|pdf|docx|doc)$", ErrorMessage = "Format must be one of: json, txt, pdf, docx, doc")]
         public required string Format { get; set; }
     }
 }
