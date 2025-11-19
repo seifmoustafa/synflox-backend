@@ -1042,6 +1042,332 @@ public class EmailService : IEmailService
         await SendEmailAsync(toEmail, subject, body);
     }
 
+    // ===== 2FA AND BACKUP CODE SECURITY EMAILS =====
+
+    public async Task SendBackupCodesGeneratedEmailAsync(string toEmail, string adminName, int codesCount, string ipAddress, string? language = null)
+    {
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔐 SYNFLOX Backup Codes Generated";
+        var title = "New Backup Codes Created";
+        
+        var message = $@"Hi {adminName},
+            <br><br>
+            This email confirms that <strong>{codesCount} new backup codes</strong> were generated for your SYNFLOX administrator account.
+            <br><br>
+            <div style='background-color: #d4edda; border-left: 4px solid #28a745; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #155724; font-size: 14px; font-weight: 600;'>✅ Backup Codes Created</p>
+                <p style='margin: 0; color: #155724; font-size: 13px; line-height: 1.6;'>
+                    Your backup codes have been generated and are ready to use. These codes can be used to access your account if you lose access to your authenticator app.
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Generation Details:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+                    <strong>IP Address:</strong> {ipAddress}<br>
+                    <strong>Codes Generated:</strong> {codesCount}<br>
+                    <strong>Account:</strong> {toEmail}
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Important Security Notes</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    <strong>• Store your backup codes safely</strong> – Keep them in a secure location (password manager, secure notes)<br>
+                    <strong>• Each code can only be used once</strong> – Once you use a code, it becomes invalid<br>
+                    <strong>• Generate new codes when running low</strong> – Don't wait until all codes are used<br>
+                    <strong>• Didn't request this?</strong> – Contact support immediately if you didn't generate these codes
+                </p>
+            </div>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#28a745", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task SendBackupCodeUsedEmailAsync(string toEmail, string adminName, int remainingCodes, string ipAddress, string? language = null)
+    {
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔓 SYNFLOX Backup Code Used";
+        var title = "Backup Code Authentication";
+        
+        var urgencyLevel = remainingCodes <= 2 ? "critical" : remainingCodes <= 5 ? "warning" : "info";
+        var urgencyColor = remainingCodes <= 2 ? "#dc3545" : remainingCodes <= 5 ? "#ffc107" : "#17a2b8";
+        var urgencyIcon = remainingCodes <= 2 ? "🚨" : remainingCodes <= 5 ? "⚠️" : "ℹ️";
+        
+        var message = $@"Hi {adminName},
+            <br><br>
+            A backup code was just used to sign in to your SYNFLOX administrator account.
+            <br><br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>🔓 Backup Code Used</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    One of your backup codes was successfully used for authentication. You have <strong>{remainingCodes} backup code{(remainingCodes != 1 ? "s" : "")} remaining</strong>.
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Login Details:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+                    <strong>IP Address:</strong> {ipAddress}<br>
+                    <strong>Remaining Codes:</strong> {remainingCodes}<br>
+                    <strong>Account:</strong> {toEmail}
+                </p>
+            </div>
+            <br>
+            <div style='background-color: {(remainingCodes <= 2 ? "#f8d7da" : remainingCodes <= 5 ? "#fff3cd" : "#d1ecf1")}; border-left: 4px solid {urgencyColor}; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: {(remainingCodes <= 2 ? "#721c24" : remainingCodes <= 5 ? "#856404" : "#0c5460")}; font-size: 14px; font-weight: 600;'>{urgencyIcon} {(remainingCodes <= 2 ? "Critical: Generate New Codes Now!" : remainingCodes <= 5 ? "Warning: Low on Backup Codes" : "Recommendation")}</p>
+                <p style='margin: 0; color: {(remainingCodes <= 2 ? "#721c24" : remainingCodes <= 5 ? "#856404" : "#0c5460")}; font-size: 13px; line-height: 1.6;'>
+                    {(remainingCodes <= 2 
+                        ? "<strong>You have 2 or fewer backup codes left!</strong><br>Generate new backup codes immediately to maintain account recovery options. Go to your account security settings to create new codes." 
+                        : remainingCodes <= 5 
+                            ? "<strong>You're running low on backup codes.</strong><br>We recommend generating new backup codes soon to ensure you always have recovery options available." 
+                            : "Monitor your remaining backup codes and generate new ones when needed to maintain secure account recovery options.")}
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Didn't Use This Code?</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    If you didn't use a backup code to sign in, <strong>someone else may have access to your codes.</strong><br><br>
+                    <strong>1.</strong> Change your password immediately<br>
+                    <strong>2.</strong> Generate new backup codes<br>
+                    <strong>3.</strong> Contact our support team<br>
+                    <strong>4.</strong> Review your recent account activity
+                </p>
+            </div>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, urgencyColor, language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task SendBackupCodesLowEmailAsync(string toEmail, string adminName, int remainingCodes, string? language = null)
+    {
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "⚠️ SYNFLOX Backup Codes Running Low";
+        var title = "Backup Codes Low Warning";
+        
+        var message = $@"Hi {adminName},
+            <br><br>
+            This is a friendly reminder that you have <strong>only {remainingCodes} backup code{(remainingCodes != 1 ? "s" : "")} remaining</strong> for your SYNFLOX administrator account.
+            <br><br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Action Required</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    You should generate new backup codes soon to ensure you always have recovery options if you lose access to your authenticator app.
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>📝 How to Generate New Codes</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    <strong>1.</strong> Sign in to your SYNFLOX account<br>
+                    <strong>2.</strong> Go to Profile → Security Settings<br>
+                    <strong>3.</strong> Click &quot;Generate New Backup Codes&quot;<br>
+                    <strong>4.</strong> Save the new codes in a secure location
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Current Status:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Remaining Codes:</strong> {remainingCodes}<br>
+                    <strong>Account:</strong> {toEmail}
+                </p>
+            </div>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#ffc107", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task SendBackupCodesDepletedEmailAsync(string toEmail, string adminName, string? language = null)
+    {
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🚨 URGENT: SYNFLOX Backup Codes Depleted";
+        var title = "All Backup Codes Used";
+        
+        var message = $@"Hi {adminName},
+            <br><br>
+            <strong>This is an urgent security alert.</strong> You have used all of your backup codes for your SYNFLOX administrator account.
+            <br><br>
+            <div style='background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #721c24; font-size: 14px; font-weight: 600;'>🚨 Critical: No Backup Codes Remaining</p>
+                <p style='margin: 0; color: #721c24; font-size: 13px; line-height: 1.6;'>
+                    <strong>You have 0 backup codes left!</strong> If you lose access to your authenticator app, you will not be able to recover your account using backup codes.
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Generate New Codes Immediately</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    <strong>Follow these steps NOW to restore your account recovery options:</strong><br><br>
+                    <strong>1.</strong> Sign in to your SYNFLOX account<br>
+                    <strong>2.</strong> Go to Profile → Security Settings<br>
+                    <strong>3.</strong> Click &quot;Generate New Backup Codes&quot;<br>
+                    <strong>4.</strong> Save the new codes in a secure location (password manager recommended)<br>
+                    <strong>5.</strong> Print or write down the codes as a backup
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>🛡️ Protect Your Account</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    <strong>While you have access, we strongly recommend:</strong><br><br>
+                    • <strong>Keep your authenticator app safe</strong> – Back up your authenticator app or save the recovery key<br>
+                    • <strong>Always have backup codes</strong> – Generate a new set when you have 3 or fewer remaining<br>
+                    • <strong>Update your recovery email</strong> – Ensure your backup email is current<br>
+                    • <strong>Enable additional security</strong> – Consider using hardware security keys
+                </p>
+            </div>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#dc3545", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task Send2FADisabledEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null)
+    {
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔓 SYNFLOX Two-Factor Authentication Disabled";
+        var title = "2FA Disabled on Your Account";
+        
+        var message = $@"Hi {adminName},
+            <br><br>
+            This email confirms that <strong>Two-Factor Authentication (2FA) has been disabled</strong> on your SYNFLOX administrator account.
+            <br><br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Security Alert: 2FA Disabled</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    Your account security has been reduced. We strongly recommend re-enabling Two-Factor Authentication for maximum protection.
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Change Details:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+                    <strong>IP Address:</strong> {ipAddress}<br>
+                    <strong>Account:</strong> {toEmail}<br>
+                    <strong>Action:</strong> All backup codes deleted, 2FA secret removed
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #721c24; font-size: 14px; font-weight: 600;'>🚨 Didn't Disable 2FA?</p>
+                <p style='margin: 0; color: #721c24; font-size: 13px; line-height: 1.6;'>
+                    If you didn't disable Two-Factor Authentication, <strong>someone else has accessed your account.</strong> Take these steps immediately:<br><br>
+                    <strong>1.</strong> Change your password right away<br>
+                    <strong>2.</strong> Enable Two-Factor Authentication again<br>
+                    <strong>3.</strong> Contact our support team immediately<br>
+                    <strong>4.</strong> Review all recent account activity
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>🔐 Re-Enable 2FA for Better Security</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    <strong>To re-enable Two-Factor Authentication:</strong><br><br>
+                    <strong>1.</strong> Sign in to your SYNFLOX account<br>
+                    <strong>2.</strong> Go to Profile → Security Settings<br>
+                    <strong>3.</strong> Click &quot;Enable Two-Factor Authentication&quot;<br>
+                    <strong>4.</strong> Scan the QR code with your authenticator app<br>
+                    <strong>5.</strong> Generate and save new backup codes
+                </p>
+            </div>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#ffc107", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task Send2FAResetEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null)
+    {
+        _localizationHelper.SetCulture(language);
+        
+        var subject = "🔄 SYNFLOX Two-Factor Authentication Reset";
+        var title = "2FA Reset on Your Account";
+        
+        var message = $@"Hi {adminName},
+            <br><br>
+            This email confirms that <strong>Two-Factor Authentication (2FA) has been reset</strong> on your SYNFLOX administrator account.
+            <br><br>
+            <div style='background-color: #e7f3ff; border-left: 4px solid #0066cc; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #004085; font-size: 14px; font-weight: 600;'>🔄 2FA Has Been Reset</p>
+                <p style='margin: 0; color: #004085; font-size: 13px; line-height: 1.6;'>
+                    A new 2FA secret has been generated for your account. Your old authenticator codes will no longer work, and all backup codes have been deleted.
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                <p style='margin: 0 0 8px 0; color: #4a5568; font-size: 13px;'><strong>Reset Details:</strong></p>
+                <p style='margin: 0; color: #6c757d; font-size: 12px; line-height: 1.6;'>
+                    <strong>Time:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
+                    <strong>IP Address:</strong> {ipAddress}<br>
+                    <strong>Account:</strong> {toEmail}<br>
+                    <strong>Action:</strong> New secret generated, old backup codes deleted
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #856404; font-size: 14px; font-weight: 600;'>⚠️ Action Required</p>
+                <p style='margin: 0; color: #856404; font-size: 13px; line-height: 1.6;'>
+                    <strong>You must complete these steps to finish the 2FA reset:</strong><br><br>
+                    <strong>1.</strong> Scan the new QR code with your authenticator app<br>
+                    <strong>2.</strong> Verify the 2FA code works<br>
+                    <strong>3.</strong> Generate new backup codes<br>
+                    <strong>4.</strong> Store your new backup codes securely
+                </p>
+            </div>
+            <br>
+            <div style='background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 16px 20px; border-radius: 4px; margin: 24px 0;'>
+                <p style='margin: 0 0 12px 0; color: #721c24; font-size: 14px; font-weight: 600;'>🚨 Didn't Reset Your 2FA?</p>
+                <p style='margin: 0; color: #721c24; font-size: 13px; line-height: 1.6;'>
+                    If you didn't request a 2FA reset, <strong>someone else may have access to your account.</strong> Take immediate action:<br><br>
+                    <strong>1.</strong> Change your password immediately<br>
+                    <strong>2.</strong> Reset your 2FA again using a device you trust<br>
+                    <strong>3.</strong> Contact our support team urgently<br>
+                    <strong>4.</strong> Review all recent account activity
+                </p>
+            </div>
+            <br>
+            <p style='margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;'>
+                Best regards,<br>
+                <strong>The SYNFLOX Security Team</strong>
+            </p>";
+        
+        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#0066cc", language);
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
     // ===== CUSTOM EMAIL METHODS =====
 
     public async Task<CustomEmailResponse> SendCustomEmailAsync(CustomEmailRequest request, string? language = null)

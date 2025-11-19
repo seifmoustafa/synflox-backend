@@ -45,6 +45,14 @@ public interface IEmailService
     Task SendPasswordResetOtpEmailAsync(string toEmail, string adminName, string otpCode, string magicLinkToken, int expiryMinutes, string ipAddress, string? language = null);
     Task SendPasswordResetSuccessEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null);
     
+    // 2FA and Backup Code security emails
+    Task SendBackupCodesGeneratedEmailAsync(string toEmail, string adminName, int codesCount, string ipAddress, string? language = null);
+    Task SendBackupCodeUsedEmailAsync(string toEmail, string adminName, int remainingCodes, string ipAddress, string? language = null);
+    Task SendBackupCodesLowEmailAsync(string toEmail, string adminName, int remainingCodes, string? language = null);
+    Task SendBackupCodesDepletedEmailAsync(string toEmail, string adminName, string? language = null);
+    Task Send2FADisabledEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null);
+    Task Send2FAResetEmailAsync(string toEmail, string adminName, string ipAddress, string? language = null);
+    
     // Custom email methods
     Task<CustomEmailResponse> SendCustomEmailAsync(CustomEmailRequest request, string? language = null);
     Task<BulkCustomEmailResponse> SendBulkCustomEmailAsync(BulkCustomEmailRequest request, string? language = null);

@@ -697,4 +697,16 @@
   <data name="BackupCodes.NoCodesGenerated" xml:space="preserve">
     <value>No backup codes found. Please generate backup codes first.</value>
   </data>
+  <data name="2FADisabled" xml:space="preserve">
+    <value>Two-factor authentication has been disabled successfully.</value>
+  </data>
+  <data name="2FAResetSuccess" xml:space="preserve">
+    <value>Two-factor authentication has been reset. Please scan the QR code with your authenticator app.</value>
+  </data>
+  <data name="BackupCodes.Deleted" xml:space="preserve">
+    <value>All backup codes deleted successfully.</value>
+  </data>
+  <data name="BackupCodes.Expired" xml:space="preserve">
+    <value>This backup code has expired. Please generate new codes.</value>
+  </data>
 </root>

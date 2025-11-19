@@ -36,5 +36,21 @@ namespace Domain.Interfaces
         /// Clean up old audit logs (optional housekeeping)
         /// </summary>
         Task DeleteOldLogsAsync(DateTime olderThan);
+
+        /// <summary>
+        /// Get audit logs by admin ID and event type within a time range
+        /// Used for security analytics and statistics
+        /// </summary>
+        Task<List<SecurityAuditLog>> GetByAdminAndEventTypeAsync(
+            Guid adminId,
+            string eventType,
+            DateTime? startDate,
+            DateTime? endDate);
+
+        /// <summary>
+        /// Get recent audit logs for an admin (sorted by timestamp descending)
+        /// Used for security dashboard recent activity
+        /// </summary>
+        Task<List<SecurityAuditLog>> GetRecentByAdminAsync(Guid adminId, DateTime since, int limit);
     }
 }

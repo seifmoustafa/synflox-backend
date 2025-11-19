@@ -63,5 +63,35 @@ namespace Infrastructure.Repositories
             _dbSet.RemoveRange(oldLogs);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<SecurityAuditLog>> GetByAdminAndEventTypeAsync(
+            Guid adminId,
+            string eventType,
+            DateTime? startDate,
+            DateTime? endDate)
+        {
+            var query = _dbSet.Where(log => log.AdminId == adminId && log.EventType == eventType);
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(log => log.CreatedAt >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(log => log.CreatedAt <= endDate.Value);
+            }
+
+            return await query.OrderByDescending(log => log.CreatedAt).ToListAsync();
+        }
+
+        public async Task<List<SecurityAuditLog>> GetRecentByAdminAsync(Guid adminId, DateTime since, int limit)
+        {
+            return await _dbSet
+                .Where(log => log.AdminId == adminId && log.CreatedAt >= since)
+                .OrderByDescending(log => log.CreatedAt)
+                .Take(limit)
+                .ToListAsync();
+        }
     }
 }

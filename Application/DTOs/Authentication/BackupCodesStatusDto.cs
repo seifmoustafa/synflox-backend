@@ -1,3 +1,5 @@
+using System;
+
 namespace Application.DTOs.Authentication
 {
     /// <summary>
@@ -6,7 +8,7 @@ namespace Application.DTOs.Authentication
     public class BackupCodesStatusDto
     {
         /// <summary>
-        /// Number of unused backup codes remaining
+        /// Number of unused and non-expired backup codes remaining
         /// </summary>
         public int RemainingCodes { get; set; }
 
@@ -14,6 +16,21 @@ namespace Application.DTOs.Authentication
         /// Total number of backup codes generated
         /// </summary>
         public int TotalCodes { get; set; }
+
+        /// <summary>
+        /// Number of expired backup codes
+        /// </summary>
+        public int ExpiredCodes { get; set; }
+
+        /// <summary>
+        /// Earliest expiry date among unused codes (null if no codes)
+        /// </summary>
+        public DateTime? NextExpiryDate { get; set; }
+
+        /// <summary>
+        /// Days until next code expires (null if no codes)
+        /// </summary>
+        public int? DaysUntilExpiry { get; set; }
 
         /// <summary>
         /// Whether user has backup codes
@@ -26,7 +43,12 @@ namespace Application.DTOs.Authentication
         public bool LowCodesWarning => RemainingCodes > 0 && RemainingCodes < 3;
 
         /// <summary>
-        /// Whether user needs to regenerate codes (all codes used or no codes exist)
+        /// Whether codes are expiring soon (< 30 days until expiry)
+        /// </summary>
+        public bool ExpiryWarning => DaysUntilExpiry.HasValue && DaysUntilExpiry.Value < 30;
+
+        /// <summary>
+        /// Whether user needs to regenerate codes (all codes used/expired or no codes exist)
         /// </summary>
         public bool NeedsRegeneration => RemainingCodes == 0;
     }

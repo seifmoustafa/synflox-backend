@@ -6,6 +6,7 @@ using Domain.Entities.Authentication;
 using Domain.Exceptions;
 using Domain.Interfaces;
 using Infrastructure.Authentication;
+using Microsoft.AspNetCore.Http;
 using OtpNet;
 using QRCoder;
 using SixLabors.ImageSharp;
@@ -33,6 +34,8 @@ public class AdminProfileService : IAdminProfileService
     private readonly ICompanyRepository _companyRepo;
     private readonly ISubscriptionRepository _subscriptionRepo;
     private readonly IEmailService _emailService;
+    private readonly IBackupCodeService _backupCodeService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AdminProfileService(
         IAdminRepository repo,
@@ -42,7 +45,9 @@ public class AdminProfileService : IAdminProfileService
         IUnitOfWork unitOfWork,
         ICompanyRepository companyRepo,
         ISubscriptionRepository subscriptionRepo,
-        IEmailService emailService)
+        IEmailService emailService,
+        IBackupCodeService backupCodeService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _repo = repo;
         _hasher = hasher;
@@ -52,6 +57,8 @@ public class AdminProfileService : IAdminProfileService
         _companyRepo = companyRepo;
         _subscriptionRepo = subscriptionRepo;
         _emailService = emailService;
+        _backupCodeService = backupCodeService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     // ===== Profile Information =====
@@ -412,18 +419,121 @@ public class AdminProfileService : IAdminProfileService
         return false;
     }
 
-    public async Task Disable2FAAsync(Guid currentUserId)
+    public async Task Disable2FAAsync(Guid currentUserId, string currentPassword)
     {
         var admin = await _repo.GetByIdAsync(currentUserId, null);
-        if (admin == null)
+        if (admin == null || admin.IsDeleted)
             throw new NotFoundException(_localizer["Admin.NotFound"]);
 
+        // SECURITY: Check if admin account is active
+        if (!admin.IsActive)
+        {
+            throw new BadRequestException(_localizer["Account.Deactivated"] ?? "Account is deactivated");
+        }
+
+        // SECURITY: Validate password length to prevent DoS
+        if (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 1000)
+        {
+            throw new BadRequestException(_localizer["InvalidCurrentPassword"] ?? "Invalid password");
+        }
+
+        // SECURITY: Verify current password before disabling 2FA
+        if (!_hasher.VerifyPassword(currentPassword, admin.Password))
+        {
+            throw new BadRequestException(_localizer["InvalidCurrentPassword"] ?? "Invalid password");
+        }
+
+        // Disable 2FA
         admin.IsTwoFactorEnabled = false;
         admin.TwoFactorSecret = null;
-        admin.LastTwoFactorCodeUsedAt = null; // Clear timestamp when disabling
+        admin.LastTwoFactorCodeUsedAt = null;
 
         await _repo.UpdateAsync(admin);
         await _unitOfWork.SaveChangesAsync();
+
+        // SECURITY: Delete all backup codes when disabling 2FA
+        await _backupCodeService.DeleteAllBackupCodesAsync(currentUserId);
+
+        // Send email notification about 2FA being disabled
+        if (!string.IsNullOrEmpty(admin.Email))
+        {
+            var adminName = $"{admin.FirstName} {admin.LastName}".Trim();
+            if (string.IsNullOrEmpty(adminName)) adminName = admin.Username;
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+            
+            // Send asynchronously without waiting (fire and forget)
+            _ = _emailService.Send2FADisabledEmailAsync(admin.Email, adminName, ipAddress, admin.PreferredLanguage);
+        }
+    }
+
+    public async Task<TwoFactorSetupDto> Reset2FAAsync(Guid currentUserId, string currentPassword)
+    {
+        var admin = await _repo.GetByIdAsync(currentUserId, null);
+        if (admin == null || admin.IsDeleted)
+            throw new NotFoundException(_localizer["Admin.NotFound"]);
+
+        // SECURITY: Check if admin account is active
+        if (!admin.IsActive)
+        {
+            throw new BadRequestException(_localizer["Account.Deactivated"] ?? "Account is deactivated");
+        }
+
+        // SECURITY: Validate password length to prevent DoS
+        if (string.IsNullOrEmpty(currentPassword) || currentPassword.Length > 1000)
+        {
+            throw new BadRequestException(_localizer["InvalidCurrentPassword"] ?? "Invalid password");
+        }
+
+        // SECURITY: Verify current password before resetting 2FA
+        if (!_hasher.VerifyPassword(currentPassword, admin.Password))
+        {
+            throw new BadRequestException(_localizer["InvalidCurrentPassword"] ?? "Invalid password");
+        }
+
+        // SECURITY: Delete all old backup codes before generating new 2FA secret
+        await _backupCodeService.DeleteAllBackupCodesAsync(currentUserId);
+
+        // Generate NEW cryptographically secure secret
+        var key = KeyGeneration.GenerateRandomKey(20);
+        var base32Secret = Base32Encoding.ToString(key);
+
+        admin.TwoFactorSecret = base32Secret;
+        // Keep IsTwoFactorEnabled = true (user is resetting, not disabling)
+        // They must verify the new secret to complete the reset
+        admin.LastTwoFactorCodeUsedAt = null; // Clear previous code usage timestamp
+
+        await _repo.UpdateAsync(admin);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Generate QR code URL for authenticator apps
+        var qrCodeUrl = $"otpauth://totp/SYNFLOX:{admin.Username}?secret={base32Secret}&issuer=SYNFLOX";
+
+        // Generate QR code image
+        using var qrGenerator = new QRCodeGenerator();
+        var qrCodeData = qrGenerator.CreateQrCode(qrCodeUrl, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrCodeData);
+        var qrCodeBytes = qrCode.GetGraphic(20);
+        var qrCodeBase64 = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+
+        // Send email notification about 2FA being reset
+        if (!string.IsNullOrEmpty(admin.Email))
+        {
+            var adminName = $"{admin.FirstName} {admin.LastName}".Trim();
+            if (string.IsNullOrEmpty(adminName)) adminName = admin.Username;
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+            
+            // Send asynchronously without waiting (fire and forget)
+            _ = _emailService.Send2FAResetEmailAsync(admin.Email, adminName, ipAddress, admin.PreferredLanguage);
+        }
+
+        return new TwoFactorSetupDto
+        {
+            Secret = base32Secret,
+            QRCodeBase64 = qrCodeBase64,
+            ManualEntryKey = base32Secret,
+            AccountName = admin.Username,
+            Issuer = "SYNFLOX"
+        };
     }
 
     // ===== Account Management =====

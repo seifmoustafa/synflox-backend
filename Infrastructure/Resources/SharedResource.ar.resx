@@ -697,4 +697,16 @@
   <data name="BackupCodes.NoCodesGenerated" xml:space="preserve">
     <value>لم يتم العثور على رموز نسخ احتياطي. يرجى إنشاء رموز النسخ الاحتياطي أولاً.</value>
   </data>
+  <data name="2FADisabled" xml:space="preserve">
+    <value>تم تعطيل المصادقة الثنائية بنجاح.</value>
+  </data>
+  <data name="2FAResetSuccess" xml:space="preserve">
+    <value>تم إعادة تعيين المصادقة الثنائية. يرجى مسح رمز الاستجابة السريعة باستخدام تطبيق المصادقة الخاص بك.</value>
+  </data>
+  <data name="BackupCodes.Deleted" xml:space="preserve">
+    <value>تم حذف جميع رموز النسخ الاحتياطي بنجاح.</value>
+  </data>
+  <data name="BackupCodes.Expired" xml:space="preserve">
+    <value>انتهت صلاحية رمز النسخ الاحتياطي هذا. يرجى إنشاء رموز جديدة.</value>
+  </data>
 </root>

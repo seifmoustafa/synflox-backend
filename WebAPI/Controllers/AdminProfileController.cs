@@ -21,15 +21,21 @@ public class AdminProfileController : ControllerBase
     private readonly IAdminProfileService _profileService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILocalizationService _localizer;
+    private readonly IBackupCodeService _backupCodeService;
+    private readonly ISecurityAnalyticsService _securityAnalyticsService;
 
     public AdminProfileController(
         IAdminProfileService profileService,
         ICurrentUserService currentUserService,
-        ILocalizationService localizer)
+        ILocalizationService localizer,
+        IBackupCodeService backupCodeService,
+        ISecurityAnalyticsService securityAnalyticsService)
     {
         _profileService = profileService;
         _currentUserService = currentUserService;
         _localizer = localizer;
+        _backupCodeService = backupCodeService;
+        _securityAnalyticsService = securityAnalyticsService;
     }
 
     // ===== Profile Information =====
@@ -156,12 +162,101 @@ public class AdminProfileController : ControllerBase
 
     /// <summary>
     /// Disable 2FA for current user
+    /// Requires password confirmation for security
+    /// Automatically deletes all backup codes
     /// </summary>
     [HttpPost("me/2fa/disable")]
-    public async Task<IActionResult> Disable2FA()
+    public async Task<IActionResult> Disable2FA([FromBody] Disable2FARequest request)
     {
-        await _profileService.Disable2FAAsync(_currentUserService.UserId);
-        return NoContent();
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        await _profileService.Disable2FAAsync(_currentUserService.UserId, request.CurrentPassword);
+        return Ok(new { message = _localizer["2FADisabled"] ?? "Two-factor authentication has been disabled successfully." });
+    }
+
+    /// <summary>
+    /// Reset 2FA for current user (generates new secret and QR code)
+    /// Requires password confirmation for security
+    /// Deletes all old backup codes - user must generate new ones
+    /// Used when user loses access to authenticator app but still has account access
+    /// </summary>
+    [HttpPost("me/2fa/reset")]
+    public async Task<IActionResult> Reset2FA([FromBody] Reset2FARequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _profileService.Reset2FAAsync(_currentUserService.UserId, request.CurrentPassword);
+        return Ok(result);
+    }
+
+    // ===== Backup Codes Management =====
+
+    /// <summary>
+    /// Generate new set of 10 backup codes for 2FA recovery
+    /// SECURITY: Requires current password confirmation
+    /// Invalidates all previous backup codes
+    /// Codes are shown ONLY once - user must save them
+    /// </summary>
+    [HttpPost("me/backup-codes/generate")]
+    public async Task<IActionResult> GenerateBackupCodes([FromBody] GenerateBackupCodesRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await _backupCodeService.GenerateBackupCodesAsync(_currentUserService.UserId, request.CurrentPassword);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get status of backup codes (count of remaining/used codes)
+    /// Returns NeedsRegeneration flag when all codes are used
+    /// </summary>
+    [HttpGet("me/backup-codes/status")]
+    public async Task<IActionResult> GetBackupCodesStatus()
+    {
+        var status = await _backupCodeService.GetBackupCodesStatusAsync(_currentUserService.UserId);
+        return Ok(status);
+    }
+
+    /// <summary>
+    /// Delete all backup codes for current user
+    /// Called when regenerating codes or disabling 2FA
+    /// </summary>
+    [HttpDelete("me/backup-codes")]
+    public async Task<IActionResult> DeleteBackupCodes()
+    {
+        await _backupCodeService.DeleteAllBackupCodesAsync(_currentUserService.UserId);
+        return Ok(new { message = _localizer["BackupCodes.Deleted"] ?? "All backup codes deleted successfully." });
+    }
+
+    /// <summary>
+    /// Export backup codes in specified format (PDF, Text, or JSON)
+    /// SECURITY: Accepts codes from frontend (codes shown only once during generation)
+    /// Returns base64-encoded file content ready for download
+    /// Supported formats: "pdf", "text", "json"
+    /// </summary>
+    [HttpPost("me/backup-codes/export")]
+    public async Task<IActionResult> ExportBackupCodes([FromBody] ExportBackupCodesRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await _backupCodeService.ExportBackupCodesAsync(_currentUserService.UserId, request);
+        return Ok(response);
+    }
+
+    // ===== Security Analytics =====
+
+    /// <summary>
+    /// Get comprehensive security dashboard for current user
+    /// Includes 2FA stats, backup codes status, recent security events, failed login attempts
+    /// Calculates security score and provides personalized recommendations
+    /// </summary>
+    [HttpGet("me/security/dashboard")]
+    public async Task<IActionResult> GetSecurityDashboard()
+    {
+        var dashboard = await _securityAnalyticsService.GetSecurityDashboardAsync(_currentUserService.UserId);
+        return Ok(dashboard);
     }
 
     // ===== Account Management =====

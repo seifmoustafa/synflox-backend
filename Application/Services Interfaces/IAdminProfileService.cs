@@ -74,8 +74,18 @@ public interface IAdminProfileService
     
     /// <summary>
     /// Disable 2FA for current admin
+    /// Requires password confirmation for security
+    /// Deletes all backup codes automatically
     /// </summary>
-    Task Disable2FAAsync(Guid currentUserId);
+    Task Disable2FAAsync(Guid currentUserId, string currentPassword);
+    
+    /// <summary>
+    /// Reset 2FA for current admin (generates new secret)
+    /// Requires password confirmation for security
+    /// Deletes all old backup codes
+    /// Used when user loses access to authenticator app but still has account access
+    /// </summary>
+    Task<TwoFactorSetupDto> Reset2FAAsync(Guid currentUserId, string currentPassword);
     
     // ===== Account Management =====
     

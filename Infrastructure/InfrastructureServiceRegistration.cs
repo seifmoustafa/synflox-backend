@@ -147,6 +147,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IBackupCodeService, BackupCodeService>();
+        services.AddScoped<ISecurityAnalyticsService, SecurityAnalyticsService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
         // Configure distributed cache (Redis) if connection string provided and Redis is available
         // Otherwise, fallback to in-memory distributed cache

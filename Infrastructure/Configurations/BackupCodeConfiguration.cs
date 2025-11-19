@@ -23,6 +23,9 @@ namespace Infrastructure.Configurations
             builder.Property(b => b.CreatedAt)
                 .IsRequired();
 
+            builder.Property(b => b.ExpiresAt)
+                .IsRequired();
+
             builder.Property(b => b.BatchId)
                 .IsRequired();
 
@@ -32,6 +35,9 @@ namespace Infrastructure.Configurations
 
             builder.HasIndex(b => b.IsUsed)
                 .HasDatabaseName("IX_BackupCodes_IsUsed");
+
+            builder.HasIndex(b => b.ExpiresAt)
+                .HasDatabaseName("IX_BackupCodes_ExpiresAt");
 
             builder.HasIndex(b => new { b.AdminId, b.IsUsed })
                 .HasDatabaseName("IX_BackupCodes_AdminId_IsUsed");

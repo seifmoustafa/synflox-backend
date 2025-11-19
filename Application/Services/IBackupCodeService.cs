@@ -43,5 +43,20 @@ namespace Application.Services
         /// </summary>
         /// <param name="adminId">Admin ID</param>
         Task DeleteAllBackupCodesAsync(Guid adminId);
+
+        /// <summary>
+        /// Export backup codes in specified format (PDF, Text, or JSON)
+        /// Returns base64-encoded file content for download
+        /// SECURITY: Accepts codes from frontend (generated codes shown only once)
+        /// AUDIT: Logs export action with format and count
+        /// NOTE: This is a utility endpoint - codes must be provided by frontend
+        /// since they're hashed in database and cannot be retrieved
+        /// </summary>
+        /// <param name="adminId">Admin ID for audit logging</param>
+        /// <param name="request">Export request with codes and format</param>
+        /// <returns>Export response with base64 file content</returns>
+        Task<ExportBackupCodesResponse> ExportBackupCodesAsync(Guid adminId, ExportBackupCodesRequest request);
     }
 }
+
+

@@ -25,6 +25,7 @@ namespace Infrastructure.Services
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ILocalizationService _localizer;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
 
         private const int BACKUP_CODES_COUNT = 10;
         private const int CODE_LENGTH = 8;
@@ -41,7 +42,8 @@ namespace Infrastructure.Services
             IJwtTokenGenerator jwtTokenGenerator,
             IRefreshTokenRepository refreshTokenRepository,
             ILocalizationService localizer,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IEmailService emailService)
         {
             _backupCodeRepository = backupCodeRepository;
             _adminRepository = adminRepository;
@@ -52,6 +54,7 @@ namespace Infrastructure.Services
             _refreshTokenRepository = refreshTokenRepository;
             _localizer = localizer;
             _unitOfWork = unitOfWork;
+            _emailService = emailService;
         }
 
         public async Task<GenerateBackupCodesResponse> GenerateBackupCodesAsync(Guid adminId, string currentPassword)
@@ -142,7 +145,8 @@ namespace Infrastructure.Services
                     CodeHash = codeHash,
                     BatchId = batchId,
                     IsUsed = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddDays(90) // Codes expire after 90 days
                 };
 
                 await _backupCodeRepository.AddAsync(backupCode);
@@ -159,6 +163,21 @@ namespace Infrastructure.Services
                 success: true,
                 metadata: $"{{\"batchId\":\"{batchId}\",\"codesCount\":{BACKUP_CODES_COUNT}}}"
             );
+
+            // Send email notification about backup codes generation
+            if (!string.IsNullOrEmpty(admin.Email))
+            {
+                var adminName = $"{admin.FirstName} {admin.LastName}".Trim();
+                if (string.IsNullOrEmpty(adminName)) adminName = admin.Username;
+                
+                // Send asynchronously without waiting (fire and forget)
+                _ = _emailService.SendBackupCodesGeneratedEmailAsync(
+                    admin.Email, 
+                    adminName, 
+                    BACKUP_CODES_COUNT, 
+                    GetClientIpAddress(), 
+                    admin.PreferredLanguage);
+            }
 
             return new GenerateBackupCodesResponse
             {
@@ -244,6 +263,22 @@ namespace Infrastructure.Services
                 throw new InvalidOtpException(_localizer["BackupCodes.Invalid"] ?? "Invalid backup code.");
             }
 
+            // SECURITY: Check if backup code is expired
+            if (backupCode.IsExpired)
+            {
+                // AUDIT: Log expired code attempt
+                await LogSecurityEventAsync(
+                    adminId: admin.Id,
+                    eventType: "BackupCodeExpiredAttempt",
+                    eventDescription: "Attempted to use expired backup code",
+                    username: request.Username,
+                    success: false,
+                    errorMessage: "Backup code expired"
+                );
+
+                throw new InvalidOtpException(_localizer["BackupCodes.Expired"] ?? "This backup code has expired. Please generate new codes.");
+            }
+
             // SECURITY: RACE CONDITION PREVENTION - Mark as used
             await _backupCodeRepository.MarkAsUsedAsync(backupCode.Id);
 
@@ -270,6 +305,40 @@ namespace Infrastructure.Services
                 success: true,
                 metadata: $"{{\"remainingCodes\":{remainingCount}}}"
             );
+
+            // Send email notifications based on remaining codes
+            if (!string.IsNullOrEmpty(admin.Email))
+            {
+                var adminName = $"{admin.FirstName} {admin.LastName}".Trim();
+                if (string.IsNullOrEmpty(adminName)) adminName = admin.Username;
+                
+                // Always send backup code used notification
+                _ = _emailService.SendBackupCodeUsedEmailAsync(
+                    admin.Email, 
+                    adminName, 
+                    remainingCount, 
+                    GetClientIpAddress(), 
+                    admin.PreferredLanguage);
+
+                // Send additional warnings based on remaining codes
+                if (remainingCount == 0)
+                {
+                    // Critical: All codes depleted
+                    _ = _emailService.SendBackupCodesDepletedEmailAsync(
+                        admin.Email, 
+                        adminName, 
+                        admin.PreferredLanguage);
+                }
+                else if (remainingCount <= 2)
+                {
+                    // Warning: Low on codes
+                    _ = _emailService.SendBackupCodesLowEmailAsync(
+                        admin.Email, 
+                        adminName, 
+                        remainingCount,
+                        admin.PreferredLanguage);
+                }
+            }
 
             // Build warning message based on remaining codes
             string warningMessage = null;
@@ -309,12 +378,32 @@ namespace Infrastructure.Services
             }
 
             var allCodes = await _backupCodeRepository.GetAllByAdminIdAsync(adminId);
-            var unusedCount = allCodes.Count(c => !c.IsUsed);
+            var now = DateTime.UtcNow;
+            
+            // Calculate unused AND non-expired codes
+            var availableCodes = allCodes.Where(c => !c.IsUsed && c.ExpiresAt > now).ToList();
+            var unusedCount = availableCodes.Count;
+            
+            // Calculate expired codes
+            var expiredCount = allCodes.Count(c => c.ExpiresAt <= now);
+            
+            // Find next expiry date among available codes
+            DateTime? nextExpiryDate = null;
+            int? daysUntilExpiry = null;
+            
+            if (availableCodes.Any())
+            {
+                nextExpiryDate = availableCodes.Min(c => c.ExpiresAt);
+                daysUntilExpiry = (int)(nextExpiryDate.Value - now).TotalDays;
+            }
 
             return new BackupCodesStatusDto
             {
                 RemainingCodes = unusedCount,
-                TotalCodes = allCodes.Count
+                TotalCodes = allCodes.Count,
+                ExpiredCodes = expiredCount,
+                NextExpiryDate = nextExpiryDate,
+                DaysUntilExpiry = daysUntilExpiry
             };
         }
 
@@ -342,6 +431,90 @@ namespace Infrastructure.Services
                 eventDescription: "All backup codes deleted by admin",
                 success: true
             );
+        }
+
+        public async Task<ExportBackupCodesResponse> ExportBackupCodesAsync(Guid adminId, ExportBackupCodesRequest request)
+        {
+            // SECURITY: Verify admin exists AND is active
+            var admin = await _adminRepository.GetByIdAsync(adminId, null);
+            if (admin == null || admin.IsDeleted)
+            {
+                throw new NotFoundException(_localizer["Admin.NotFound"]);
+            }
+
+            if (!admin.IsActive)
+            {
+                throw new BadRequestException(_localizer["Account.Deactivated"] ?? "Account is deactivated");
+            }
+
+            // Validate codes provided
+            if (request.Codes == null || request.Codes.Count == 0)
+            {
+                throw new BadRequestException("No backup codes provided for export");
+            }
+
+            // SECURITY: Validate code format to prevent injection attacks
+            // Each code must be exactly 8 characters, uppercase alphanumeric
+            foreach (var code in request.Codes)
+            {
+                if (string.IsNullOrWhiteSpace(code) || 
+                    code.Length != CODE_LENGTH || 
+                    !code.All(c => char.IsUpper(c) || char.IsDigit(c)))
+                {
+                    throw new BadRequestException($"Invalid backup code format: '{code}'. Codes must be 8-character uppercase alphanumeric.");
+                }
+            }
+
+            var exportedAt = DateTime.UtcNow;
+            var normalizedFormat = request.Format.ToLower();
+            string fileContent;
+            string contentType;
+            string fileName;
+
+            // Generate content based on format
+            switch (normalizedFormat)
+            {
+                case "pdf":
+                    fileContent = GeneratePdfContent(request.Codes, admin.Username, exportedAt);
+                    contentType = "application/pdf";
+                    fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.pdf";
+                    break;
+
+                case "text":
+                    fileContent = GenerateTextContent(request.Codes, admin.Username, exportedAt);
+                    contentType = "text/plain";
+                    fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.txt";
+                    break;
+
+                case "json":
+                    fileContent = GenerateJsonContent(request.Codes, admin.Username, exportedAt);
+                    contentType = "application/json";
+                    fileName = $"SYNFLOX_BackupCodes_{admin.Username}_{exportedAt:yyyyMMdd_HHmmss}.json";
+                    break;
+
+                default:
+                    throw new BadRequestException($"Invalid export format: {request.Format}");
+            }
+
+            // AUDIT: Log backup codes export
+            await LogSecurityEventAsync(
+                adminId: adminId,
+                eventType: "BackupCodesExported",
+                eventDescription: $"Backup codes exported in {normalizedFormat.ToUpper()} format",
+                success: true,
+                metadata: $"{{\"format\":\"{normalizedFormat}\",\"codesCount\":{request.Codes.Count}}}"
+            );
+
+            return new ExportBackupCodesResponse
+            {
+                FileContent = fileContent,
+                ContentType = contentType,
+                FileName = fileName,
+                UnusedCodesCount = request.Codes.Count,
+                Format = normalizedFormat.ToUpper(),
+                ExportedAt = exportedAt,
+                Message = $"Backup codes exported successfully as {normalizedFormat.ToUpper()}"
+            };
         }
 
         // ========================================
@@ -456,6 +629,104 @@ namespace Infrastructure.Services
                 // Never fail the main operation due to audit logging failure
                 // Just silently continue
             }
+        }
+
+        /// <summary>
+        /// Generate PDF content (as base64 encoded text-based PDF)
+        /// Simple PDF format without external libraries
+        /// </summary>
+        private string GeneratePdfContent(List<string> codes, string username, DateTime exportedAt)
+        {
+            // Simple text-based PDF structure
+            var content = $@"SYNFLOX BACKUP CODES
+====================
+
+Account: {username}
+Generated: {exportedAt:yyyy-MM-dd HH:mm:ss} UTC
+Total Codes: {codes.Count}
+
+IMPORTANT SECURITY NOTES:
+- Store these codes in a secure location
+- Each code can only be used once
+- Generate new codes when running low
+- Never share these codes with anyone
+
+BACKUP CODES:
+-------------
+{string.Join(Environment.NewLine, codes.Select((code, index) => $"{index + 1,2}. {code}"))}
+
+============================================
+SYNFLOX Central Licensing System
+© 2025 - All Rights Reserved
+============================================";
+
+            // Convert to base64
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            return Convert.ToBase64String(bytes);
+        }
+
+        /// <summary>
+        /// Generate plain text content (as base64 encoded)
+        /// </summary>
+        private string GenerateTextContent(List<string> codes, string username, DateTime exportedAt)
+        {
+            var content = $@"SYNFLOX BACKUP CODES
+====================
+
+Account: {username}
+Generated: {exportedAt:yyyy-MM-dd HH:mm:ss} UTC
+Total Codes: {codes.Count}
+
+IMPORTANT SECURITY NOTES:
+- Store these codes in a secure location
+- Each code can only be used once
+- Generate new codes when running low
+- Never share these codes with anyone
+
+BACKUP CODES:
+{string.Join(Environment.NewLine, codes)}
+
+============================================
+SYNFLOX Central Licensing System
+© 2025 - All Rights Reserved
+============================================";
+
+            // Convert to base64
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            return Convert.ToBase64String(bytes);
+        }
+
+        /// <summary>
+        /// Generate JSON content (as base64 encoded)
+        /// </summary>
+        private string GenerateJsonContent(List<string> codes, string username, DateTime exportedAt)
+        {
+            var jsonObject = new
+            {
+                system = "SYNFLOX",
+                type = "backup_codes",
+                account = username,
+                generated_at = exportedAt.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                total_codes = codes.Count,
+                backup_codes = codes,
+                security_notes = new[]
+                {
+                    "Store these codes in a secure location",
+                    "Each code can only be used once",
+                    "Generate new codes when running low",
+                    "Never share these codes with anyone"
+                },
+                copyright = "SYNFLOX Central Licensing System © 2025"
+            };
+
+            var content = System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            // Convert to base64
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            return Convert.ToBase64String(bytes);
         }
     }
 }

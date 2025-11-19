@@ -42,6 +42,13 @@ namespace Domain.Entities.Authentication
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
+        /// Expiration timestamp (90 days from creation)
+        /// Codes expire after 90 days for security
+        /// </summary>
+        [Required]
+        public DateTime ExpiresAt { get; set; }
+
+        /// <summary>
         /// Generation batch ID - links codes generated together
         /// Useful for invalidating entire sets and rate limiting
         /// </summary>
@@ -53,7 +60,13 @@ namespace Domain.Entities.Authentication
 
         /// <summary>
         /// Check if code is available for use
+        /// Code must not be used AND not expired
         /// </summary>
-        public bool IsAvailable => !IsUsed;
+        public bool IsAvailable => !IsUsed && DateTime.UtcNow < ExpiresAt;
+
+        /// <summary>
+        /// Check if code is expired
+        /// </summary>
+        public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
     }
 }
