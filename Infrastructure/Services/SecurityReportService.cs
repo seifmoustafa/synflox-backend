@@ -17,6 +17,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Services
 {
@@ -32,6 +33,7 @@ namespace Infrastructure.Services
         private readonly IFileHostExportService _fileHostExportService;
         private readonly ILogger<SecurityReportService> _logger;
         private readonly IMemoryCache _cache;
+        private readonly IConfiguration _configuration;
         
         private const int MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
         private const int MAX_REPORT_DAYS = 365;
@@ -46,7 +48,8 @@ namespace Infrastructure.Services
             ILocalizationService localizer,
             IFileHostExportService fileHostExportService,
             ILogger<SecurityReportService> logger,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IConfiguration configuration)
         {
             _adminRepository = adminRepository;
             _auditLogRepository = auditLogRepository;
@@ -55,6 +58,7 @@ namespace Infrastructure.Services
             _fileHostExportService = fileHostExportService;
             _logger = logger;
             _cache = cache;
+            _configuration = configuration;
         }
 
         public async Task<SecurityReportDataDto> GenerateReportDataAsync(Guid adminId, SecurityReportRequest request)

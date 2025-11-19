@@ -494,10 +494,29 @@ public class EmailService : IEmailService
         }
     }
 
+    private string GetLogoUrl()
+    {
+        // CENTRALIZED: Read logo URL from appsettings.json
+        // Change logo in ONE place: appsettings.json -> AppLogo:Url
+        return _configuration["AppLogo:Url"];
+    }
+    
+    private string GetLogoStyle()
+    {
+        // CENTRALIZED: Read logo styling from appsettings.json
+        var width = _configuration["AppLogo:Width"] ?? "100";
+        var height = _configuration["AppLogo:Height"] ?? "100";
+        var isCircular = _configuration["AppLogo:IsCircular"] == "true";
+        
+        var borderRadius = isCircular ? "border-radius: 50%;" : "";
+        
+        return $"width: {width}px; height: {height}px; {borderRadius} object-fit: cover; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 3px solid rgba(255,255,255,0.3);";
+    }
+
     private string BuildEmailTemplate(string companyName, string title, string message, string accentColor)
     {
-        var baseUrl = _configuration["BaseUrl"] ?? "https://localhost:5035";
-        var logoUrl = $"{baseUrl}/images/app-logo.png";
+        var logoUrl = GetLogoUrl();
+        var logoStyle = GetLogoStyle();
         var currentYear = DateTime.UtcNow.Year;
         var notificationTime = DateTime.UtcNow.ToString("MMMM dd, yyyy 'at' HH:mm");
         
@@ -515,7 +534,7 @@ public class EmailService : IEmailService
                 <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);"">
                     <tr>
                         <td style=""background: linear-gradient(135deg, {accentColor} 0%, {accentColor}dd 100%); padding: 40px; text-align: center;"">
-                            <img src=""{logoUrl}"" alt=""SYNFLOX Logo"" style=""max-width: 120px; height: auto; margin-bottom: 20px;"" />
+                            {(string.IsNullOrEmpty(logoUrl) ? "" : $@"<img src=""{logoUrl}"" alt=""SYNFLOX Logo"" style=""{logoStyle}"" />")}
                             <h1 style=""color: white; margin: 0; font-size: 36px; font-weight: 700; letter-spacing: -0.5px;"">SYNFLOX</h1>
                             <p style=""color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; font-weight: 500;"">Central Licensing System</p>
                         </td>
@@ -589,8 +608,8 @@ public class EmailService : IEmailService
         _localizationHelper.SetCulture(language);
         var commonContent = _localizationHelper.GetCommonContent();
         
-        var baseUrl = _configuration["BaseUrl"] ?? "https://localhost:5035";
-        var logoUrl = $"{baseUrl}/images/app-logo.png";
+        var logoUrl = GetLogoUrl();
+        var logoStyle = GetLogoStyle();
         var currentYear = DateTime.UtcNow.Year;
         var notificationTime = DateTime.UtcNow.ToString("MMMM dd, yyyy 'at' HH:mm");
         
@@ -608,7 +627,7 @@ public class EmailService : IEmailService
                 <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);"">
                     <tr>
                         <td style=""background: linear-gradient(135deg, {accentColor} 0%, {accentColor}dd 100%); padding: 40px; text-align: center;"">
-                            <img src=""{logoUrl}"" alt=""SYNFLOX Logo"" style=""max-width: 120px; height: auto; margin-bottom: 20px;"" />
+                            {(string.IsNullOrEmpty(logoUrl) ? "" : $@"<img src=""{logoUrl}"" alt=""SYNFLOX Logo"" style=""{logoStyle}"" />")}
                             <h1 style=""color: white; margin: 0; font-size: 36px; font-weight: 700; letter-spacing: -0.5px;"">SYNFLOX</h1>
                             <p style=""color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; font-weight: 500;"">Central Licensing System</p>
                         </td>
@@ -1595,8 +1614,8 @@ public class EmailService : IEmailService
         _localizationHelper.SetCulture(language);
         var commonContent = _localizationHelper.GetCommonContent();
         
-        var logoPath = _configuration["EmailSettings:LogoPath"] ?? "/images/synflox-logo.png";
-        var baseUrl = _configuration["EmailSettings:BaseUrl"] ?? "https://synflox.com";
+        var logoUrl = GetLogoUrl();
+        var logoStyle = GetLogoStyle();
         var currentYear = DateTime.Now.Year;
         
         // Build custom announcement section if provided
@@ -1648,7 +1667,7 @@ public class EmailService : IEmailService
         .header {{ background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 40px 30px; text-align: center; }}
         .content {{ padding: 40px 30px; }}
         .footer {{ background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 30px; text-align: center; }}
-        .logo {{ max-width: 150px; height: auto; margin-bottom: 20px; }}
+        .logo {{ {logoStyle} }}
         {rtlStyles}
         .title {{ font-size: 28px; font-weight: 700; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }}
         .message {{ font-size: 16px; line-height: 1.6; color: #2c3e50; margin: 20px 0; }}
@@ -1662,7 +1681,7 @@ public class EmailService : IEmailService
     <div class='container'>
         <!-- SYNFLOX Header - Always Present (Our Identity) -->
         <div class='header'>
-            <img src='{baseUrl}{logoPath}' alt='SYNFLOX' class='logo'>
+            {(string.IsNullOrEmpty(logoUrl) ? "" : $"<img src='{logoUrl}' alt='SYNFLOX' class='logo'>")}
             <h1 class='title'>{title}</h1>
             <p style='margin: 10px 0 0 0; opacity: 0.9; font-size: 14px;'>Central Licensing System</p>
         </div>
