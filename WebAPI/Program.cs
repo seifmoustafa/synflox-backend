@@ -116,7 +116,7 @@ await DBInitializer.InitializeDatabaseAsync(app.Services);
 // Serve uploaded files for all configured schemes
 var fileOptions = app.Services.GetRequiredService<IOptionsMonitor<FileSettings>>();
 var contentTypeProvider = new FileExtensionContentTypeProvider();
-var schemes = new[] { "video", "image", "pdf", "pptx", "any" };
+var schemes = new[] { "profile", "video", "image", "pdf", "pptx", "any" };
 foreach (var scheme in schemes)
 {
     var cfg = fileOptions.Get(scheme);

@@ -267,22 +267,29 @@ public class AdminProfileService : IAdminProfileService
             Mode = ResizeMode.Crop
         }));
 
-        // Save image to uploads folder
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "profiles");
-        Directory.CreateDirectory(uploadsFolder);
+        // Save image to FileHost/Profile folder (consistent with other file types)
+        var profileFolder = Path.Combine(Directory.GetCurrentDirectory(), "FileHost", "Profile");
+        Directory.CreateDirectory(profileFolder);
 
-        var fileName = $"profile_{currentUserId}.jpg";
-        var filePath = Path.Combine(uploadsFolder, fileName);
+        // Use username for filename instead of ID for better readability
+        var fileName = $"profile_{admin.Username}.jpg";
+        var filePath = Path.Combine(profileFolder, fileName);
 
-        // Save new image first (before deleting old to prevent data loss)
+        // Delete old file if it exists (in case username changed)
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+
+        // Save new image
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await image.SaveAsync(stream, new JpegEncoder { Quality = 90 });
         }
 
-        // Update profile picture URL in database
+        // Update profile picture URL in database (use /profile path like other FileHost paths)
         var oldPictureUrl = admin.ProfilePictureUrl;
-        admin.ProfilePictureUrl = $"/uploads/profiles/{fileName}";
+        admin.ProfilePictureUrl = $"/profile/{fileName}";
 
         await _repo.UpdateAsync(admin);
         await _unitOfWork.SaveChangesAsync();
@@ -298,9 +305,9 @@ public class AdminProfileService : IAdminProfileService
 
         if (!string.IsNullOrEmpty(admin.ProfilePictureUrl))
         {
-            // Delete file from disk
+            // Delete file from disk (FileHost/Profile folder)
             var fileName = Path.GetFileName(admin.ProfilePictureUrl);
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "profiles", fileName);
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "FileHost", "Profile", fileName);
 
             if (File.Exists(filePath))
             {

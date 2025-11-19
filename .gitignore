@@ -27,3 +27,4 @@ packages/
 /Infrastructure/Migrations
 /WebAPI/FileHost
 logs/
+/WebAPI/uploads

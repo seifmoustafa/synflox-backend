@@ -65,6 +65,7 @@ public static class InfrastructureServiceRegistration
             .ValidateOnStart();
 
         // Bind named schemes for file uploads/downloads (using lowercase for consistency)
+        services.Configure<FileSettings>("profile", configuration.GetSection("ProfileSettings"));
         services.Configure<FileSettings>("image", configuration.GetSection("ImageSettings"));
         services.Configure<FileSettings>("pdf", configuration.GetSection("PdfSettings"));
         services.Configure<FileSettings>("pptx", configuration.GetSection("PptxSettings"));
