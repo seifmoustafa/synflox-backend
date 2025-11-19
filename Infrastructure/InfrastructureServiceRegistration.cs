@@ -148,6 +148,9 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IBackupCodeService, BackupCodeService>();
         services.AddScoped<ISecurityAnalyticsService, SecurityAnalyticsService>();
+        // SecurityNotificationService registered in WebAPI layer to avoid circular dependency with Hub
+        services.AddScoped<IAdvancedSecurityAnalyticsService, AdvancedSecurityAnalyticsService>();
+        services.AddScoped<ISecurityReportService, SecurityReportService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
         // Configure distributed cache (Redis) if connection string provided and Redis is available
         // Otherwise, fallback to in-memory distributed cache

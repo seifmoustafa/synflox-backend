@@ -63,6 +63,15 @@ builder.Services.AddSingleton<Microsoft.Extensions.Caching.Memory.IMemoryCache>(
         new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
 builder.Services.AddResponseCaching();
 builder.Services.AddControllers();
+builder.Services.AddSignalR(); // Real-time security notifications
+
+// Register SecurityNotificationService with Hub context (after SignalR registration)
+builder.Services.AddScoped<Application.Services.ISecurityNotificationService>(sp =>
+{
+    var hubContext = sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<WebAPI.Hubs.SecurityNotificationHub>>();
+    return new Infrastructure.Services.SecurityNotificationService(hubContext);
+});
+
 builder.Services.AddAuthorizationPolicies();
 builder.Services.AddAuthenticationRateLimiter();
 #endregion
@@ -166,6 +175,9 @@ app.UseStaticFiles();
 
 #region Endpoint mapping
 app.MapControllers();
+
+// SignalR Hub for real-time security notifications
+app.MapHub<WebAPI.Hubs.SecurityNotificationHub>("/hubs/security");
 #endregion
 
 app.Run();

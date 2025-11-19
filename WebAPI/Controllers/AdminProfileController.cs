@@ -1,5 +1,6 @@
 using Application.DTOs.Admin;
 using Application.DTOs.Authentication;
+using Application.DTOs.Security;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,19 +24,25 @@ public class AdminProfileController : ControllerBase
     private readonly ILocalizationService _localizer;
     private readonly IBackupCodeService _backupCodeService;
     private readonly ISecurityAnalyticsService _securityAnalyticsService;
+    private readonly IAdvancedSecurityAnalyticsService _advancedAnalyticsService;
+    private readonly ISecurityReportService _securityReportService;
 
     public AdminProfileController(
         IAdminProfileService profileService,
         ICurrentUserService currentUserService,
         ILocalizationService localizer,
         IBackupCodeService backupCodeService,
-        ISecurityAnalyticsService securityAnalyticsService)
+        ISecurityAnalyticsService securityAnalyticsService,
+        IAdvancedSecurityAnalyticsService advancedAnalyticsService,
+        ISecurityReportService securityReportService)
     {
         _profileService = profileService;
         _currentUserService = currentUserService;
         _localizer = localizer;
         _backupCodeService = backupCodeService;
         _securityAnalyticsService = securityAnalyticsService;
+        _advancedAnalyticsService = advancedAnalyticsService;
+        _securityReportService = securityReportService;
     }
 
     // ===== Profile Information =====
@@ -257,6 +264,34 @@ public class AdminProfileController : ControllerBase
     {
         var dashboard = await _securityAnalyticsService.GetSecurityDashboardAsync(_currentUserService.UserId);
         return Ok(dashboard);
+    }
+
+    /// <summary>
+    /// Get advanced security analytics with time-series data and trends
+    /// Includes login patterns, 2FA analytics, threat assessment
+    /// </summary>
+    [HttpGet("me/security/analytics")]
+    public async Task<IActionResult> GetAdvancedAnalytics([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        var start = startDate ?? DateTime.UtcNow.AddDays(-30);
+        var end = endDate ?? DateTime.UtcNow;
+
+        var analytics = await _advancedAnalyticsService.GetAdvancedAnalyticsAsync(_currentUserService.UserId, start, end);
+        return Ok(analytics);
+    }
+
+    /// <summary>
+    /// Export security report in specified format (PDF/Excel/JSON)
+    /// Comprehensive security report with executive summary, threat assessment, recommendations
+    /// </summary>
+    [HttpPost("me/security/report/export")]
+    public async Task<IActionResult> ExportSecurityReport([FromBody] SecurityReportRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var report = await _securityReportService.ExportSecurityReportAsync(_currentUserService.UserId, request);
+        return Ok(report);
     }
 
     // ===== Account Management =====
