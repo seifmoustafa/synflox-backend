@@ -27,9 +27,6 @@
   <data name="UserNotFound" xml:space="preserve">
     <value>المستخدم غير موجود</value>
   </data>
-  <data name="InvalidCurrentPassword" xml:space="preserve">
-    <value>كلمة المرور الحالية غير صحيحة</value>
-  </data>
   <data name="InvalidAdminCredentials" xml:space="preserve">
     <value>اسم المستخدم أو كلمة المرور غير صحيحة</value>
   </data>
@@ -664,5 +661,40 @@
   </data>
   <data name="Password.TooManyAttempts" xml:space="preserve">
     <value>محاولات فاشلة كثيرة جدًا. يرجى طلب رمز جديد.</value>
+  </data>
+  
+  <!-- Backup Codes -->
+  <data name="BackupCodes.Generated" xml:space="preserve">
+    <value>تم إنشاء رموز النسخ الاحتياطي بنجاح. احفظها في مكان آمن.</value>
+  </data>
+  <data name="BackupCodes.Invalid" xml:space="preserve">
+    <value>رمز نسخ احتياطي غير صحيح.</value>
+  </data>
+  <data name="BackupCodes.Verified" xml:space="preserve">
+    <value>تم التحقق من رمز النسخ الاحتياطي بنجاح.</value>
+  </data>
+  <data name="BackupCodes.LastCodeUsed" xml:space="preserve">
+    <value>تم التحقق من رمز النسخ الاحتياطي. كان هذا آخر رمز لديك. قم بإنشاء رموز جديدة فورًا.</value>
+  </data>
+  <data name="BackupCodes.LowCount" xml:space="preserve">
+    <value>تم التحقق من رمز النسخ الاحتياطي. لديك {0} رموز نسخ احتياطي متبقية.</value>
+  </data>
+  <data name="BackupCodes.TooManyGenerations" xml:space="preserve">
+    <value>عدد كبير جدًا من عمليات إنشاء رموز النسخ الاحتياطي. الحد الأقصى 5 في اليوم للأمان.</value>
+  </data>
+  <data name="BackupCodes.TooManyAttempts" xml:space="preserve">
+    <value>محاولات تحقق كثيرة جدًا. يرجى المحاولة مرة أخرى لاحقًا.</value>
+  </data>
+  <data name="BackupCodes.TwoFactorNotEnabled" xml:space="preserve">
+    <value>المصادقة الثنائية غير مفعلة لهذا الحساب.</value>
+  </data>
+  <data name="Account.Deactivated" xml:space="preserve">
+    <value>الحساب معطل. يرجى الاتصال بالدعم الفني.</value>
+  </data>
+  <data name="InvalidCurrentPassword" xml:space="preserve">
+    <value>كلمة مرور غير صحيحة. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="BackupCodes.NoCodesGenerated" xml:space="preserve">
+    <value>لم يتم العثور على رموز نسخ احتياطي. يرجى إنشاء رموز النسخ الاحتياطي أولاً.</value>
   </data>
 </root>

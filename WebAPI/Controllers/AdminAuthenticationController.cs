@@ -16,15 +16,18 @@ public class AdminAuthenticationController : ControllerBase
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly IPasswordResetService _passwordResetService;
+    private readonly IBackupCodeService _backupCodeService;
     private readonly ICurrentUserService _currentUserService;
 
     public AdminAuthenticationController(
         IAuthenticationService authenticationService,
         IPasswordResetService passwordResetService,
+        IBackupCodeService backupCodeService,
         ICurrentUserService currentUserService)
     {
         _authenticationService = authenticationService;
         _passwordResetService = passwordResetService;
+        _backupCodeService = backupCodeService;
         _currentUserService = currentUserService;
     }
 
@@ -166,5 +169,86 @@ public class AdminAuthenticationController : ControllerBase
         var response = await _passwordResetService.ValidateMagicLinkAsync(request);
 
         return Ok(new ApiResponse<MagicLinkValidationResponse>(StatusCodes.Status200OK, "Token validated successfully", response));
+    }
+
+    // ============================================
+    // BACKUP CODES ENDPOINTS
+    // ============================================
+
+    /// <summary>
+    /// Generate new set of 10 backup codes for 2FA recovery
+    /// Requires authentication - admin must be logged in
+    /// SECURITY: Requires current password confirmation
+    /// </summary>
+    [HttpPost("backup-codes/generate")]
+    [Authorize]
+    public async Task<IActionResult> GenerateBackupCodes([FromBody] GenerateBackupCodesRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var adminId = _currentUserService.UserId;
+
+        var response = await _backupCodeService.GenerateBackupCodesAsync(adminId, request.CurrentPassword);
+
+        return Ok(new ApiResponse<GenerateBackupCodesResponse>(
+            StatusCodes.Status200OK, 
+            response.Message, 
+            response));
+    }
+
+    /// <summary>
+    /// Get status of backup codes (count of remaining codes)
+    /// Requires authentication
+    /// </summary>
+    [HttpGet("backup-codes/status")]
+    [Authorize]
+    public async Task<IActionResult> GetBackupCodesStatus()
+    {
+        var adminId = _currentUserService.UserId;
+
+        var status = await _backupCodeService.GetBackupCodesStatusAsync(adminId);
+
+        return Ok(new ApiResponse<BackupCodesStatusDto>(
+            StatusCodes.Status200OK, 
+            "Backup codes status retrieved successfully", 
+            status));
+    }
+
+    /// <summary>
+    /// Verify backup code for 2FA authentication and issue JWT tokens
+    /// Used when user lost their authenticator app
+    /// Returns JWT access token and refresh token for login
+    /// </summary>
+    [HttpPost("verify-backup-code")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyBackupCode([FromBody] VerifyBackupCodeRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await _backupCodeService.VerifyBackupCodeAsync(request);
+
+        if (response.Success)
+        {
+            return Ok(response);
+        }
+
+        return Unauthorized(new ApiResponse<string>(StatusCodes.Status401Unauthorized, response.ErrorMessage));
+    }
+
+    /// <summary>
+    /// Delete all backup codes for an admin
+    /// Called when disabling 2FA
+    /// </summary>
+    [HttpDelete("backup-codes")]
+    [Authorize]
+    public async Task<IActionResult> DeleteBackupCodes()
+    {
+        var adminId = _currentUserService.UserId;
+
+        await _backupCodeService.DeleteAllBackupCodesAsync(adminId);
+
+        return Ok(new ApiResponse<string>(StatusCodes.Status200OK, "All backup codes deleted successfully"));
     }
 }

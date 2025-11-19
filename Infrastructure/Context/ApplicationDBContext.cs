@@ -34,6 +34,8 @@ namespace Infrastructure.Context
         public DbSet<AdminType> UserTypes { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<BackupCode> BackupCodes { get; set; }
+        public DbSet<SecurityAuditLog> SecurityAuditLogs { get; set; }
 
         #endregion
 
