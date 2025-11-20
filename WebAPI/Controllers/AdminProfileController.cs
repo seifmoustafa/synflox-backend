@@ -142,7 +142,7 @@ public class AdminProfileController : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         await _profileService.ChangeMyPasswordAsync(_currentUserService.UserId, request);
-        return NoContent();
+        return Ok(new { message = _localizer["Password.Changed"] ?? "Password changed successfully. All sessions have been invalidated." });
     }
 
     /// <summary>

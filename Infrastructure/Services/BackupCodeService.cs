@@ -744,198 +744,170 @@ namespace Infrastructure.Services
                     page.Margin(30);
                     page.PageColor(Colors.White);
                     
-                    // STUNNING GRADIENT HEADER with BRANDING
-                    page.Header().Height(140).Column(header =>
+                    // COMPACT BRANDED HEADER
+                    page.Header().Height(80).Column(header =>
                     {
-                        // Purple gradient background effect
-                        header.Item().Height(140).Layers(layers =>
+                        header.Item().Height(80).Background(Colors.Purple.Darken2).Padding(15).Row(row =>
                         {
-                            // Base purple
-                            layers.Layer().Background(Colors.Purple.Darken2);
-                            // Gradient overlay effect
-                            layers.PrimaryLayer().Padding(25).Column(content =>
+                            row.RelativeItem().Column(brand =>
                             {
-                                // Logo/Brand area with icon
-                                content.Item().Row(row =>
-                                {
-                                    row.RelativeItem().Column(brand =>
-                                    {
-                                        brand.Item().Text("🔒 SYNFLOX")
-                                            .FontSize(32).Bold().FontColor(Colors.White);
-                                        brand.Item().PaddingTop(3).Text("Central Licensing System")
-                                            .FontSize(11).FontColor(Colors.Grey.Lighten3);
-                                    });
-                                    row.ConstantItem(80).AlignRight().Column(badge =>
-                                    {
-                                        badge.Item().Background(Colors.Orange.Medium).Padding(8).AlignCenter()
-                                            .Text("✓ SECURE").FontSize(9).Bold().FontColor(Colors.White);
-                                    });
-                                });
-                                
-                                content.Item().PaddingTop(15).AlignCenter().Column(title =>
-                                {
-                                    title.Item().Text("TWO-FACTOR AUTHENTICATION")
-                                        .FontSize(14).SemiBold().FontColor(Colors.Grey.Lighten4);
-                                    title.Item().PaddingTop(5).Text("BACKUP RECOVERY CODES")
-                                        .FontSize(28).Bold().FontColor(Colors.White);
-                                });
+                                brand.Item().Text("🔒 SYNFLOX").FontSize(20).Bold().FontColor(Colors.White);
+                                brand.Item().PaddingTop(2).Text("Backup Recovery Codes")
+                                    .FontSize(12).SemiBold().FontColor(Colors.Grey.Lighten3);
                             });
+                            row.ConstantItem(70).AlignRight().AlignMiddle()
+                                .Background(Colors.Orange.Medium).Padding(6).AlignCenter()
+                                .Text("✓ SECURE").FontSize(8).Bold().FontColor(Colors.White);
                         });
                     });
 
-                    // MODERN CONTENT with CREATIVE LAYOUT
-                    page.Content().Padding(25).Column(column =>
+                    // COMPACT CONTENT LAYOUT
+                    page.Content().Padding(15).Column(column =>
                     {
-                        // ACCOUNT INFO CARD - Modern Card Design
-                        column.Item().Border(2).BorderColor(Colors.Purple.Lighten2)
-                            .Background(Colors.Purple.Lighten5).Padding(20).Column(infoCard =>
+                        // ACCOUNT INFO CARD - Compact Design
+                        column.Item().Border(1).BorderColor(Colors.Purple.Lighten2)
+                            .Background(Colors.Purple.Lighten5).Padding(12).Column(infoCard =>
                         {
-                            infoCard.Item().Text("ⓘ Account Information").FontSize(12).SemiBold().FontColor(Colors.Purple.Darken2);
-                            infoCard.Item().PaddingTop(10).PaddingBottom(10).LineHorizontal(1).LineColor(Colors.Purple.Lighten3);
+                            infoCard.Item().Text("ⓘ Account Information").FontSize(10).SemiBold().FontColor(Colors.Purple.Darken2);
+                            infoCard.Item().PaddingTop(6).PaddingBottom(6).LineHorizontal(1).LineColor(Colors.Purple.Lighten3);
                             
                             infoCard.Item().Row(row =>
                             {
                                 row.RelativeItem().Column(col =>
                                 {
-                                    col.Item().Text("👤 Account").FontSize(9).FontColor(Colors.Grey.Darken1);
-                                    col.Item().PaddingTop(3).Text(username).FontSize(13).Bold().FontColor(Colors.Purple.Darken3);
+                                    col.Item().Text("👤 Account").FontSize(8).FontColor(Colors.Grey.Darken1);
+                                    col.Item().PaddingTop(2).Text(username).FontSize(11).Bold().FontColor(Colors.Purple.Darken3);
                                 });
                                 row.RelativeItem().Column(col =>
                                 {
-                                    col.Item().Text("📅 Generated").FontSize(9).FontColor(Colors.Grey.Darken1);
-                                    col.Item().PaddingTop(3).Text(exportedAt.ToString("MMM dd, yyyy HH:mm UTC"))
-                                        .FontSize(13).Bold().FontColor(Colors.Purple.Darken3);
+                                    col.Item().Text("📅 Generated").FontSize(8).FontColor(Colors.Grey.Darken1);
+                                    col.Item().PaddingTop(2).Text(exportedAt.ToString("MMM dd, yyyy HH:mm UTC"))
+                                        .FontSize(11).Bold().FontColor(Colors.Purple.Darken3);
                                 });
                                 row.RelativeItem().Column(col =>
                                 {
-                                    col.Item().Text("🔢 Total Codes").FontSize(9).FontColor(Colors.Grey.Darken1);
-                                    col.Item().PaddingTop(3).Text($"{codes.Count} codes")
-                                        .FontSize(13).Bold().FontColor(Colors.Purple.Darken3);
+                                    col.Item().Text("🔢 Total Codes").FontSize(8).FontColor(Colors.Grey.Darken1);
+                                    col.Item().PaddingTop(2).Text($"{codes.Count} codes")
+                                        .FontSize(11).Bold().FontColor(Colors.Purple.Darken3);
                                 });
                             });
                         });
 
-                        // CRITICAL SECURITY ALERT - Eye-catching Design
-                        column.Item().PaddingTop(20).Border(3).BorderColor(Colors.Red.Darken1)
-                            .Background(Colors.Red.Lighten4).Padding(18).Column(alert =>
+                        // SECURITY ALERT - Compact Design
+                        column.Item().PaddingTop(12).Border(2).BorderColor(Colors.Red.Darken1)
+                            .Background(Colors.Red.Lighten4).Padding(12).Column(alert =>
                         {
                             alert.Item().Row(row =>
                             {
-                                row.ConstantItem(40).AlignMiddle().Text("⚠️").FontSize(28);
-                                row.RelativeItem().PaddingLeft(10).AlignMiddle().Text("CRITICAL SECURITY INSTRUCTIONS")
-                                    .FontSize(16).Bold().FontColor(Colors.Red.Darken3);
+                                row.ConstantItem(30).AlignMiddle().Text("⚠️").FontSize(20);
+                                row.RelativeItem().PaddingLeft(8).AlignMiddle().Text("SECURITY INSTRUCTIONS")
+                                    .FontSize(12).Bold().FontColor(Colors.Red.Darken3);
                             });
                             
-                            alert.Item().PaddingTop(12).PaddingBottom(8).LineHorizontal(2).LineColor(Colors.Red.Lighten2);
+                            alert.Item().PaddingTop(8).PaddingBottom(4).LineHorizontal(1).LineColor(Colors.Red.Lighten2);
                             
-                            alert.Item().PaddingTop(8).Column(instructions =>
+                            alert.Item().PaddingTop(6).Column(instructions =>
                             {
-                                instructions.Item().PaddingBottom(6).Row(row =>
+                                instructions.Item().PaddingBottom(4).Row(row =>
                                 {
-                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
-                                    row.RelativeItem().Text("Store these codes in a SECURE, ENCRYPTED location")
-                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                    row.ConstantItem(20).Text("✔").FontSize(10).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Store in a SECURE, ENCRYPTED location")
+                                        .FontSize(9).FontColor(Colors.Red.Darken3);
                                 });
-                                instructions.Item().PaddingBottom(6).Row(row =>
+                                instructions.Item().PaddingBottom(4).Row(row =>
                                 {
-                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
-                                    row.RelativeItem().Text("Each code can ONLY be used ONCE - treat like passwords")
-                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                    row.ConstantItem(20).Text("✔").FontSize(10).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Each code can ONLY be used ONCE")
+                                        .FontSize(9).FontColor(Colors.Red.Darken3);
                                 });
-                                instructions.Item().PaddingBottom(6).Row(row =>
+                                instructions.Item().PaddingBottom(4).Row(row =>
                                 {
-                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
-                                    row.RelativeItem().Text("NEVER share codes with anyone - including SYNFLOX staff")
-                                        .FontSize(11).FontColor(Colors.Red.Darken3);
-                                });
-                                instructions.Item().PaddingBottom(6).Row(row =>
-                                {
-                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
-                                    row.RelativeItem().Text("Generate new codes when you have 3 or fewer remaining")
-                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                    row.ConstantItem(20).Text("✔").FontSize(10).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("NEVER share with anyone")
+                                        .FontSize(9).FontColor(Colors.Red.Darken3);
                                 });
                                 instructions.Item().Row(row =>
                                 {
-                                    row.ConstantItem(25).Text("✔").FontSize(12).FontColor(Colors.Red.Darken2);
-                                    row.RelativeItem().Text("Print this document and store offline in a safe place")
-                                        .FontSize(11).FontColor(Colors.Red.Darken3);
+                                    row.ConstantItem(20).Text("✔").FontSize(10).FontColor(Colors.Red.Darken2);
+                                    row.RelativeItem().Text("Generate new codes when you have 3 or fewer remaining")
+                                        .FontSize(9).FontColor(Colors.Red.Darken3);
                                 });
                             });
                         });
 
-                        // BACKUP CODES - Premium Table Design
-                        column.Item().PaddingTop(25).Column(codesSection =>
+                        // BACKUP CODES - Compact Table
+                        column.Item().PaddingTop(15).Column(codesSection =>
                         {
                             codesSection.Item().Row(row =>
                             {
                                 row.RelativeItem().Text("🔐 YOUR BACKUP CODES")
-                                    .FontSize(18).Bold().FontColor(Colors.Purple.Darken3);
-                                row.ConstantItem(100).AlignRight().Background(Colors.Green.Lighten4)
-                                    .Padding(6).AlignCenter().Text("✓ ACTIVE").FontSize(9).Bold().FontColor(Colors.Green.Darken2);
+                                    .FontSize(14).Bold().FontColor(Colors.Purple.Darken3);
+                                row.ConstantItem(80).AlignRight().Background(Colors.Green.Lighten4)
+                                    .Padding(4).AlignCenter().Text("✓ ACTIVE").FontSize(8).Bold().FontColor(Colors.Green.Darken2);
                             });
                             
-                            codesSection.Item().PaddingTop(3).Text("Use these codes to recover access if you lose your 2FA device")
-                                .FontSize(10).Italic().FontColor(Colors.Grey.Darken1);
+                            codesSection.Item().PaddingTop(2).Text("Use these codes to recover access if you lose your 2FA device")
+                                .FontSize(8).Italic().FontColor(Colors.Grey.Darken1);
                         });
                         
-                        column.Item().PaddingTop(15).Border(2).BorderColor(Colors.Purple.Medium).Column(tableWrapper =>
+                        column.Item().PaddingTop(10).Border(1).BorderColor(Colors.Purple.Medium).Column(tableWrapper =>
                         {
                             tableWrapper.Item().Table(table =>
                             {
                                 table.ColumnsDefinition(columns =>
                                 {
-                                    columns.ConstantColumn(60);
+                                    columns.ConstantColumn(40);
                                     columns.RelativeColumn();
-                                    columns.ConstantColumn(100);
+                                    columns.ConstantColumn(70);
                                 });
 
-                                // PREMIUM HEADER
+                                // COMPACT HEADER
                                 table.Header(header =>
                                 {
-                                    header.Cell().Background(Colors.Purple.Darken2).Padding(12)
-                                        .Text("#").FontSize(12).Bold().FontColor(Colors.White);
-                                    header.Cell().Background(Colors.Purple.Darken2).Padding(12)
-                                        .Text("BACKUP CODE").FontSize(12).Bold().FontColor(Colors.White);
-                                    header.Cell().Background(Colors.Purple.Darken2).Padding(12).AlignCenter()
-                                        .Text("STATUS").FontSize(12).Bold().FontColor(Colors.White);
+                                    header.Cell().Background(Colors.Purple.Darken2).Padding(8)
+                                        .Text("#").FontSize(10).Bold().FontColor(Colors.White);
+                                    header.Cell().Background(Colors.Purple.Darken2).Padding(8)
+                                        .Text("BACKUP CODE").FontSize(10).Bold().FontColor(Colors.White);
+                                    header.Cell().Background(Colors.Purple.Darken2).Padding(8).AlignCenter()
+                                        .Text("STATUS").FontSize(10).Bold().FontColor(Colors.White);
                                 });
 
-                                // CODES with ALTERNATING COLORS and VISUAL APPEAL
+                                // CODES - Compact styling
                                 for (int i = 0; i < codes.Count; i++)
                                 {
                                     var bgColor = i % 2 == 0 ? Colors.Grey.Lighten4 : Colors.White;
                                     var numberColor = i % 2 == 0 ? Colors.Purple.Medium : Colors.Purple.Darken1;
                                     
                                     table.Cell().Background(bgColor).Border(1).BorderColor(Colors.Grey.Lighten2)
-                                        .Padding(12).AlignCenter().Text((i + 1).ToString())
-                                        .FontSize(13).SemiBold().FontColor(numberColor);
+                                        .Padding(8).AlignCenter().Text((i + 1).ToString())
+                                        .FontSize(11).SemiBold().FontColor(numberColor);
                                     
                                     table.Cell().Background(bgColor).Border(1).BorderColor(Colors.Grey.Lighten2)
-                                        .Padding(12).Text(codes[i])
-                                        .FontSize(16).FontFamily(QuestPDF.Helpers.Fonts.Courier).Bold()
+                                        .Padding(8).Text(codes[i])
+                                        .FontSize(13).FontFamily(QuestPDF.Helpers.Fonts.Courier).Bold()
                                         .FontColor(Colors.Black);
                                     
                                     table.Cell().Background(bgColor).Border(1).BorderColor(Colors.Grey.Lighten2)
-                                        .Padding(12).AlignCenter().Background(Colors.Green.Lighten3)
-                                        .Padding(6).AlignCenter().Text("✓ Valid")
-                                        .FontSize(9).SemiBold().FontColor(Colors.Green.Darken2);
+                                        .Padding(8).AlignCenter().Background(Colors.Green.Lighten3)
+                                        .Padding(4).AlignCenter().Text("✓ Valid")
+                                        .FontSize(8).SemiBold().FontColor(Colors.Green.Darken2);
                                 }
                             });
                         });
 
-                        // USAGE INSTRUCTIONS - Helpful Guide
-                        column.Item().PaddingTop(20).Background(Colors.Blue.Lighten5).Border(1)
-                            .BorderColor(Colors.Blue.Lighten2).Padding(15).Column(usage =>
+                        // USAGE INSTRUCTIONS - Compact Guide
+                        column.Item().PaddingTop(12).Background(Colors.Blue.Lighten5).Border(1)
+                            .BorderColor(Colors.Blue.Lighten2).Padding(10).Column(usage =>
                         {
-                            usage.Item().Text("📝 How to Use These Codes").FontSize(13).SemiBold().FontColor(Colors.Blue.Darken2);
-                            usage.Item().PaddingTop(10).Text("1. If you lose access to your 2FA device, use a backup code instead")
-                                .FontSize(10).FontColor(Colors.Blue.Darken3);
-                            usage.Item().PaddingTop(4).Text("2. Enter ONE code when prompted during login")
-                                .FontSize(10).FontColor(Colors.Blue.Darken3);
-                            usage.Item().PaddingTop(4).Text("3. Each code is single-use only and cannot be reused")
-                                .FontSize(10).FontColor(Colors.Blue.Darken3);
-                            usage.Item().PaddingTop(4).Text("4. Generate new codes before running out (3 codes remaining = regenerate)")
-                                .FontSize(10).FontColor(Colors.Blue.Darken3);
+                            usage.Item().Text("📝 How to Use These Codes").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken2);
+                            usage.Item().PaddingTop(6).Text("1. If you lose access to your 2FA device, use a backup code instead")
+                                .FontSize(8).FontColor(Colors.Blue.Darken3);
+                            usage.Item().PaddingTop(3).Text("2. Enter ONE code when prompted during login")
+                                .FontSize(8).FontColor(Colors.Blue.Darken3);
+                            usage.Item().PaddingTop(3).Text("3. Each code is single-use only and cannot be reused")
+                                .FontSize(8).FontColor(Colors.Blue.Darken3);
+                            usage.Item().PaddingTop(3).Text("4. Generate new codes before running out (3 codes remaining = regenerate)")
+                                .FontSize(8).FontColor(Colors.Blue.Darken3);
                         });
                     });
 
