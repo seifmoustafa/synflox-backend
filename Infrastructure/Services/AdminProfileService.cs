@@ -291,8 +291,10 @@ public class AdminProfileService : IAdminProfileService
         }
 
         // Update profile picture URL in database (use /profile path like other FileHost paths)
+        // IMPORTANT: Add timestamp query parameter for cache-busting (force browser to reload new image)
         var oldPictureUrl = admin.ProfilePictureUrl;
-        admin.ProfilePictureUrl = $"/profile/{fileName}";
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        admin.ProfilePictureUrl = $"/profile/{fileName}?v={timestamp}";
 
         await _repo.UpdateAsync(admin);
         await _unitOfWork.SaveChangesAsync();
