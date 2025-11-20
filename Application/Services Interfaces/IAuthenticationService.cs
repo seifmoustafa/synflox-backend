@@ -36,5 +36,12 @@ namespace Application.Services
         /// Verifies 2FA code and completes login for admins with 2FA enabled.
         /// </summary>
         Task<AuthenticationResponse> Verify2FAAsync(string username, string password, string twoFactorCode);
+
+        /// <summary>
+        /// Check if an email address has 2FA enabled
+        /// Used in forgot password flow to determine if 2FA verification is required
+        /// Returns false for non-existent emails (don't leak user existence)
+        /// </summary>
+        Task<Check2FAStatusResponse> Check2FAStatusAsync(string email);
     }
 }

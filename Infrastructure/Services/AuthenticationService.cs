@@ -246,7 +246,8 @@ namespace Infrastructure.Services
             var refreshedToken = (await _refreshTokenRepo.FindAsync(rt => 
                 rt.Token == request.RefreshToken && 
                 rt.IsActive && 
-                !rt.IsDeleted)).FirstOrDefault();
+                !rt.IsDeleted && 
+                !rt.IsRevoked)).FirstOrDefault();
 
             if (refreshedToken == null || refreshedToken.IsExpired)
             {
@@ -280,8 +281,10 @@ namespace Infrastructure.Services
             admin.AdminType = await _adminTypeRepository.GetByIdAsync(admin.AdminTypeId, null)
                 ?? throw new NotFoundException(_localizer["AdminTypeNotFound"]);
 
-            // Revoke old refresh token
-            refreshedToken.IsActive = false;
+            // Revoke old refresh token (rotation - old token is replaced with new one)
+            refreshedToken.IsRevoked = true;
+            refreshedToken.RevokedAt = DateTime.UtcNow;
+            refreshedToken.RevokedReason = "TokenRotation";
             await _refreshTokenRepo.UpdateAsync(refreshedToken);
 
             // Generate new tokens
@@ -303,7 +306,9 @@ namespace Infrastructure.Services
             var refreshedToken = await _refreshTokenRepo.GetByAdminId(adminId);
             if (refreshedToken != null)
             {
-                refreshedToken.IsActive = false;
+                refreshedToken.IsRevoked = true;
+                refreshedToken.RevokedAt = DateTime.UtcNow;
+                refreshedToken.RevokedReason = "Logout";
                 await _refreshTokenRepo.UpdateAsync(refreshedToken);
                 await _unitOfWork.SaveChangesAsync();
             }
@@ -345,6 +350,30 @@ namespace Infrastructure.Services
                 AccessToken = token,
                 Success = true,
                 RefreshToken = refreshToken.Token
+            };
+        }
+
+        public async Task<Check2FAStatusResponse> Check2FAStatusAsync(string email)
+        {
+            // Find admin by email
+            var admin = (await _adminRepository.FindAsync(a => a.Email == email && !a.IsDeleted))
+                .FirstOrDefault();
+
+            // Don't leak user existence for security
+            // Always return EmailExists = true, but set Has2FA based on actual status
+            if (admin == null)
+            {
+                return new Check2FAStatusResponse
+                {
+                    Has2FA = false,
+                    EmailExists = true // Don't reveal user doesn't exist
+                };
+            }
+
+            return new Check2FAStatusResponse
+            {
+                Has2FA = admin.IsTwoFactorEnabled,
+                EmailExists = true
             };
         }
 

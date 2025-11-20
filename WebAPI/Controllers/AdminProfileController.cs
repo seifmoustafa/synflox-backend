@@ -133,7 +133,8 @@ public class AdminProfileController : ControllerBase
     // ===== Password Management =====
 
     /// <summary>
-    /// Change current user password
+    /// Change current user password (simple - no 2FA required)
+    /// Use this endpoint when 2FA is NOT enabled
     /// </summary>
     [HttpPut("me/password")]
     public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordRequest request)
@@ -142,6 +143,23 @@ public class AdminProfileController : ControllerBase
 
         await _profileService.ChangeMyPasswordAsync(_currentUserService.UserId, request);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Change current user password with 2FA verification
+    /// Required when user has 2FA enabled
+    /// Accepts either TwoFactorCode or BackupCode
+    /// Invalidates all refresh tokens after password change
+    /// Rate Limited: 5 attempts per hour per user
+    /// </summary>
+    [HttpPut("me/password/change-with-2fa")]
+    [EnableRateLimiting("PasswordChange")]
+    public async Task<IActionResult> ChangeMyPasswordWith2FA([FromBody] ChangePasswordWith2FARequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        await _profileService.ChangeMyPasswordWith2FAAsync(_currentUserService.UserId, request);
+        return Ok(new { message = _localizer["Password.Changed"] ?? "Password changed successfully. All sessions have been invalidated." });
     }
 
     // ===== Two-Factor Authentication =====

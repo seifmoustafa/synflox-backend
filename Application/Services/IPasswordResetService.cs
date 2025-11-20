@@ -18,6 +18,17 @@ namespace Application.Services
         Task<string> SendPasswordResetOtpAsync(ForgotPasswordRequest request, string? ipAddress = null);
 
         /// <summary>
+        /// Send password reset OTP with 2FA verification
+        /// Required when admin has 2FA enabled
+        /// Verifies either TwoFactorCode or BackupCode before sending reset email
+        /// Rate limit: Max 3 requests per hour per email
+        /// </summary>
+        /// <param name="request">Email, 2FA code, or backup code</param>
+        /// <param name="ipAddress">IP address of requester (for logging)</param>
+        /// <returns>Success message</returns>
+        Task<string> SendPasswordResetWith2FAAsync(ForgotPasswordWith2FARequest request, string? ipAddress = null);
+
+        /// <summary>
         /// Verify OTP code for password reset
         /// Max 5 attempts allowed
         /// </summary>

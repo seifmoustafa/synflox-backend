@@ -60,6 +60,13 @@ public interface IAdminProfileService
     /// </summary>
     Task ChangeMyPasswordAsync(Guid currentUserId, ChangePasswordRequest request);
     
+    /// <summary>
+    /// Change current admin's password with 2FA verification
+    /// Requires either TwoFactorCode or BackupCode if 2FA is enabled
+    /// Invalidates all refresh tokens after password change
+    /// </summary>
+    Task ChangeMyPasswordWith2FAAsync(Guid currentUserId, ChangePasswordWith2FARequest request);
+    
     // ===== Two-Factor Authentication =====
     
     /// <summary>

@@ -83,6 +83,45 @@ namespace WebAPI.Configurations
                             QueueLimit = 0
                         });
                 });
+
+                // PASSWORD CHANGE WITH 2FA RATE LIMITING POLICY
+                // Prevents brute force attacks on 2FA codes
+                options.AddPolicy("PasswordChange", context =>
+                {
+                    var userId = context.User?.FindFirst("sub")?.Value 
+                        ?? context.User?.FindFirst("UserId")?.Value 
+                        ?? "anonymous";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        $"password-change-{userId}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            // DEV: 1000 attempts/hour (unlimited) | PRODUCTION: 5 attempts/hour
+                            PermitLimit = isDevelopment ? 1000 : 5,
+                            Window = TimeSpan.FromHours(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        });
+                });
+
+                // CHECK 2FA STATUS RATE LIMITING POLICY
+                // Prevents email enumeration attacks
+                options.AddPolicy("Check2FAStatus", context =>
+                {
+                    var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        $"check2fa-{clientIp}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            // DEV: 1000 requests/min (unlimited) | PRODUCTION: 10 requests/min
+                            PermitLimit = isDevelopment ? 1000 : 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        });
+                });
+
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.OnRejected = async (context, token) =>
                 {

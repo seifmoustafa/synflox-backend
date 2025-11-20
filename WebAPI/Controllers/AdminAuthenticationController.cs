@@ -4,6 +4,7 @@ using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace WebAPI.Controllers;
 
@@ -109,6 +110,7 @@ public class AdminAuthenticationController : ControllerBase
     /// <summary>
     /// Request password reset OTP to be sent to email
     /// Rate limit: Max 3 requests per hour per email
+    /// Use this endpoint when 2FA is NOT enabled
     /// </summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
@@ -121,6 +123,43 @@ public class AdminAuthenticationController : ControllerBase
         var message = await _passwordResetService.SendPasswordResetOtpAsync(request, ipAddress);
 
         return Ok(new ApiResponse<string>(StatusCodes.Status200OK, message));
+    }
+
+    /// <summary>
+    /// Request password reset OTP with 2FA verification
+    /// Required when user has 2FA enabled
+    /// Verifies either TwoFactorCode or BackupCode before sending reset email
+    /// Rate limit: Max 3 requests per hour per email
+    /// </summary>
+    [HttpPost("forgot-password-with-2fa")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPasswordWith2FA([FromBody] ForgotPasswordWith2FARequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var message = await _passwordResetService.SendPasswordResetWith2FAAsync(request, ipAddress);
+
+        return Ok(new ApiResponse<string>(StatusCodes.Status200OK, message));
+    }
+
+    /// <summary>
+    /// Check if an email address has 2FA enabled
+    /// Used in forgot password flow to determine if 2FA verification is needed
+    /// Returns false for non-existent emails (security: don't leak user existence)
+    /// Rate Limited: 10 requests per minute to prevent email enumeration
+    /// </summary>
+    [HttpGet("check-2fa-status")]
+    [AllowAnonymous]
+    [EnableRateLimiting("Check2FAStatus")]
+    public async Task<IActionResult> Check2FAStatus([FromQuery] string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new ApiResponse<string>(StatusCodes.Status400BadRequest, "Email is required"));
+
+        var response = await _authenticationService.Check2FAStatusAsync(email);
+        return Ok(new ApiResponse<Check2FAStatusResponse>(StatusCodes.Status200OK, "2FA status retrieved", response));
     }
 
     /// <summary>

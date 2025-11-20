@@ -20,6 +20,7 @@ namespace Infrastructure.Services
         private readonly ILocalizationService _localizer;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
+        private readonly IBackupCodeService _backupCodeService;
 
         private const int OTP_LENGTH = 6;
         private const int OTP_EXPIRY_MINUTES = 15;
@@ -32,7 +33,8 @@ namespace Infrastructure.Services
             IPasswordHasher passwordHasher,
             ILocalizationService localizer,
             IUnitOfWork unitOfWork,
-            IEmailService emailService)
+            IEmailService emailService,
+            IBackupCodeService backupCodeService)
         {
             _adminRepository = adminRepository;
             _resetTokenRepository = resetTokenRepository;
@@ -40,6 +42,7 @@ namespace Infrastructure.Services
             _localizer = localizer;
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _backupCodeService = backupCodeService;
         }
 
         public async Task<string> SendPasswordResetOtpAsync(ForgotPasswordRequest request, string? ipAddress = null)
@@ -59,6 +62,113 @@ namespace Infrastructure.Services
             if (!admin.IsActive)
             {
                 throw new BadRequestException(_localizer["Account.Deactivated"]);
+            }
+
+            // Rate limiting: Check recent requests
+            var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+            var recentRequests = await _resetTokenRepository.CountRecentRequestsAsync(admin.Id, oneHourAgo);
+
+            if (recentRequests >= MAX_REQUESTS_PER_HOUR)
+            {
+                throw new RateLimitExceededException(
+                    _localizer["Password.TooManyRequests"],
+                    retryAfterMinutes: 60
+                );
+            }
+
+            // Generate 6-digit OTP
+            var otp = GenerateOtp();
+
+            // Hash the OTP for storage
+            var otpHash = HashOtp(otp);
+
+            // Invalidate any existing tokens for this admin
+            await _resetTokenRepository.InvalidateAllTokensForAdminAsync(admin.Id);
+
+            // Create new reset token
+            var resetToken = new PasswordResetToken
+            {
+                AdminId = admin.Id,
+                TokenHash = otpHash,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(OTP_EXPIRY_MINUTES),
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _resetTokenRepository.AddAsync(resetToken);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Generate magic link token for one-click reset
+            var encryptionKey = DeriveEncryptionKey();
+            var magicToken = GenerateMagicLinkToken(resetToken.Id, admin.Email, otp, resetToken.ExpiresAt, encryptionKey);
+
+            // Send password reset OTP email with both manual OTP and magic link
+            await _emailService.SendPasswordResetOtpEmailAsync(
+                admin.Email, 
+                admin.Username, 
+                otp, 
+                magicToken,
+                OTP_EXPIRY_MINUTES, 
+                ipAddress ?? "Unknown");
+
+            return _localizer["Password.OtpSent"];
+        }
+
+        public async Task<string> SendPasswordResetWith2FAAsync(ForgotPasswordWith2FARequest request, string? ipAddress = null)
+        {
+            // Find admin by email
+            var admin = (await _adminRepository.FindAsync(a => a.Email == request.Email && !a.IsDeleted))
+                .FirstOrDefault();
+
+            if (admin == null)
+            {
+                // Security: Don't reveal if email exists or not
+                // Return success message even if email doesn't exist
+                return _localizer["Password.OtpSent"];
+            }
+
+            // Check if admin account is active
+            if (!admin.IsActive)
+            {
+                throw new BadRequestException(_localizer["Account.Deactivated"]);
+            }
+
+            // CRITICAL: Verify 2FA if enabled
+            if (admin.IsTwoFactorEnabled)
+            {
+                bool is2FAVerified = false;
+
+                // Option A: Verify 2FA code from authenticator app
+                if (!string.IsNullOrEmpty(request.TwoFactorCode))
+                {
+                    if (string.IsNullOrEmpty(admin.TwoFactorSecret))
+                        throw new BadRequestException(_localizer["2FA.SecretNotFound"]);
+
+                    var totp = new OtpNet.Totp(OtpNet.Base32Encoding.ToBytes(admin.TwoFactorSecret));
+                    is2FAVerified = totp.VerifyTotp(request.TwoFactorCode, out _, new OtpNet.VerificationWindow(2, 2));
+
+                    if (!is2FAVerified)
+                        throw new BadRequestException(_localizer["Invalid2FACode"]);
+                }
+                // Option B: Verify backup code (WITHOUT consuming it - consumed after password reset succeeds)
+                else if (!string.IsNullOrEmpty(request.BackupCode))
+                {
+                    // Verify backup code for password reset (does NOT mark as used)
+                    is2FAVerified = await _backupCodeService.VerifyBackupCodeForPasswordResetAsync(
+                        admin.Username, 
+                        request.BackupCode
+                    );
+
+                    if (!is2FAVerified)
+                        throw new BadRequestException(_localizer["Invalid2FACode"]);
+                }
+                else
+                {
+                    throw new BadRequestException(_localizer["2FA.CodeRequired"]);
+                }
+
+                if (!is2FAVerified)
+                    throw new BadRequestException(_localizer["Invalid2FACode"]);
             }
 
             // Rate limiting: Check recent requests

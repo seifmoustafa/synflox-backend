@@ -207,7 +207,7 @@
   <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
     <value>رمز التحديث غير صالح أو منتهي الصلاحية</value>
   </data>
-  
+
   <!-- إدارة مفاتيح الترخيص -->
   <data name="License.KeyGeneratedSuccessfully" xml:space="preserve">
     <value>تم إنشاء مفتاح الترخيص بنجاح</value>
@@ -236,9 +236,9 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>الاشتراك غير موجود</value>
   </data>
-  
+
   <!-- Email Localization Keys - Arabic -->
-  
+
   <!-- Company Email Keys -->
   <data name="Email.Company.Created.Subject" xml:space="preserve">
     <value>🎉 مرحباً بك في سينفلوكس - {0}</value>
@@ -285,7 +285,7 @@
   <data name="Email.Company.Deleted.Message" xml:space="preserve">
     <value>تم حذف حساب شركتك من نظامنا. لديك 30 يوماً لاستعادة بياناتك عن طريق الاتصال بالدعم الفني.</value>
   </data>
-  
+
   <!-- Company Field Labels -->
   <data name="Email.Company.CompanyName" xml:space="preserve">
     <value>اسم الشركة</value>
@@ -314,7 +314,7 @@
   <data name="Email.Company.Reason" xml:space="preserve">
     <value>السبب</value>
   </data>
-  
+
   <!-- What's Next Section -->
   <data name="Email.Company.WhatsNext" xml:space="preserve">
     <value>🚀 ما هي الخطوات التالية؟</value>
@@ -334,7 +334,7 @@
   <data name="Email.Company.WhatsNext.AccessDashboard" xml:space="preserve">
     <value>الوصول إلى لوحة التحكم وبدء إدارة التراخيص</value>
   </data>
-  
+
   <!-- Features Section -->
   <data name="Email.Company.Features" xml:space="preserve">
     <value>✨ ميزات سينفلوكس المتاحة</value>
@@ -357,7 +357,7 @@
   <data name="Email.Company.ThankYou" xml:space="preserve">
     <value>شكراً لك لاختيار سينفلوكس لاحتياجات الترخيص الخاصة بك!</value>
   </data>
-  
+
   <!-- Common Email Elements -->
   <data name="Email.Common.Date" xml:space="preserve">
     <value>التاريخ</value>
@@ -398,7 +398,7 @@
   <data name="Email.Common.Copyright" xml:space="preserve">
     <value>© {0} سينفلوكس. جميع الحقوق محفوظة. | مدعوم بالتكنولوجيا المتقدمة</value>
   </data>
-  
+
   <!-- Missing Email Keys -->
   <data name="Email.Common.Hello" xml:space="preserve">
     <value>مرحباً</value>
@@ -415,7 +415,7 @@
   <data name="Email.Common.PoweredBy" xml:space="preserve">
     <value>مدعوم من</value>
   </data>
-  
+
   <!-- Dashboard Messages -->
   <data name="Dashboard.Retrieved" xml:space="preserve">
     <value>تم استرجاع بيانات لوحة التحكم بنجاح</value>
@@ -438,7 +438,7 @@
   <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
     <value>تم استرجاع إحصائيات النظام بنجاح</value>
   </data>
-  
+
   <!-- Lifetime Plan & Dynamic Duration Messages -->
   <data name="Plan.LifetimeCannotHaveTrial" xml:space="preserve">
     <value>الخطط مدى الحياة لا يمكن أن تحتوي على فترة تجريبية</value>
@@ -458,7 +458,7 @@
   <data name="Plan.LifetimeMustUseFullReplace" xml:space="preserve">
     <value>يجب أن تستخدم الخطط مدى الحياة سياسة الاستبدال الكامل (لا يمكن التقسيط النسبي أو التأجيل)</value>
   </data>
-  
+
   <!-- Subscription Plan General Messages -->
   <data name="Plan.TrialDurationRequired" xml:space="preserve">
     <value>مدة التجربة مطلوبة عند السماح بالفترة التجريبية</value>
@@ -481,17 +481,17 @@
   <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
     <value>سعر الخطة غير متاح للعملة المطلوبة</value>
   </data>
-  
+
   <!-- Project Messages -->
   <data name="Project.NotFound" xml:space="preserve">
     <value>المشروع غير موجود</value>
   </data>
-  
+
   <!-- Module Messages -->
   <data name="Module.NotFound" xml:space="preserve">
     <value>الوحدة غير موجودة</value>
   </data>
-  
+
   <!-- Subscription Messages -->
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>الاشتراك غير موجود</value>
@@ -535,7 +535,7 @@
   <data name="SuperAdmin.CannotDeleteSelf" xml:space="preserve">
     <value>لا يمكن للمسؤول الأساسي حذف حسابه</value>
   </data>
-  
+
   <!-- التحقق بخطوتين -->
   <data name="2FA.Required" xml:space="preserve">
     <value>رمز المصادقة الثنائية مطلوب</value>
@@ -555,12 +555,12 @@
   <data name="Invalid2FACode" xml:space="preserve">
     <value>رمز التحقق غير صحيح</value>
   </data>
-  
+
   <!-- حالة الحساب -->
   <data name="Account.Deactivated" xml:space="preserve">
     <value>تم تعطيل حسابك. يرجى الاتصال بالمسؤول.</value>
   </data>
-  
+
   <!-- المسؤول ونوع المسؤول -->
   <data name="Admin.NotFound" xml:space="preserve">
     <value>المسؤول غير موجود</value>
@@ -568,7 +568,7 @@
   <data name="AdminTypeNotFound" xml:space="preserve">
     <value>نوع المسؤول غير موجود</value>
   </data>
-  
+
   <!-- التحقق من تاريخ الميلاد -->
   <data name="DateOfBirth.FutureDate" xml:space="preserve">
     <value>لا يمكن أن يكون تاريخ الميلاد في المستقبل</value>
@@ -579,7 +579,7 @@
   <data name="DateOfBirth.Invalid" xml:space="preserve">
     <value>تاريخ الميلاد غير صحيح</value>
   </data>
-  
+
   <!-- التحقق من البريد الإلكتروني -->
   <data name="Email.AlreadyInUse" xml:space="preserve">
     <value>عنوان البريد الإلكتروني مستخدم بالفعل</value>
@@ -587,7 +587,7 @@
   <data name="Email.BackupCannotMatchPrimary" xml:space="preserve">
     <value>لا يمكن أن يكون البريد الإلكتروني الاحتياطي مطابقًا للبريد الأساسي</value>
   </data>
-  
+
   <!-- اللغة والتفضيلات -->
   <data name="Language.Invalid" xml:space="preserve">
     <value>اختيار لغة غير صحيح. اللغات المدعومة هي الإنجليزية (en) والعربية (ar) فقط.</value>
@@ -598,7 +598,7 @@
   <data name="TimeZone.Invalid" xml:space="preserve">
     <value>المنطقة الزمنية غير صحيحة</value>
   </data>
-  
+
   <!-- إدارة الوحدات -->
   <data name="Module.InUse" xml:space="preserve">
     <value>الوحدة قيد الاستخدام حاليًا ولا يمكن حذفها</value>
@@ -606,7 +606,7 @@
   <data name="Module.NameExists" xml:space="preserve">
     <value>اسم الوحدة موجود بالفعل</value>
   </data>
-  
+
   <!-- صورة الملف الشخصي -->
   <data name="ProfilePicture.InvalidFormat" xml:space="preserve">
     <value>تنسيق صورة الملف الشخصي غير صحيح</value>
@@ -614,7 +614,7 @@
   <data name="ProfilePicture.TooLarge" xml:space="preserve">
     <value>يجب أن تكون صورة الملف الشخصي 5 ميجابايت أو أقل</value>
   </data>
-  
+
   <!-- إدارة المشاريع -->
   <data name="Project.InUse" xml:space="preserve">
     <value>المشروع قيد الاستخدام حاليًا ولا يمكن حذفه</value>
@@ -622,7 +622,7 @@
   <data name="Project.NameExists" xml:space="preserve">
     <value>اسم المشروع موجود بالفعل</value>
   </data>
-  
+
   <!-- حالة الاشتراك -->
   <data name="Subscription.Status.Active" xml:space="preserve">
     <value>نشط</value>
@@ -639,7 +639,7 @@
   <data name="Subscription.Status.TrialActive" xml:space="preserve">
     <value>فترة تجريبية نشطة</value>
   </data>
-  
+
   <!-- إعادة تعيين كلمة المرور -->
   <data name="Password.OtpSent" xml:space="preserve">
     <value>إذا كان هناك حساب بهذا البريد الإلكتروني، فقد أرسلنا رمز إعادة تعيين كلمة المرور. يرجى التحقق من بريدك الإلكتروني.</value>
@@ -662,7 +662,7 @@
   <data name="Password.TooManyAttempts" xml:space="preserve">
     <value>محاولات فاشلة كثيرة جدًا. يرجى طلب رمز جديد.</value>
   </data>
-  
+
   <!-- Backup Codes -->
   <data name="BackupCodes.Generated" xml:space="preserve">
     <value>تم إنشاء رموز النسخ الاحتياطي بنجاح. احفظها في مكان آمن.</value>
@@ -814,4 +814,55 @@
   <data name="SecurityReport.Threat.ThreatLevel" xml:space="preserve">
     <value>مستوى التهديد الحالي: {0}</value>
   </data>
+
+  <!-- Password Management with 2FA -->
+  <data name="Password.Requires2FA" xml:space="preserve">
+    <value>المصادقة الثنائية مفعلة. يرجى استخدام نقطة النهاية لتغيير كلمة المرور مع المصادقة الثنائية.</value>
+  </data>
+
+  <data name="Password.Changed" xml:space="preserve">
+    <value>تم تغيير كلمة المرور بنجاح. تم إبطال جميع الجلسات لأسباب أمنية.</value>
+  </data>
+
+  <data name="2FA.CodeRequired" xml:space="preserve">
+    <value>رمز المصادقة الثنائية أو رمز النسخ الاحتياطي مطلوب.</value>
+  </data>
+
+  <data name="2FA.SecretNotFound" xml:space="preserve">
+    <value>لم يتم العثور على سر المصادقة الثنائية. يرجى إعادة تعيين المصادقة الثنائية الخاصة بك.</value>
+  </data>
+
+  <!-- Backup Codes -->
+  <data name="BackupCodes.TwoFactorNotEnabled" xml:space="preserve">
+    <value>المصادقة الثنائية غير مفعلة لهذا الحساب.</value>
+  </data>
+
+  <data name="BackupCodes.Invalid" xml:space="preserve">
+    <value>رمز النسخ الاحتياطي غير صالح. يرجى التحقق والمحاولة مرة أخرى.</value>
+  </data>
+
+  <data name="BackupCodes.Expired" xml:space="preserve">
+    <value>انتهت صلاحية رمز النسخ الاحتياطي هذا. يرجى إنشاء رموز نسخ احتياطي جديدة.</value>
+  </data>
+
+  <data name="BackupCodes.TooManyAttempts" xml:space="preserve">
+    <value>محاولات التحقق من رمز النسخ الاحتياطي كثيرة جداً. يرجى المحاولة مرة أخرى لاحقاً.</value>
+  </data>
+
+  <data name="BackupCodes.Verified" xml:space="preserve">
+    <value>تم التحقق من رمز النسخ الاحتياطي بنجاح.</value>
+  </data>
+
+  <data name="BackupCodes.LastCodeUsed" xml:space="preserve">
+    <value>كان هذا آخر رمز نسخ احتياطي لديك. قم بإنشاء رموز جديدة على الفور لتجنب فقدان الوصول إلى حسابك.</value>
+  </data>
+
+  <data name="BackupCodes.LowCount" xml:space="preserve">
+    <value>لديك {0} رموز نسخ احتياطي متبقية. فكر في إنشاء رموز جديدة قريباً.</value>
+  </data>
+
+  <data name="BackupCodes.Generated" xml:space="preserve">
+    <value>تم إنشاء رموز النسخ الاحتياطي بنجاح. احفظها في مكان آمن - سيتم عرضها مرة واحدة فقط.</value>
+  </data>
+
 </root>

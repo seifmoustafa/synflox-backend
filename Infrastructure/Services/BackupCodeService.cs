@@ -373,6 +373,70 @@ namespace Infrastructure.Services
             };
         }
 
+        public async Task<bool> VerifyBackupCodeForPasswordResetAsync(string username, string backupCode)
+        {
+            // SECURITY: Validate input
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(backupCode))
+            {
+                return false; // Don't leak info about what was wrong
+            }
+
+            try
+            {
+                // Hash the backup code
+                var codeHash = HashCode(backupCode.ToUpper());
+
+                // Find admin by username or email (case-insensitive)
+                var usernameLower = username.ToLower();
+                var admin = (await _adminRepository.FindAsync(a =>
+                    ((a.Username.ToLower() == usernameLower || a.Email.ToLower() == usernameLower) && !a.IsDeleted)))
+                    .FirstOrDefault();
+
+                if (admin == null || !admin.IsActive || !admin.IsTwoFactorEnabled)
+                {
+                    // SECURITY: Don't reveal which condition failed
+                    await Task.Delay(100); // Prevent timing attacks
+                    return false;
+                }
+
+                // Find matching backup code
+                var code = await _backupCodeRepository.GetByAdminAndHashAsync(admin.Id, codeHash);
+
+                if (code == null || code.IsUsed || code.IsExpired)
+                {
+                    // AUDIT: Log failed attempt
+                    await LogSecurityEventAsync(
+                        adminId: admin.Id,
+                        eventType: "BackupCodeVerificationFailed_PasswordReset",
+                        eventDescription: "Invalid backup code for password reset",
+                        username: username,
+                        success: false,
+                        errorMessage: "Invalid, used, or expired code"
+                    );
+
+                    await Task.Delay(100); // Prevent timing attacks
+                    return false;
+                }
+
+                // AUDIT: Log successful verification (code NOT consumed yet)
+                await LogSecurityEventAsync(
+                    adminId: admin.Id,
+                    eventType: "BackupCodeVerified_PasswordReset",
+                    eventDescription: "Backup code verified for password reset (not consumed)",
+                    username: username,
+                    success: true
+                );
+
+                return true; // Code is valid!
+            }
+            catch
+            {
+                // SECURITY: Catch all exceptions and return false
+                await Task.Delay(100);
+                return false;
+            }
+        }
+
         public async Task<BackupCodesStatusDto> GetBackupCodesStatusAsync(Guid adminId)
         {
             // SECURITY: Verify admin exists AND is active

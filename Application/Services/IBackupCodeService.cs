@@ -30,6 +30,16 @@ namespace Application.Services
         Task<AuthenticationResponse> VerifyBackupCodeAsync(VerifyBackupCodeRequest request);
 
         /// <summary>
+        /// Verify backup code for password reset (does NOT consume the code)
+        /// Used in forgot password flow with 2FA enabled
+        /// Code is only consumed after successful password reset
+        /// </summary>
+        /// <param name="username">Username or email</param>
+        /// <param name="backupCode">Backup code to verify</param>
+        /// <returns>True if code is valid and not used/expired</returns>
+        Task<bool> VerifyBackupCodeForPasswordResetAsync(string username, string backupCode);
+
+        /// <summary>
         /// Get status of backup codes for an admin
         /// Returns count of remaining unused codes
         /// </summary>

@@ -207,7 +207,7 @@
   <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
     <value>Invalid or expired refresh token</value>
   </data>
-  
+
   <!-- License Key Management -->
   <data name="License.KeyGeneratedSuccessfully" xml:space="preserve">
     <value>License key generated successfully</value>
@@ -236,9 +236,9 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>Subscription not found</value>
   </data>
-  
+
   <!-- Email Localization Keys -->
-  
+
   <!-- Company Email Keys -->
   <data name="Email.Company.Created.Subject" xml:space="preserve">
     <value>🎉 Welcome to SYNFLOX - {0}</value>
@@ -285,7 +285,7 @@
   <data name="Email.Company.Deleted.Message" xml:space="preserve">
     <value>Your company account has been deleted from our system. You have 30 days to recover your data by contacting support.</value>
   </data>
-  
+
   <!-- Company Field Labels -->
   <data name="Email.Company.CompanyName" xml:space="preserve">
     <value>Company Name</value>
@@ -314,7 +314,7 @@
   <data name="Email.Company.Reason" xml:space="preserve">
     <value>Reason</value>
   </data>
-  
+
   <!-- What's Next Section -->
   <data name="Email.Company.WhatsNext" xml:space="preserve">
     <value>🚀 What's next?</value>
@@ -334,7 +334,7 @@
   <data name="Email.Company.WhatsNext.AccessDashboard" xml:space="preserve">
     <value>Access your dashboard and start managing licenses</value>
   </data>
-  
+
   <!-- Features Section -->
   <data name="Email.Company.Features" xml:space="preserve">
     <value>✨ SYNFLOX Features Available</value>
@@ -357,7 +357,7 @@
   <data name="Email.Company.ThankYou" xml:space="preserve">
     <value>Thank you for choosing SYNFLOX for your licensing needs!</value>
   </data>
-  
+
   <!-- Common Email Elements -->
   <data name="Email.Common.Date" xml:space="preserve">
     <value>Date</value>
@@ -398,7 +398,7 @@
   <data name="Email.Common.Copyright" xml:space="preserve">
     <value> 2023 SYNFLOX. All rights reserved. | Powered by Advanced Technology</value>
   </data>
-  
+
   <!-- Missing Email Keys -->
   <data name="Email.Common.Hello" xml:space="preserve">
     <value>Hello</value>
@@ -415,7 +415,7 @@
   <data name="Email.Common.PoweredBy" xml:space="preserve">
     <value>Powered by</value>
   </data>
-  
+
   <!-- Dashboard Messages -->
   <data name="Dashboard.Retrieved" xml:space="preserve">
     <value>Dashboard data retrieved successfully</value>
@@ -438,7 +438,7 @@
   <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
     <value>System statistics retrieved successfully</value>
   </data>
-  
+
   <!-- Lifetime Plan & Dynamic Duration Messages -->
   <data name="Plan.LifetimeCannotHaveTrial" xml:space="preserve">
     <value>Lifetime plans cannot have trial periods</value>
@@ -458,7 +458,7 @@
   <data name="Plan.LifetimeMustUseFullReplace" xml:space="preserve">
     <value>Lifetime plans must use FullReplace upgrade policy (cannot prorate or defer)</value>
   </data>
-  
+
   <!-- Subscription Plan General Messages -->
   <data name="Plan.TrialDurationRequired" xml:space="preserve">
     <value>Trial duration is required when trial is allowed</value>
@@ -481,17 +481,17 @@
   <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
     <value>Plan price not available for the requested currency</value>
   </data>
-  
+
   <!-- Project Messages -->
   <data name="Project.NotFound" xml:space="preserve">
     <value>Project not found</value>
   </data>
-  
+
   <!-- Module Messages -->
   <data name="Module.NotFound" xml:space="preserve">
     <value>Module not found</value>
   </data>
-  
+
   <!-- Subscription Messages -->
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>Subscription not found</value>
@@ -535,7 +535,7 @@
   <data name="SuperAdmin.CannotDeleteSelf" xml:space="preserve">
     <value>Root superadmin cannot delete their own account</value>
   </data>
-  
+
   <!-- Two-Factor Authentication -->
   <data name="2FA.Required" xml:space="preserve">
     <value>Two-factor authentication code is required</value>
@@ -555,12 +555,12 @@
   <data name="Invalid2FACode" xml:space="preserve">
     <value>Invalid verification code</value>
   </data>
-  
+
   <!-- Account Status -->
   <data name="Account.Deactivated" xml:space="preserve">
     <value>Your account has been deactivated. Please contact administrator.</value>
   </data>
-  
+
   <!-- Admin & AdminType -->
   <data name="Admin.NotFound" xml:space="preserve">
     <value>Admin not found</value>
@@ -568,7 +568,7 @@
   <data name="AdminTypeNotFound" xml:space="preserve">
     <value>Admin type not found</value>
   </data>
-  
+
   <!-- Date of Birth Validation -->
   <data name="DateOfBirth.FutureDate" xml:space="preserve">
     <value>Date of birth cannot be in the future</value>
@@ -579,7 +579,7 @@
   <data name="DateOfBirth.Invalid" xml:space="preserve">
     <value>Invalid date of birth</value>
   </data>
-  
+
   <!-- Email Validation -->
   <data name="Email.AlreadyInUse" xml:space="preserve">
     <value>Email address is already in use</value>
@@ -587,7 +587,7 @@
   <data name="Email.BackupCannotMatchPrimary" xml:space="preserve">
     <value>Backup email cannot be the same as primary email</value>
   </data>
-  
+
   <!-- Language & Preferences -->
   <data name="Language.Invalid" xml:space="preserve">
     <value>Invalid language selection. Only English (en) and Arabic (ar) are supported.</value>
@@ -598,7 +598,7 @@
   <data name="TimeZone.Invalid" xml:space="preserve">
     <value>Invalid timezone</value>
   </data>
-  
+
   <!-- Module Management -->
   <data name="Module.InUse" xml:space="preserve">
     <value>Module is currently in use and cannot be deleted</value>
@@ -606,7 +606,7 @@
   <data name="Module.NameExists" xml:space="preserve">
     <value>Module name already exists</value>
   </data>
-  
+
   <!-- Profile Picture -->
   <data name="ProfilePicture.InvalidFormat" xml:space="preserve">
     <value>Invalid profile picture format</value>
@@ -614,7 +614,7 @@
   <data name="ProfilePicture.TooLarge" xml:space="preserve">
     <value>Profile picture must be 5MB or less</value>
   </data>
-  
+
   <!-- Project Management -->
   <data name="Project.InUse" xml:space="preserve">
     <value>Project is currently in use and cannot be deleted</value>
@@ -622,7 +622,7 @@
   <data name="Project.NameExists" xml:space="preserve">
     <value>Project name already exists</value>
   </data>
-  
+
   <!-- Subscription Status -->
   <data name="Subscription.Status.Active" xml:space="preserve">
     <value>Active</value>
@@ -639,7 +639,7 @@
   <data name="Subscription.Status.TrialActive" xml:space="preserve">
     <value>Trial Active</value>
   </data>
-  
+
   <!-- Password Reset -->
   <data name="Password.OtpSent" xml:space="preserve">
     <value>If an account with that email exists, we've sent a password reset code. Please check your email.</value>
@@ -662,7 +662,7 @@
   <data name="Password.TooManyAttempts" xml:space="preserve">
     <value>Too many failed attempts. Please request a new code.</value>
   </data>
-  
+
   <!-- Backup Codes -->
   <data name="BackupCodes.Generated" xml:space="preserve">
     <value>Backup codes generated successfully. Save them in a secure location.</value>
@@ -813,5 +813,55 @@
   </data>
   <data name="SecurityReport.Threat.ThreatLevel" xml:space="preserve">
     <value>Current threat level: {0}</value>
+  </data>
+
+  <!-- Password Management with 2FA -->
+  <data name="Password.Requires2FA" xml:space="preserve">
+    <value>Two-factor authentication is enabled. Please use the change password with 2FA endpoint.</value>
+  </data>
+
+  <data name="Password.Changed" xml:space="preserve">
+    <value>Password changed successfully. All sessions have been invalidated for security.</value>
+  </data>
+
+  <data name="2FA.CodeRequired" xml:space="preserve">
+    <value>Two-factor authentication code or backup code is required.</value>
+  </data>
+
+  <data name="2FA.SecretNotFound" xml:space="preserve">
+    <value>Two-factor authentication secret not found. Please reset your 2FA.</value>
+  </data>
+
+  <!-- Backup Codes -->
+  <data name="BackupCodes.TwoFactorNotEnabled" xml:space="preserve">
+    <value>Two-factor authentication is not enabled for this account.</value>
+  </data>
+
+  <data name="BackupCodes.Invalid" xml:space="preserve">
+    <value>Invalid backup code. Please check and try again.</value>
+  </data>
+
+  <data name="BackupCodes.Expired" xml:space="preserve">
+    <value>This backup code has expired. Please generate new backup codes.</value>
+  </data>
+
+  <data name="BackupCodes.TooManyAttempts" xml:space="preserve">
+    <value>Too many backup code verification attempts. Please try again later.</value>
+  </data>
+
+  <data name="BackupCodes.Verified" xml:space="preserve">
+    <value>Backup code verified successfully.</value>
+  </data>
+
+  <data name="BackupCodes.LastCodeUsed" xml:space="preserve">
+    <value>This was your last backup code. Generate new codes immediately to avoid losing access to your account.</value>
+  </data>
+
+  <data name="BackupCodes.LowCount" xml:space="preserve">
+    <value>You have {0} backup codes remaining. Consider generating new codes soon.</value>
+  </data>
+
+  <data name="BackupCodes.Generated" xml:space="preserve">
+    <value>Backup codes generated successfully. Save them in a secure location - they will only be shown once.</value>
   </data>
 </root>

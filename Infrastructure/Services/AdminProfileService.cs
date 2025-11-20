@@ -36,6 +36,7 @@ public class AdminProfileService : IAdminProfileService
     private readonly IEmailService _emailService;
     private readonly IBackupCodeService _backupCodeService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IRefreshTokenRepository _refreshTokenRepo;
 
     public AdminProfileService(
         IAdminRepository repo,
@@ -47,7 +48,8 @@ public class AdminProfileService : IAdminProfileService
         ISubscriptionRepository subscriptionRepo,
         IEmailService emailService,
         IBackupCodeService backupCodeService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IRefreshTokenRepository refreshTokenRepo)
     {
         _repo = repo;
         _hasher = hasher;
@@ -59,6 +61,7 @@ public class AdminProfileService : IAdminProfileService
         _emailService = emailService;
         _backupCodeService = backupCodeService;
         _httpContextAccessor = httpContextAccessor;
+        _refreshTokenRepo = refreshTokenRepo;
     }
 
     // ===== Profile Information =====
@@ -330,6 +333,14 @@ public class AdminProfileService : IAdminProfileService
         if (admin is null)
             throw new NotFoundException(_localizer["UserNotFound"]);
 
+        // SECURITY: Force 2FA verification if enabled
+        if (admin.IsTwoFactorEnabled)
+        {
+            throw new BadRequestException(
+                _localizer["Password.Requires2FA"] ?? 
+                "Two-factor authentication is enabled. Please use the change password with 2FA endpoint.");
+        }
+
         bool valid = _hasher.VerifyPassword(request.CurrentPassword, admin.Password);
         if (!valid)
             throw new BadRequestException(_localizer["InvalidCurrentPassword"]);
@@ -347,6 +358,92 @@ public class AdminProfileService : IAdminProfileService
             if (string.IsNullOrEmpty(adminName)) adminName = admin.Username;
 
             // Send asynchronously without waiting (fire and forget)
+            _ = _emailService.SendPasswordChangedNotificationAsync(admin.Email, adminName, admin.PreferredLanguage);
+        }
+    }
+
+    public async Task ChangeMyPasswordWith2FAAsync(Guid currentUserId, ChangePasswordWith2FARequest request)
+    {
+        var admin = await _repo.GetByIdAsync(currentUserId, null);
+        if (admin is null)
+            throw new NotFoundException(_localizer["UserNotFound"]);
+
+        // 1. Verify current password
+        bool valid = _hasher.VerifyPassword(request.CurrentPassword, admin.Password);
+        if (!valid)
+            throw new BadRequestException(_localizer["InvalidCurrentPassword"]);
+
+        // 2. If 2FA is enabled, verify 2FA code OR backup code
+        if (admin.IsTwoFactorEnabled)
+        {
+            bool is2FAVerified = false;
+
+            // Option A: Verify 2FA code from authenticator app
+            if (!string.IsNullOrEmpty(request.TwoFactorCode))
+            {
+                if (string.IsNullOrEmpty(admin.TwoFactorSecret))
+                    throw new BadRequestException(_localizer["2FA.SecretNotFound"]);
+
+                var totp = new Totp(Base32Encoding.ToBytes(admin.TwoFactorSecret));
+                is2FAVerified = totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2));
+
+                if (!is2FAVerified)
+                    throw new BadRequestException(_localizer["Invalid2FACode"]);
+            }
+            // Option B: Verify backup code
+            else if (!string.IsNullOrEmpty(request.BackupCode))
+            {
+                // Verify and consume backup code
+                var backupCodeRequest = new VerifyBackupCodeRequest
+                {
+                    Username = admin.Username,
+                    BackupCode = request.BackupCode
+                };
+
+                var backupCodeResponse = await _backupCodeService.VerifyBackupCodeAsync(backupCodeRequest);
+                if (!backupCodeResponse.Success)
+                    throw new BadRequestException(_localizer["Invalid2FACode"]);
+
+                is2FAVerified = true;
+            }
+            else
+            {
+                throw new BadRequestException(_localizer["2FA.CodeRequired"]);
+            }
+
+            if (!is2FAVerified)
+                throw new BadRequestException(_localizer["Invalid2FACode"]);
+        }
+
+        // 3. Update password
+        admin.Password = _hasher.HashPassword(request.NewPassword);
+        admin.LastPasswordChangeAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(admin);
+        await _unitOfWork.SaveChangesAsync();
+
+        // 4. Invalidate all refresh tokens for security (revoke all active tokens)
+        var userTokens = await _refreshTokenRepo.FindAsync(rt => 
+            rt.AdminId == currentUserId && 
+            rt.IsActive && 
+            !rt.IsExpired && 
+            !rt.IsRevoked);
+        
+        foreach (var token in userTokens)
+        {
+            token.IsRevoked = true;
+            token.RevokedAt = DateTime.UtcNow;
+            token.RevokedReason = "PasswordChanged";
+            await _refreshTokenRepo.UpdateAsync(token);
+        }
+        await _unitOfWork.SaveChangesAsync();
+
+        // 5. Send password change notification email
+        if (!string.IsNullOrEmpty(admin.Email))
+        {
+            var adminName = $"{admin.FirstName} {admin.LastName}".Trim();
+            if (string.IsNullOrEmpty(adminName)) adminName = admin.Username;
+
             _ = _emailService.SendPasswordChangedNotificationAsync(admin.Email, adminName, admin.PreferredLanguage);
         }
     }
