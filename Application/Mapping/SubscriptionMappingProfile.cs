@@ -2,9 +2,9 @@ using AutoMapper;
 using Domain.Entities.Subscriptions;
 using Application.DTOs.Subscriptions;
 using Domain.Helpers;
-using Application.DTOs.ProjectDto;
-using Application.DTOs.ModuleDto;
-using Application.DTOs.PlanDto;
+using ModuleDtos = Application.DTOs.ModuleDto;
+using ProjectDtos = Application.DTOs.ProjectDto;
+using PlanDtos = Application.DTOs.PlanDto;
 
 namespace Application.Mapping;
 
@@ -13,65 +13,65 @@ public class SubscriptionMappingProfile : Profile
     public SubscriptionMappingProfile()
     {
         // ========== Project Mappings ==========
-        CreateMap<Project, ProjectDto>()
+        CreateMap<Project, ProjectDtos.ProjectDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
                 s.ProjectModules.Select(pm => pm.Module)));
 
-        CreateMap<CreateProjectDto, Project>()
+        CreateMap<ProjectDtos.CreateProjectDto, Project>()
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.ProjectModules, opt => opt.Ignore());
 
-        CreateMap<UpdateProjectDto, Project>()
+        CreateMap<ProjectDtos.UpdateProjectDto, Project>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         
         // Decrypt ModuleIds collection using universal converter - returns IEnumerable, will be converted to List
-        CreateMap<ModuleIdsRequest, IEnumerable<Guid>>()
+        CreateMap<ModuleDtos.ModuleIdsRequest, IEnumerable<Guid>>()
             .ConvertUsing<UniversalDecryptionConverter>();
         
         // Decrypt ProjectIds collection using universal converter - returns IEnumerable, will be converted to List
-        CreateMap<ProjectIdsRequest, IEnumerable<Guid>>()
+        CreateMap<ProjectDtos.ProjectIdsRequest, IEnumerable<Guid>>()
             .ConvertUsing<UniversalDecryptionConverter>();
         
         // Decrypt single PlanId for operations requiring encrypted Plan ID
-        CreateMap<PlanIdRequest, Guid>()
+        CreateMap<PlanDtos.PlanIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
         
         // Decrypt single ProjectId for operations requiring encrypted Project ID
-        CreateMap<ProjectIdRequest, Guid>()
+        CreateMap<ProjectDtos.ProjectIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
         
         // Decrypt single ModuleId for operations requiring encrypted Module ID
-        CreateMap<ModuleIdRequest, Guid>()
+        CreateMap<ModuleDtos.ModuleIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
 
         // ========== Module Mappings ==========
-        CreateMap<Module, ModuleDto>()
+        CreateMap<Module, ModuleDtos.ModuleDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.IsActive, opt => opt.MapFrom(s => s.IsActive));
             // Removed Projects mapping - modules don't own the relationship!
 
-        CreateMap<CreateModuleDto, Module>()
+        CreateMap<ModuleDtos.CreateModuleDto, Module>()
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.ProjectModules, opt => opt.Ignore())
             .ForMember(d => d.PlanModules, opt => opt.Ignore());
 
-        CreateMap<UpdateModuleDto, Module>()
+        CreateMap<ModuleDtos.UpdateModuleDto, Module>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // ========== Plan Price Mappings ==========
-        CreateMap<PlanPrice, PlanPriceDto>();
-        CreateMap<PlanPriceDto, PlanPrice>();
+        CreateMap<PlanPrice, PlanDtos.PlanPriceDto>();
+        CreateMap<PlanDtos.PlanPriceDto, PlanPrice>();
 
         // ========== Subscription Plan Mappings ==========
-        CreateMap<SubscriptionPlan, PlanDto>()
+        CreateMap<SubscriptionPlan, PlanDtos.PlanDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
             .ForMember(d => d.IsLifetimePlan, opt => opt.MapFrom(s => s.IsLifetimePlan))
             .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)));
 
-        CreateMap<SubscriptionPlan, PlanDetailsDto>()
+        CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
@@ -90,7 +90,7 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.PlanModules, opt => opt.Ignore())
             .ForMember(d => d.Subscriptions, opt => opt.Ignore());
 
-        CreateMap<UpdatePlanDto, SubscriptionPlan>()
+        CreateMap<PlanDtos.UpdatePlanDto, SubscriptionPlan>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // ========== Subscription Mappings ==========

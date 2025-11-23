@@ -140,7 +140,7 @@ namespace Infrastructure.Context
                     },
                 };
 
-                // Product Catalog Children - Projects & Modules (Plans will be added later)
+                // Product Catalog Children - Projects, Modules & Plans
                 var productCatalogChildren = new List<MenuItems>
                 {
                     new MenuItems
@@ -165,7 +165,18 @@ namespace Infrastructure.Context
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                         IsActive = true,
                     },
-                    // NOTE: Plans, Subscriptions, and License Keys will be added as we implement them
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.plans",
+                        Href = "/plans",
+                        Icon = "tag",
+                        Order = 3,
+                        ParentMenuItemsId = productCatalogParent.Id,
+                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                        IsActive = true,
+                    },
+                    // NOTE: Subscriptions, and License Keys will be added as we implement them
                 };
 
                 // Add all child menu items

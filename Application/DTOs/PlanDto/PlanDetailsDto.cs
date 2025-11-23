@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Application.DTOs.ProjectDto;
 using Domain.Enums;
-
 namespace Application.DTOs.PlanDto;
 
 /// <summary>
@@ -40,10 +40,10 @@ public class PlanDetailsDto
     /// <summary>
     /// Projects included in this plan with their features and modules
     /// </summary>
-    public List<ProjectDto> Projects { get; set; } = new();
+    public List<ProjectDto.ProjectDto> Projects { get; set; } = new();
     
     /// <summary>
     /// Standalone modules included in this plan
     /// </summary>
-    public List<ModuleDto> Modules { get; set; } = new();
+    public List<ModuleDto.ModuleDto> Modules { get; set; } = new();
 }
