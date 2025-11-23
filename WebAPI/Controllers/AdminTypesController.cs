@@ -58,5 +58,13 @@ public class AdminTypesController : ControllerBase
         var updated = await _service.UpdateAsync(request);
         return updated is null ? NotFound() : Ok(updated);
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var request = new DeleteAdminTypeRequest { AdminTypeId = id };
+        await _service.DeleteAsync(request);
+        return NoContent();
+    }
 }
 

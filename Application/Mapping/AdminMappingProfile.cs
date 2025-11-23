@@ -62,6 +62,9 @@ public class AdminMappingProfile : Profile
         CreateMap<UpdateAdminTypeByIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
 
+        CreateMap<DeleteAdminTypeRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+
         // Admin request DTOs - decrypt AdminId (using universal converter)
         CreateMap<GetAdminByIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();

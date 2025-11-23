@@ -565,8 +565,11 @@
   <data name="Admin.NotFound" xml:space="preserve">
     <value>Admin not found</value>
   </data>
-  <data name="AdminTypeNotFound" xml:space="preserve">
+  <data name="AdminType.NotFound" xml:space="preserve">
     <value>Admin type not found</value>
+  </data>
+  <data name="AdminType.CannotDelete" xml:space="preserve">
+    <value>Cannot delete this admin type. {0} admin(s) are currently using it. Please reassign these admins to a different type before deleting.</value>
   </data>
 
   <!-- Date of Birth Validation -->

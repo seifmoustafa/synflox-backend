@@ -565,8 +565,11 @@
   <data name="Admin.NotFound" xml:space="preserve">
     <value>المسؤول غير موجود</value>
   </data>
-  <data name="AdminTypeNotFound" xml:space="preserve">
+  <data name="AdminType.NotFound" xml:space="preserve">
     <value>نوع المسؤول غير موجود</value>
+  </data>
+  <data name="AdminType.CannotDelete" xml:space="preserve">
+    <value>لا يمكن حذف نوع المسؤول هذا. يوجد {0} مسؤول(ين) يستخدمونه حاليًا. يرجى إعادة تعيين هؤلاء المسؤولين إلى نوع مختلف قبل الحذف.</value>
   </data>
 
   <!-- التحقق من تاريخ الميلاد -->

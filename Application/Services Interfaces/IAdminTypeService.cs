@@ -13,5 +13,6 @@ public interface IAdminTypeService
     Task<AdminTypeDto?> GetByIdAsync(GetAdminTypeByIdRequest request);
     Task<AdminTypeDto> CreateAsync(CreateAdminTypeDto dto);
     Task<AdminTypeDto?> UpdateAsync(UpdateAdminTypeByIdRequest request);
+    Task DeleteAsync(DeleteAdminTypeRequest request);
 }
 
