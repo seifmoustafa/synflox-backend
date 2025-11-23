@@ -33,6 +33,10 @@ public class SubscriptionMappingProfile : Profile
         // Decrypt single PlanId for operations requiring encrypted Plan ID
         CreateMap<PlanIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
+        
+        // Decrypt single ProjectId for operations requiring encrypted Project ID
+        CreateMap<ProjectIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         // ========== Module Mappings ==========
         CreateMap<Module, ModuleDto>()

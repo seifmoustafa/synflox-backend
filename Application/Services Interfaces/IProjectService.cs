@@ -13,8 +13,8 @@ namespace Application.Services;
 public interface IProjectService
 {
     Task<ProjectDto> CreateAsync(CreateProjectDto dto);
-    Task<ProjectDto?> GetByIdAsync(Guid id);
+    Task<ProjectDto?> GetByIdAsync(ProjectIdRequest request);
     Task<(IEnumerable<ProjectDto> Projects, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search);
-    Task<ProjectDto?> UpdateAsync(Guid id, UpdateProjectDto dto);
-    Task<bool> DeleteAsync(Guid id);
+    Task<ProjectDto?> UpdateAsync(ProjectIdRequest request, UpdateProjectDto dto);
+    Task<bool> DeleteAsync(ProjectIdRequest request);
 }

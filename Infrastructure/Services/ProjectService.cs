@@ -74,9 +74,12 @@ public class ProjectService : IProjectService
         return _mapper.Map<ProjectDto>(result!);
     }
 
-    public async Task<ProjectDto?> GetByIdAsync(Guid id)
+    public async Task<ProjectDto?> GetByIdAsync(ProjectIdRequest request)
     {
-        var project = await _projectRepo.GetByIdWithModulesAsync(id);
+        // Use AutoMapper to decrypt the ID (SYNFLOX ID encryption rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var project = await _projectRepo.GetByIdWithModulesAsync(decryptedId);
         return project == null ? null : _mapper.Map<ProjectDto>(project);
     }
 
@@ -94,9 +97,12 @@ public class ProjectService : IProjectService
         return (dtos, meta);
     }
 
-    public async Task<ProjectDto?> UpdateAsync(Guid id, UpdateProjectDto dto)
+    public async Task<ProjectDto?> UpdateAsync(ProjectIdRequest request, UpdateProjectDto dto)
     {
-        var project = await _projectRepo.GetByIdAsync(id, new[] { "ProjectModules" });
+        // Use AutoMapper to decrypt the ID (SYNFLOX ID encryption rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var project = await _projectRepo.GetByIdAsync(decryptedId, new[] { "ProjectModules" });
         if (project == null)
             throw new NotFoundException(_localizer["Project.NotFound"]);
 
@@ -104,7 +110,7 @@ public class ProjectService : IProjectService
         if (dto.Name != null && dto.Name != project.Name)
         {
             var existing = await _projectRepo.GetByNameAsync(dto.Name);
-            if (existing != null && existing.Id != id)
+            if (existing != null && existing.Id != decryptedId)
                 throw new BadRequestException(_localizer["Project.NameExists"]);
         }
 
@@ -133,22 +139,25 @@ public class ProjectService : IProjectService
         await _projectRepo.UpdateAsync(project);
         await _unitOfWork.SaveChangesAsync();
 
-        var result = await _projectRepo.GetByIdWithModulesAsync(id);
+        var result = await _projectRepo.GetByIdWithModulesAsync(decryptedId);
         return _mapper.Map<ProjectDto>(result);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(ProjectIdRequest request)
     {
-        var project = await _projectRepo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the ID (SYNFLOX ID encryption rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var project = await _projectRepo.GetByIdAsync(decryptedId, null);
         if (project == null)
             throw new NotFoundException(_localizer["Project.NotFound"]);
 
         // Check if project is used in any active subscriptions
-        var isInUse = await _projectRepo.IsUsedInActiveSubscriptionsAsync(id);
+        var isInUse = await _projectRepo.IsUsedInActiveSubscriptionsAsync(decryptedId);
         if (isInUse)
             throw new InvalidOperationException(_localizer["Project.InUse"]);
 
-        await _projectRepo.DeleteAsync(id);
+        await _projectRepo.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

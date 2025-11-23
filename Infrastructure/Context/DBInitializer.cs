@@ -63,17 +63,17 @@ namespace Infrastructure.Context
                 await dbContext.SaveChangesAsync();
             }
 
-            // Seed Menu Items - Simplified 2-Parent Structure
+            // Seed Menu Items - 2-Parent Structure
             if (dbContext.MenuItems.Count() == 0)
             {
-                // Parent Menu Items (Only 2!)
+                // Parent Menu Items
                 var parentMenuItems = new List<MenuItems>
                 {
-                    // System Parent - Admin Management & Reference Data (Lookups)
+                    // System Parent - Admin Management & Core Data
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.System",
+                        Name = "nav.system",
                         Href = null,
                         Icon = "settings",
                         Order = 1,
@@ -81,13 +81,13 @@ namespace Infrastructure.Context
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                         IsActive = true,
                     },
-                    // Phase 1 Parent - Subscription Engine
+                    // Product Catalog Parent - Projects, Modules, Plans
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.Phase1",
+                        Name = "nav.productCatalog",
                         Href = null,
-                        Icon = "rocket",
+                        Icon = "package",
                         Order = 2,
                         ParentMenuItemsId = null,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
@@ -99,18 +99,18 @@ namespace Infrastructure.Context
                 await dbContext.SaveChangesAsync();
 
                 // Get parent references
-                var systemParent = parentMenuItems.First(m => m.Name == "nav.System");
-                var phase1Parent = parentMenuItems.First(m => m.Name == "nav.Phase1");
+                var systemParent = parentMenuItems.First(m => m.Name == "nav.system");
+                var productCatalogParent = parentMenuItems.First(m => m.Name == "nav.productCatalog");
 
-                // System Children - Admin Management & Lookups
+                // System Children - Admin Management & Core Data
                 var systemChildren = new List<MenuItems>
                 {
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.Admins",
+                        Name = "nav.admins",
                         Href = "/admins",
-                        Icon = "user-shield",
+                        Icon = "users",
                         Order = 1,
                         ParentMenuItemsId = systemParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
@@ -119,9 +119,9 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.AdminTypes",
+                        Name = "nav.adminTypes",
                         Href = "/admin-types",
-                        Icon = "user-tag",
+                        Icon = "shield-check",
                         Order = 2,
                         ParentMenuItemsId = systemParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
@@ -130,9 +130,9 @@ namespace Infrastructure.Context
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.Companies",
+                        Name = "nav.companies",
                         Href = "/companies",
-                        Icon = "building",
+                        Icon = "building-2",
                         Order = 3,
                         ParentMenuItemsId = systemParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
@@ -140,83 +140,37 @@ namespace Infrastructure.Context
                     },
                 };
 
-                // Phase 1 Children - Subscription Engine (Logically Arranged)
-                var phase1Children = new List<MenuItems>
+                // Product Catalog Children - Projects & Modules (Plans will be added later)
+                var productCatalogChildren = new List<MenuItems>
                 {
-                    // 1. Catalog Management (Building Blocks)
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.Projects",
+                        Name = "nav.projects",
                         Href = "/projects",
                         Icon = "folder-kanban",
                         Order = 1,
-                        ParentMenuItemsId = phase1Parent.Id,
+                        ParentMenuItemsId = productCatalogParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                         IsActive = true,
                     },
                     new MenuItems
                     {
                         Id = Guid.NewGuid(),
-                        Name = "nav.Modules",
+                        Name = "nav.modules",
                         Href = "/modules",
-                        Icon = "puzzle",
+                        Icon = "boxes",
                         Order = 2,
-                        ParentMenuItemsId = phase1Parent.Id,
+                        ParentMenuItemsId = productCatalogParent.Id,
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                         IsActive = true,
                     },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.SubscriptionPlans",
-                        Href = "/plans",
-                        Icon = "package",
-                        Order = 3,
-                        ParentMenuItemsId = phase1Parent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    
-                    // 2. Subscription Operations
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.AllSubscriptions",
-                        Href = "/subscriptions",
-                        Icon = "calendar-check",
-                        Order = 4,
-                        ParentMenuItemsId = phase1Parent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.ActiveSubscriptions",
-                        Href = "/subscriptions/active",
-                        Icon = "badge-check",
-                        Order = 5,
-                        ParentMenuItemsId = phase1Parent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.CreateSubscription",
-                        Href = "/subscriptions/create",
-                        Icon = "plus-circle",
-                        Order = 6,
-                        ParentMenuItemsId = phase1Parent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
+                    // NOTE: Plans, Subscriptions, and License Keys will be added as we implement them
                 };
 
                 // Add all child menu items
                 await dbContext.MenuItems.AddRangeAsync(systemChildren);
-                await dbContext.MenuItems.AddRangeAsync(phase1Children);
+                await dbContext.MenuItems.AddRangeAsync(productCatalogChildren);
                 await dbContext.SaveChangesAsync();
             }
         }

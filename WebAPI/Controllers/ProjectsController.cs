@@ -31,7 +31,9 @@ public class ProjectsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var project = await _projectService.GetByIdAsync(id);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new ProjectIdRequest { ProjectId = id };
+        var project = await _projectService.GetByIdAsync(request);
         if (project == null)
             return NotFound(new { message = _localizer["Project.NotFound"] });
 
@@ -54,7 +56,9 @@ public class ProjectsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var project = await _projectService.UpdateAsync(id, dto);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new ProjectIdRequest { ProjectId = id };
+        var project = await _projectService.UpdateAsync(request, dto);
         if (project == null)
             return NotFound(new { message = _localizer["Project.NotFound"] });
 
@@ -64,7 +68,9 @@ public class ProjectsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _projectService.DeleteAsync(id);
+        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+        var request = new ProjectIdRequest { ProjectId = id };
+        await _projectService.DeleteAsync(request);
         return NoContent();
     }
 }
