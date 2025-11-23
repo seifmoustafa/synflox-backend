@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ProjectDto;
 
 public class UpdateProjectDto
 {

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Application.DTOs.ModuleDto;
 using Application.DTOs.Subscriptions;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;

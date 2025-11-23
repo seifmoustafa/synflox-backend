@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Application.DTOs.PlanDto;
 using Application.DTOs.Subscriptions;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -66,7 +67,7 @@ public class PlansController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSubscriptionPlanDto dto)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePlanDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Application.DTOs.Subscriptions;
+using Application.DTOs.ModuleDto;
 using Application.Services;
 using AutoMapper;
 using Domain.Entities.Common;

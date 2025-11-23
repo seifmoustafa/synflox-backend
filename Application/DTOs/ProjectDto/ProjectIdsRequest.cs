@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ProjectDto;
 
 /// <summary>
 /// Request wrapper for decrypting a collection of Project IDs

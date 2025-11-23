@@ -1,6 +1,6 @@
 using System;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ModuleDto;
 
 /// <summary>
 /// Request containing encrypted Module ID

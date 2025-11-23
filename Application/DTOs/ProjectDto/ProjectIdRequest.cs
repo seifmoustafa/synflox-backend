@@ -1,6 +1,6 @@
 using System;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ProjectDto;
 
 /// <summary>
 /// Request DTO for operations requiring a Project ID

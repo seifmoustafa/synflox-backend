@@ -1,7 +1,8 @@
+using Application.DTOs.Subscriptions;
 using System;
 using System.Collections.Generic;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ProjectDto;
 
 public class ProjectDto
 {

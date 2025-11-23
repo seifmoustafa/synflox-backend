@@ -2,17 +2,20 @@ using System;
 using System.Collections.Generic;
 using Domain.Enums;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.PlanDto;
 
-public class SubscriptionPlanDto
+/// <summary>
+/// Aggregated view of a plan with all included projects, modules, and features
+/// Used for detailed plan display in UI
+/// </summary>
+public class PlanDetailsDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     
     /// <summary>
-    /// The type of duration for this plan (Weekly, Monthly, Yearly, Lifetime, etc.)
-    /// This is the SINGLE SOURCE OF TRUTH - expiry dates calculated from this.
+    /// The type of duration for this plan (source of truth for expiry calculation)
     /// </summary>
     public PlanDurationType DurationType { get; set; }
     
@@ -22,7 +25,7 @@ public class SubscriptionPlanDto
     public bool IsLifetimePlan { get; set; }
     
     /// <summary>
-    /// Human-readable duration description (e.g., "Monthly (1 month)", "Lifetime (Never Expires)")
+    /// Human-readable duration description
     /// </summary>
     public string DurationDescription { get; set; } = string.Empty;
     
@@ -33,10 +36,14 @@ public class SubscriptionPlanDto
     public int GracePeriodDays { get; set; }
     public List<string> CustomFeatures { get; set; } = new();
     public List<PlanPriceDto> Prices { get; set; } = new();
-}
-
-public class PlanPriceDto
-{
-    public Currency Currency { get; set; }
-    public decimal Amount { get; set; }
+    
+    /// <summary>
+    /// Projects included in this plan with their features and modules
+    /// </summary>
+    public List<ProjectDto> Projects { get; set; } = new();
+    
+    /// <summary>
+    /// Standalone modules included in this plan
+    /// </summary>
+    public List<ModuleDto> Modules { get; set; } = new();
 }

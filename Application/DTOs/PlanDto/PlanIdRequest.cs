@@ -1,6 +1,6 @@
 using System;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.PlanDto;
 
 /// <summary>
 /// Request DTO for operations requiring a single encrypted Plan ID

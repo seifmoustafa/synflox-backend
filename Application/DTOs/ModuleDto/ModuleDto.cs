@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ModuleDto;
 
 public class ModuleDto
 {

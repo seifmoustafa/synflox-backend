@@ -2,6 +2,9 @@ using AutoMapper;
 using Domain.Entities.Subscriptions;
 using Application.DTOs.Subscriptions;
 using Domain.Helpers;
+using Application.DTOs.ProjectDto;
+using Application.DTOs.ModuleDto;
+using Application.DTOs.PlanDto;
 
 namespace Application.Mapping;
 
@@ -61,7 +64,7 @@ public class SubscriptionMappingProfile : Profile
         CreateMap<PlanPriceDto, PlanPrice>();
 
         // ========== Subscription Plan Mappings ==========
-        CreateMap<SubscriptionPlan, SubscriptionPlanDto>()
+        CreateMap<SubscriptionPlan, PlanDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
@@ -87,7 +90,7 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.PlanModules, opt => opt.Ignore())
             .ForMember(d => d.Subscriptions, opt => opt.Ignore());
 
-        CreateMap<UpdateSubscriptionPlanDto, SubscriptionPlan>()
+        CreateMap<UpdatePlanDto, SubscriptionPlan>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // ========== Subscription Mappings ==========

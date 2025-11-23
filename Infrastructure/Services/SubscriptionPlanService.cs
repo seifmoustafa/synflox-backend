@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.DTOs.PlanDto;
 using Application.DTOs.Subscriptions;
 using Application.Services;
 using AutoMapper;
@@ -44,7 +45,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<SubscriptionPlanDto> CreateAsync(CreateSubscriptionPlanDto dto)
+    public async Task<PlanDto> CreateAsync(CreateSubscriptionPlanDto dto)
     {
         // ⭐ LIFETIME PLAN VALIDATION
         if (dto.DurationType == Domain.Enums.PlanDurationType.Lifetime)
@@ -143,16 +144,16 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         await _unitOfWork.SaveChangesAsync();
 
         var result = await _planRepo.GetWithDetailsAsync(plan.Id);
-        return _mapper.Map<SubscriptionPlanDto>(result!);
+        return _mapper.Map<PlanDto>(result!);
     }
 
-    public async Task<SubscriptionPlanDto?> GetByIdAsync(PlanIdRequest request)
+    public async Task<PlanDto?> GetByIdAsync(PlanIdRequest request)
     {
         // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
         var decryptedPlanId = _mapper.Map<Guid>(request);
         
         var plan = await _planRepo.GetWithDetailsAsync(decryptedPlanId);
-        return plan == null ? null : _mapper.Map<SubscriptionPlanDto>(plan);
+        return plan == null ? null : _mapper.Map<PlanDto>(plan);
     }
 
     public async Task<PlanDetailsDto?> GetDetailsAsync(PlanIdRequest request)
@@ -164,7 +165,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         return plan == null ? null : _mapper.Map<PlanDetailsDto>(plan);
     }
 
-    public async Task<(IEnumerable<SubscriptionPlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search)
+    public async Task<(IEnumerable<PlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search)
     {
         var (plans, meta) = await _planRepo.GetAllAsync(
             new[] { "PlanPrices" },
@@ -174,11 +175,11 @@ public class SubscriptionPlanService : ISubscriptionPlanService
             default,
             p => p.Name);
 
-        var dtos = _mapper.Map<IEnumerable<SubscriptionPlanDto>>(plans);
+        var dtos = _mapper.Map<IEnumerable<PlanDto>>(plans);
         return (dtos, meta);
     }
 
-    public async Task<SubscriptionPlanDto?> UpdateAsync(PlanIdRequest request, UpdateSubscriptionPlanDto dto)
+    public async Task<PlanDto?> UpdateAsync(PlanIdRequest request, UpdatePlanDto dto)
     {
         // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
         var decryptedPlanId = _mapper.Map<Guid>(request);
@@ -287,7 +288,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         await _unitOfWork.SaveChangesAsync();
 
         var result = await _planRepo.GetWithDetailsAsync(decryptedPlanId);
-        return _mapper.Map<SubscriptionPlanDto>(result);
+        return _mapper.Map<PlanDto>(result);
     }
 
     public async Task<bool> DeleteAsync(PlanIdRequest request)

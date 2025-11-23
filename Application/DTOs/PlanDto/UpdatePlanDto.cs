@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Domain.Enums;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.PlanDto;
 
-public class UpdateSubscriptionPlanDto
+public class UpdatePlanDto
 {
     [StringLength(150, MinimumLength = 2)]
     public string? Name { get; set; }

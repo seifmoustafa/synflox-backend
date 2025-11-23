@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Application.DTOs.PlanDto;
 using Domain.Enums;
 
 namespace Application.DTOs.Subscriptions;

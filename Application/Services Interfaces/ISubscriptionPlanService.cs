@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Application.DTOs.PlanDto;
 using Application.DTOs.Subscriptions;
 using Domain.Entities.Common;
 
@@ -13,10 +14,10 @@ namespace Application.Services;
 /// </summary>
 public interface ISubscriptionPlanService
 {
-    Task<SubscriptionPlanDto> CreateAsync(CreateSubscriptionPlanDto dto);
-    Task<SubscriptionPlanDto?> GetByIdAsync(PlanIdRequest request);
+    Task<PlanDto> CreateAsync(CreateSubscriptionPlanDto dto);
+    Task<PlanDto?> GetByIdAsync(PlanIdRequest request);
     Task<PlanDetailsDto?> GetDetailsAsync(PlanIdRequest request);
-    Task<(IEnumerable<SubscriptionPlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search);
-    Task<SubscriptionPlanDto?> UpdateAsync(PlanIdRequest request, UpdateSubscriptionPlanDto dto);
+    Task<(IEnumerable<PlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search);
+    Task<PlanDto?> UpdateAsync(PlanIdRequest request, UpdatePlanDto dto);
     Task<bool> DeleteAsync(PlanIdRequest request);
 }

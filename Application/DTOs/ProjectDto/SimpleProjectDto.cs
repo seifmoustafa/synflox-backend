@@ -1,6 +1,6 @@
 using System;
 
-namespace Application.DTOs.Subscriptions;
+namespace Application.DTOs.ProjectDto;
 
 /// <summary>
 /// Simplified Project DTO for module relationships
