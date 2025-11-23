@@ -36,11 +36,12 @@ public class PlansController : ControllerBase
     {
         // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
         var request = new PlanIdRequest { PlanId = id };
-        var plan = await _planService.GetByIdAsync(request);
+        // Use GetDetailsAsync to include Projects and Modules for edit form
+        var plan = await _planService.GetDetailsAsync(request);
         if (plan == null)
             return NotFound(new { message = _localizer["Plan.NotFound"] });
 
-        return Ok(plan);
+        return Ok(new { data = plan });
     }
 
     [HttpGet("{id}/details")]
