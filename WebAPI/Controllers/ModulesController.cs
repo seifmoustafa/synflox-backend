@@ -31,7 +31,10 @@ public class ModulesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var module = await _moduleService.GetByIdAsync(id);
+        // Create request DTO for AutoMapper decryption (SYNFLOX ID encryption rule)
+        var request = new ModuleIdRequest { ModuleId = id };
+        
+        var module = await _moduleService.GetByIdAsync(request);
         if (module == null)
             return NotFound(new { message = _localizer["Module.NotFound"] });
 
@@ -54,7 +57,10 @@ public class ModulesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var module = await _moduleService.UpdateAsync(id, dto);
+        // Create request DTO for AutoMapper decryption (SYNFLOX ID encryption rule)
+        var request = new ModuleIdRequest { ModuleId = id };
+        
+        var module = await _moduleService.UpdateAsync(request, dto);
         if (module == null)
             return NotFound(new { message = _localizer["Module.NotFound"] });
 
@@ -64,7 +70,34 @@ public class ModulesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _moduleService.DeleteAsync(id);
+        // Create request DTO for AutoMapper decryption (SYNFLOX ID encryption rule)
+        var request = new ModuleIdRequest { ModuleId = id };
+        
+        await _moduleService.DeleteAsync(request);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Activate module by ID
+    /// </summary>
+    [HttpPut("{id}/activate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> Activate(Guid id)
+    {
+        var request = new ModuleIdRequest { ModuleId = id };
+        await _moduleService.ActivateAsync(request);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Deactivate module by ID
+    /// </summary>
+    [HttpPut("{id}/deactivate")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> Deactivate(Guid id)
+    {
+        var request = new ModuleIdRequest { ModuleId = id };
+        await _moduleService.DeactivateAsync(request);
         return NoContent();
     }
 }

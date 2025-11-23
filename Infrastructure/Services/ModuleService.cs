@@ -49,9 +49,13 @@ public class ModuleService : IModuleService
         return _mapper.Map<ModuleDto>(module);
     }
 
-    public async Task<ModuleDto?> GetByIdAsync(Guid id)
+    public async Task<ModuleDto?> GetByIdAsync(ModuleIdRequest request)
     {
-        var module = await _moduleRepo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the encrypted Module ID (SYNFLOX ID encryption rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        // Include ProjectModules.Project for bidirectional integration
+        var module = await _moduleRepo.GetByIdAsync(decryptedId, new[] { "ProjectModules.Project" });
         return module == null ? null : _mapper.Map<ModuleDto>(module);
     }
 
@@ -69,16 +73,19 @@ public class ModuleService : IModuleService
         return (dtos, meta);
     }
 
-    public async Task<ModuleDto?> UpdateAsync(Guid id, UpdateModuleDto dto)
+    public async Task<ModuleDto?> UpdateAsync(ModuleIdRequest request, UpdateModuleDto dto)
     {
-        var module = await _moduleRepo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the encrypted Module ID (SYNFLOX ID encryption rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var module = await _moduleRepo.GetByIdAsync(decryptedId, null);
         if (module == null)
             throw new NotFoundException(_localizer["Module.NotFound"]);
 
         if (dto.Name != null && dto.Name != module.Name)
         {
             var existing = await _moduleRepo.GetByNameAsync(dto.Name);
-            if (existing != null && existing.Id != id)
+            if (existing != null && existing.Id != decryptedId)
                 throw new BadRequestException(_localizer["Module.NameExists"]);
         }
 
@@ -89,19 +96,50 @@ public class ModuleService : IModuleService
         return _mapper.Map<ModuleDto>(module);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(ModuleIdRequest request)
     {
-        var module = await _moduleRepo.GetByIdAsync(id, null);
+        // Use AutoMapper to decrypt the encrypted Module ID (SYNFLOX ID encryption rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+        
+        var module = await _moduleRepo.GetByIdAsync(decryptedId, null);
         if (module == null)
             throw new NotFoundException(_localizer["Module.NotFound"]);
 
         // Check if module is used in projects or plans
-        var isInUse = await _moduleRepo.IsUsedInProjectsOrPlansAsync(id);
+        var isInUse = await _moduleRepo.IsUsedInProjectsOrPlansAsync(decryptedId);
         if (isInUse)
             throw new InvalidOperationException(_localizer["Module.InUse"]);
 
-        await _moduleRepo.DeleteAsync(id);
+        await _moduleRepo.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         return true;
+    }
+
+    public async Task ActivateAsync(ModuleIdRequest request)
+    {
+        // Decrypt ID via AutoMapper (SYNFLOX rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+
+        var module = await _moduleRepo.GetByIdAsync(decryptedId, null);
+        if (module == null)
+            throw new KeyNotFoundException(_localizer["Module.NotFound"]);
+
+        module.IsActive = true;
+        await _moduleRepo.UpdateAsync(module);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task DeactivateAsync(ModuleIdRequest request)
+    {
+        // Decrypt ID via AutoMapper (SYNFLOX rule)
+        var decryptedId = _mapper.Map<Guid>(request);
+
+        var module = await _moduleRepo.GetByIdAsync(decryptedId, null);
+        if (module == null)
+            throw new KeyNotFoundException(_localizer["Module.NotFound"]);
+
+        module.IsActive = false;
+        await _moduleRepo.UpdateAsync(module);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

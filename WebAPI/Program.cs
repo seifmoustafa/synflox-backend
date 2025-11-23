@@ -62,7 +62,13 @@ builder.Services.AddSingleton<Microsoft.Extensions.Caching.Memory.IMemoryCache>(
     sp => new Microsoft.Extensions.Caching.Memory.MemoryCache(
         new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
 builder.Services.AddResponseCaching();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Handle circular references (Project ↔ Module bidirectional relationship)
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 builder.Services.AddSignalR(); // Real-time security notifications
 
 // Register SecurityNotificationService with Hub context (after SignalR registration)

@@ -37,10 +37,16 @@ public class SubscriptionMappingProfile : Profile
         // Decrypt single ProjectId for operations requiring encrypted Project ID
         CreateMap<ProjectIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
+        
+        // Decrypt single ModuleId for operations requiring encrypted Module ID
+        CreateMap<ModuleIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
 
         // ========== Module Mappings ==========
         CreateMap<Module, ModuleDto>()
-            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
+            .ForMember(d => d.IsActive, opt => opt.MapFrom(s => s.IsActive));
+            // Removed Projects mapping - modules don't own the relationship!
 
         CreateMap<CreateModuleDto, Module>()
             .ForMember(d => d.Id, opt => opt.Ignore())
