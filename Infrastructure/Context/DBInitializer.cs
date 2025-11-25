@@ -93,6 +93,18 @@ namespace Infrastructure.Context
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                         IsActive = true,
                     },
+                    // License Management Parent - Subscriptions, License Keys
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.licenseManagement",
+                        Href = null,
+                        Icon = "file-key",
+                        Order = 3,
+                        ParentMenuItemsId = null,
+                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                        IsActive = true,
+                    },
                 };
 
                 await dbContext.MenuItems.AddRangeAsync(parentMenuItems);
@@ -101,6 +113,7 @@ namespace Infrastructure.Context
                 // Get parent references
                 var systemParent = parentMenuItems.First(m => m.Name == "nav.system");
                 var productCatalogParent = parentMenuItems.First(m => m.Name == "nav.productCatalog");
+                var licenseManagementParent = parentMenuItems.First(m => m.Name == "nav.licenseManagement");
 
                 // System Children - Admin Management & Core Data
                 var systemChildren = new List<MenuItems>
@@ -176,12 +189,29 @@ namespace Infrastructure.Context
                         AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                         IsActive = true,
                     },
-                    // NOTE: Subscriptions, and License Keys will be added as we implement them
+                };
+
+                // License Management Children - Subscriptions & License Keys
+                var licenseManagementChildren = new List<MenuItems>
+                {
+                    new MenuItems
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "nav.subscriptions",
+                        Href = "/subscriptions",
+                        Icon = "calendar-check",
+                        Order = 1,
+                        ParentMenuItemsId = licenseManagementParent.Id,
+                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                        IsActive = true,
+                    },
+                    // NOTE: License Keys will be added in Phase 4
                 };
 
                 // Add all child menu items
                 await dbContext.MenuItems.AddRangeAsync(systemChildren);
                 await dbContext.MenuItems.AddRangeAsync(productCatalogChildren);
+                await dbContext.MenuItems.AddRangeAsync(licenseManagementChildren);
                 await dbContext.SaveChangesAsync();
             }
         }
