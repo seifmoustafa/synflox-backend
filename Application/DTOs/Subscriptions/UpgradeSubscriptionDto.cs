@@ -19,3 +19,11 @@ public class UpgradeSubscriptionDto
     /// </summary>
     public bool? NewAutoRenew { get; set; }
 }
+
+/// <summary>
+/// Request wrapper to decrypt NewPlanId from UpgradeSubscriptionDto
+/// </summary>
+public class UpgradeNewPlanIdRequest
+{
+    public Guid NewPlanId { get; set; }
+}

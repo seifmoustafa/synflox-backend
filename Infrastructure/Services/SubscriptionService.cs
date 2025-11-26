@@ -11,6 +11,7 @@ using Domain.Entities.Common;
 using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Domain.Helpers;
 using Microsoft.Extensions.Logging;
 
@@ -26,6 +27,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly ISubscriptionPlanRepository _planRepo;
     private readonly ICompanyRepository _companyRepo;
     private readonly IOutboxEventRepository _outboxRepo;
+    private readonly ISubscriptionHistoryRepository _historyRepo;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -39,6 +41,7 @@ public class SubscriptionService : ISubscriptionService
         ISubscriptionPlanRepository planRepo,
         ICompanyRepository companyRepo,
         IOutboxEventRepository outboxRepo,
+        ISubscriptionHistoryRepository historyRepo,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
@@ -51,6 +54,7 @@ public class SubscriptionService : ISubscriptionService
         _planRepo = planRepo;
         _companyRepo = companyRepo;
         _outboxRepo = outboxRepo;
+        _historyRepo = historyRepo;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -79,8 +83,19 @@ public class SubscriptionService : ISubscriptionService
         if (dto.StartWithTrial && !plan.AllowTrial)
             throw new PlanTrialNotAllowedException(_localizer["Plan.TrialNotAllowed"]);
 
+        // Determine currency: use provided or auto-select from plan's available prices
+        var selectedCurrency = dto.Currency;
+        if (!selectedCurrency.HasValue)
+        {
+            // Auto-select first available currency from plan prices
+            var firstPrice = plan.PlanPrices.FirstOrDefault();
+            if (firstPrice == null)
+                throw new BadRequestException(_localizer["Plan.NoPricesAvailable"]);
+            selectedCurrency = firstPrice.Currency;
+        }
+
         // Get price for selected currency
-        var price = await _planRepo.GetPriceAsync(subscription.PlanId, dto.Currency);
+        var price = await _planRepo.GetPriceAsync(subscription.PlanId, selectedCurrency.Value);
         if (!price.HasValue)
             throw new BadRequestException(_localizer["Plan.PriceNotAvailableForCurrency"]);
 
@@ -105,7 +120,7 @@ public class SubscriptionService : ISubscriptionService
         // Lifetime plans cannot auto-renew
         subscription.AutoRenew = plan.IsLifetimePlan ? false : (dto.AutoRenew ?? plan.AutoRenew);
         
-        subscription.Currency = dto.Currency;
+        subscription.Currency = selectedCurrency.Value;
         subscription.Amount = price.Value;
         subscription.StatusReason = dto.StartWithTrial ? "Trial started" : 
                                     plan.IsLifetimePlan ? "Lifetime subscription activated" : 
@@ -273,80 +288,61 @@ public class SubscriptionService : ISubscriptionService
         var plan = subscription.Plan;
         var company = subscription.Company;
 
-        Subscription newSubscription;
+        // Store previous values for history
+        var previousExpiryDate = subscription.ExpiryDateUtc;
+        var previousStatus = subscription.IsActive ? LicenseStatus.Active : 
+                            (subscription.IsExpired ? LicenseStatus.Expired : LicenseStatus.Suspended);
 
-        if (dto.RenewStrategy == "ExtendInPlace")
+        // SINGLE STRATEGY: Update existing subscription in place
+        // Calculate new expiry from current expiry (if active) or from now (if expired)
+        var baseDate = subscription.IsExpired ? DateTime.UtcNow : subscription.ExpiryDateUtc;
+        subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(baseDate, plan.DurationType);
+        subscription.AutoRenew = dto.NewAutoRenew ?? subscription.AutoRenew;
+        subscription.IsActive = true;
+        subscription.IsExpired = false;
+        subscription.StatusReason = dto.Reason ?? "Renewed";
+
+        if (dto.NextPlanId.HasValue)
         {
-            // Extend current subscription (not recommended but supported)
-            // Use PlanDurationHelper for dynamic duration
-            subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(subscription.ExpiryDateUtc, plan.DurationType);
-            subscription.AutoRenew = dto.NewAutoRenew ?? subscription.AutoRenew;
-            subscription.StatusReason = "Extended in place";
-
-            if (dto.NextPlanId.HasValue)
-            {
-                subscription.NextPlanId = dto.NextPlanId;
-                subscription.NextPlanStartDateUtc = dto.NextPlanStartDateUtc ?? subscription.ExpiryDateUtc.AddSeconds(1);
-            }
-
-            await _subscriptionRepo.UpdateAsync(subscription);
-            await _unitOfWork.SaveChangesAsync();
-
-            newSubscription = subscription;
+            subscription.NextPlanId = dto.NextPlanId;
+            subscription.NextPlanStartDateUtc = dto.NextPlanStartDateUtc ?? subscription.ExpiryDateUtc.AddSeconds(1);
         }
-        else // CreateFollowUp (preferred)
-        {
-            var startDate = subscription.IsExpired ? DateTime.UtcNow : subscription.ExpiryDateUtc.AddSeconds(1);
 
-            newSubscription = new Subscription
-            {
-                Id = Guid.NewGuid(),
-                CompanyId = subscription.CompanyId,
-                PlanId = subscription.PlanId,
-                StartDateUtc = startDate,
-                ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(startDate, plan.DurationType), // Use helper
-                IsActive = true,
-                IsExpired = false,
-                IsTrial = false,
-                AutoRenew = dto.NewAutoRenew ?? subscription.AutoRenew,
-                Currency = subscription.Currency,
-                Amount = subscription.Amount,
-                ParentSubscriptionId = subscription.Id,
-                StatusReason = "Renewed"
-            };
-
-            if (dto.NextPlanId.HasValue)
-            {
-                newSubscription.NextPlanId = dto.NextPlanId;
-                newSubscription.NextPlanStartDateUtc = dto.NextPlanStartDateUtc ?? newSubscription.ExpiryDateUtc.AddSeconds(1);
-            }
-
-            await _subscriptionRepo.AddAsync(newSubscription);
-            await _unitOfWork.SaveChangesAsync();
-        }
+        await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history - all changes tracked here
+        await RecordHistoryAsync(subscriptionId, "Renewed", 
+            previousStatus: previousStatus,
+            newStatus: LicenseStatus.Active,
+            previousExpiryDate: previousExpiryDate, 
+            newExpiryDate: subscription.ExpiryDateUtc,
+            reason: dto.Reason ?? "Subscription renewed");
+        
+        await _unitOfWork.SaveChangesAsync();
 
         // Send renewal email notification
         await _emailService.SendSubscriptionRenewedEmailAsync(
             company.ContactEmail,
             company.Name,
             plan.Name,
-            newSubscription.ExpiryDateUtc,
-            null); // Uses request culture
+            subscription.ExpiryDateUtc,
+            dto.Reason);
 
         // Create outbox event
         await CreateOutboxEventAsync(
             SubscriptionEventType.Renewed,
             company.Id,
-            newSubscription.Id,
+            subscription.Id,
             new
             {
                 CompanyName = company.Name,
                 CompanyEmail = company.ContactEmail,
                 PlanName = plan.Name,
-                NewExpiryDate = newSubscription.ExpiryDateUtc
+                PreviousExpiryDate = previousExpiryDate,
+                NewExpiryDate = subscription.ExpiryDateUtc
             });
 
-        var result = await _subscriptionRepo.GetWithDetailsAsync(newSubscription.Id);
+        var result = await _subscriptionRepo.GetWithDetailsAsync(subscription.Id);
         var renewedDto = _mapper.Map<SubscriptionDto>(result!);
         SetLicenseKeyIfSuperAdmin(renewedDto, result!);
         return renewedDto;
@@ -354,70 +350,65 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task<UpgradeResponseDto> UpgradeSubscriptionAsync(Guid subscriptionId, UpgradeSubscriptionDto dto)
     {
-        var oldSubscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
-        if (oldSubscription == null)
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
 
-        var newPlan = await _planRepo.GetWithDetailsAsync(dto.NewPlanId);
+        // Decrypt NewPlanId using AutoMapper (SYNFLOX ID ENCRYPTION RULE)
+        var decryptedNewPlanId = _mapper.Map<Guid>(new UpgradeNewPlanIdRequest { NewPlanId = dto.NewPlanId });
+
+        var newPlan = await _planRepo.GetWithDetailsAsync(decryptedNewPlanId);
         if (newPlan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
 
-        var company = oldSubscription.Company;
-        var oldPlan = oldSubscription.Plan;
+        var company = subscription.Company;
+        var oldPlan = subscription.Plan;
 
         // Determine effective upgrade mode
         var mode = dto.Mode == "DefaultFromPolicy"
-            ? (oldSubscription.UpgradePolicyOverride ?? oldPlan.UpgradePolicy).ToString()
+            ? (subscription.UpgradePolicyOverride ?? oldPlan.UpgradePolicy).ToString()
             : dto.Mode;
 
         // Get new plan price
-        var newPrice = await _planRepo.GetPriceAsync(dto.NewPlanId, oldSubscription.Currency);
+        var newPrice = await _planRepo.GetPriceAsync(decryptedNewPlanId, subscription.Currency);
         if (!newPrice.HasValue)
             throw new BadRequestException(_localizer["Plan.PriceNotAvailableForCurrency"]);
 
-        Subscription? newSubscription = null;
         ProrationSuggestionDto? proration = null;
-
         var now = DateTime.UtcNow;
+
+        // Store previous values for history
+        var previousPlanId = subscription.PlanId;
+        var previousPlanName = oldPlan.Name;
+        var previousExpiryDate = subscription.ExpiryDateUtc;
+        var previousAmount = subscription.Amount;
+        var previousStartDate = subscription.StartDateUtc;
 
         switch (mode)
         {
             case "FullReplace":
-                // Terminate current immediately, start new with full duration
-                oldSubscription.IsActive = false;
-                oldSubscription.IsExpired = true;
-                oldSubscription.StatusReason = $"Upgraded to {newPlan.Name} (FullReplace)";
-                await _subscriptionRepo.UpdateAsync(oldSubscription);
-
-                newSubscription = new Subscription
-                {
-                    Id = Guid.NewGuid(),
-                    CompanyId = oldSubscription.CompanyId,
-                    PlanId = dto.NewPlanId,
-                    StartDateUtc = now,
-                    ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, newPlan.DurationType),
-                    IsActive = true,
-                    IsExpired = false,
-                    IsTrial = false,
-                    AutoRenew = dto.NewAutoRenew ?? newPlan.AutoRenew,
-                    Currency = oldSubscription.Currency,
-                    Amount = newPrice.Value,
-                    ParentSubscriptionId = oldSubscription.Id,
-                    StatusReason = $"Upgraded from {oldPlan.Name} (FullReplace)"
-                };
+                // SINGLE STRATEGY: Update existing subscription with new plan
+                subscription.PlanId = decryptedNewPlanId;
+                subscription.StartDateUtc = now;
+                subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, newPlan.DurationType);
+                subscription.IsActive = true;
+                subscription.IsExpired = false;
+                subscription.AutoRenew = dto.NewAutoRenew ?? newPlan.AutoRenew;
+                subscription.Amount = newPrice.Value;
+                subscription.StatusReason = $"Upgraded from {oldPlan.Name} to {newPlan.Name}";
                 break;
 
             case "Prorated":
                 // Calculate proration
-                var remainingDays = (oldSubscription.ExpiryDateUtc - now).Days;
-                var oldPlanDays = (oldSubscription.ExpiryDateUtc - oldSubscription.StartDateUtc).Days;
-                var oldDailyRate = oldSubscription.Amount / oldPlanDays;
+                var remainingDays = Math.Max(0, (subscription.ExpiryDateUtc - now).Days);
+                var oldPlanDays = Math.Max(1, (subscription.ExpiryDateUtc - subscription.StartDateUtc).Days);
+                var oldDailyRate = subscription.Amount / oldPlanDays;
                 var suggestedCredit = oldDailyRate * remainingDays;
 
                 var newPlanDays = PlanDurationHelper.GetApproximateDays(newPlan.DurationType);
                 var newDailyRate = newPrice.Value / newPlanDays;
                 var newFullCharge = newPrice.Value;
-                var netDue = newFullCharge - suggestedCredit;
+                var netDue = Math.Max(0, newFullCharge - suggestedCredit);
 
                 proration = new ProrationSuggestionDto
                 {
@@ -427,50 +418,42 @@ public class SubscriptionService : ISubscriptionService
                     NewDailyRate = Math.Round(newDailyRate, 2),
                     SuggestedCharge = Math.Round(newFullCharge, 2),
                     NetDue = Math.Round(netDue, 2),
-                    CurrencyCode = oldSubscription.Currency.ToString()
+                    CurrencyCode = subscription.Currency.ToString()
                 };
 
-                // Terminate current, start new
-                oldSubscription.IsActive = false;
-                oldSubscription.IsExpired = true;
-                oldSubscription.StatusReason = $"Upgraded to {newPlan.Name} (Prorated)";
-                await _subscriptionRepo.UpdateAsync(oldSubscription);
-
-                newSubscription = new Subscription
-                {
-                    Id = Guid.NewGuid(),
-                    CompanyId = oldSubscription.CompanyId,
-                    PlanId = dto.NewPlanId,
-                    StartDateUtc = now,
-                    ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, newPlan.DurationType),
-                    IsActive = true,
-                    IsExpired = false,
-                    IsTrial = false,
-                    AutoRenew = dto.NewAutoRenew ?? newPlan.AutoRenew,
-                    Currency = oldSubscription.Currency,
-                    Amount = netDue,
-                    ParentSubscriptionId = oldSubscription.Id,
-                    StatusReason = $"Upgraded from {oldPlan.Name} (Prorated)"
-                };
+                // Update existing subscription with new plan (prorated)
+                subscription.PlanId = decryptedNewPlanId;
+                subscription.StartDateUtc = now;
+                subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, newPlan.DurationType);
+                subscription.IsActive = true;
+                subscription.IsExpired = false;
+                subscription.AutoRenew = dto.NewAutoRenew ?? newPlan.AutoRenew;
+                subscription.Amount = netDue;
+                subscription.StatusReason = $"Upgraded from {oldPlan.Name} to {newPlan.Name} (Prorated)";
                 break;
 
             case "Deferred":
-                // Schedule upgrade for later
-                oldSubscription.NextPlanId = dto.NewPlanId;
-                oldSubscription.NextPlanStartDateUtc = oldSubscription.ExpiryDateUtc.AddSeconds(1);
-                oldSubscription.StatusReason = $"Upgrade to {newPlan.Name} scheduled (Deferred)";
-                await _subscriptionRepo.UpdateAsync(oldSubscription);
+                // Schedule upgrade for when current subscription expires
+                subscription.NextPlanId = decryptedNewPlanId;
+                subscription.NextPlanStartDateUtc = subscription.ExpiryDateUtc.AddSeconds(1);
+                subscription.StatusReason = $"Upgrade to {newPlan.Name} scheduled";
                 break;
 
             default:
                 throw new UpgradeConflictException(_localizer["Subscription.InvalidUpgradeMode"]);
         }
 
-        if (newSubscription != null)
-        {
-            await _subscriptionRepo.AddAsync(newSubscription);
-        }
-
+        await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history - tracks the upgrade with all details
+        await RecordHistoryAsync(subscriptionId, $"Upgraded ({mode})", 
+            previousStatus: LicenseStatus.Active,
+            newStatus: LicenseStatus.Active,
+            previousExpiryDate: previousExpiryDate, 
+            newExpiryDate: subscription.ExpiryDateUtc,
+            reason: $"Plan changed from {previousPlanName} to {newPlan.Name}",
+            notes: proration != null ? $"Credit: {proration.SuggestedCredit}, Net Due: {proration.NetDue}" : null);
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send upgrade email notification
@@ -479,14 +462,14 @@ public class SubscriptionService : ISubscriptionService
             company.Name,
             oldPlan.Name,
             newPlan.Name,
-            newSubscription?.ExpiryDateUtc ?? oldSubscription.ExpiryDateUtc,
-            null); // Uses request culture
+            subscription.ExpiryDateUtc,
+            null);
 
         // Create outbox event
         await CreateOutboxEventAsync(
             SubscriptionEventType.Upgraded,
             company.Id,
-            newSubscription?.Id ?? oldSubscription.Id,
+            subscription.Id,
             new
             {
                 CompanyName = company.Name,
@@ -494,28 +477,32 @@ public class SubscriptionService : ISubscriptionService
                 OldPlanName = oldPlan.Name,
                 NewPlanName = newPlan.Name,
                 Mode = mode,
-                NewExpiryDate = newSubscription?.ExpiryDateUtc
+                PreviousExpiryDate = previousExpiryDate,
+                NewExpiryDate = subscription.ExpiryDateUtc
             });
 
+        // Build response
+        var result = await _subscriptionRepo.GetWithDetailsAsync(subscription.Id);
         var response = new UpgradeResponseDto
         {
+            Message = string.Format(_localizer["Subscription.UpgradeSuccess"], oldPlan.Name, newPlan.Name),
             Mode = mode,
             OldPlanName = oldPlan.Name,
             NewPlanName = newPlan.Name,
             OldWindow = new SubscriptionWindowDto
             {
-                StartDateUtc = oldSubscription.StartDateUtc,
-                ExpiryDateUtc = oldSubscription.ExpiryDateUtc,
-                DurationDays = (oldSubscription.ExpiryDateUtc - oldSubscription.StartDateUtc).Days
+                StartDateUtc = previousStartDate,
+                ExpiryDateUtc = previousExpiryDate,
+                DurationDays = (previousExpiryDate - previousStartDate).Days
             },
-            NewWindow = newSubscription != null ? new SubscriptionWindowDto
+            NewWindow = new SubscriptionWindowDto
             {
-                StartDateUtc = newSubscription.StartDateUtc,
-                ExpiryDateUtc = newSubscription.ExpiryDateUtc,
-                DurationDays = (newSubscription.ExpiryDateUtc - newSubscription.StartDateUtc).Days
-            } : null,
+                StartDateUtc = subscription.StartDateUtc,
+                ExpiryDateUtc = subscription.ExpiryDateUtc,
+                DurationDays = (subscription.ExpiryDateUtc - subscription.StartDateUtc).Days
+            },
             ProrationSuggestion = proration,
-            NewSubscription = GetMappedSubscriptionDto(newSubscription)
+            NewSubscription = _mapper.Map<SubscriptionDto>(result!)
         };
 
         return response;
@@ -527,11 +514,19 @@ public class SubscriptionService : ISubscriptionService
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
 
+        var previousStatus = subscription.IsActive ? LicenseStatus.Active : 
+                           subscription.IsExpired ? LicenseStatus.Expired : LicenseStatus.Suspended;
+
         subscription.IsActive = false;
         subscription.IsExpired = true;
         subscription.StatusReason = reason ?? "Canceled by administrator";
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Cancelled", previousStatus, LicenseStatus.Expired, 
+            reason: reason ?? "Canceled by administrator");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
@@ -571,13 +566,19 @@ public class SubscriptionService : ISubscriptionService
         subscription.StatusReason = reason ?? "Suspended by administrator";
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Suspended", LicenseStatus.Active, LicenseStatus.Suspended, 
+            reason: reason ?? "Suspended by administrator");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
         await _emailService.SendSubscriptionSuspendedEmailAsync(
             subscription.Company.ContactEmail,
             subscription.Company.Name,
-            reason ?? "Suspended by administrator",
+            subscription.Plan.Name,
+            reason,
             language);
 
         // Create outbox event
@@ -610,6 +611,11 @@ public class SubscriptionService : ISubscriptionService
         subscription.StatusReason = reason ?? "Resumed by administrator";
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Resumed", LicenseStatus.Suspended, LicenseStatus.Active, 
+            reason: reason ?? "Resumed by administrator");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification with reason
@@ -651,6 +657,11 @@ public class SubscriptionService : ISubscriptionService
         // Note: In a full implementation, you'd want to add PausedAtUtc field to track pause time
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Paused", LicenseStatus.Active, null, 
+            reason: reason ?? "Paused by administrator");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
@@ -674,6 +685,11 @@ public class SubscriptionService : ISubscriptionService
         // Note: In a full implementation, you'd calculate and adjust the expiry date based on pause duration
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Unpaused", null, LicenseStatus.Active, 
+            reason: reason ?? "Unpaused by administrator");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
@@ -701,9 +717,17 @@ public class SubscriptionService : ISubscriptionService
         subscription.StatusReason = reason ?? "Trial converted to paid subscription";
         
         // Extend expiry to full plan duration from now using PlanDurationHelper
-        subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(DateTime.UtcNow, subscription.Plan.DurationType);
+        var newExpiryDate = PlanDurationHelper.CalculateExpiryDate(DateTime.UtcNow, subscription.Plan.DurationType);
+        var oldExpiryDate = subscription.ExpiryDateUtc;
+        subscription.ExpiryDateUtc = newExpiryDate;
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Trial Stopped", null, LicenseStatus.Active, 
+            previousExpiryDate: oldExpiryDate, newExpiryDate: newExpiryDate,
+            reason: reason ?? "Trial converted to paid subscription");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
@@ -732,6 +756,12 @@ public class SubscriptionService : ISubscriptionService
         subscription.StatusReason = dto.Reason ?? $"Extended by {dto.ExtensionDays} days";
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Extended", null, null, 
+            previousExpiryDate: oldExpiryDate, newExpiryDate: subscription.ExpiryDateUtc,
+            reason: dto.Reason ?? $"Extended by {dto.ExtensionDays} days");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification if requested
@@ -759,6 +789,8 @@ public class SubscriptionService : ISubscriptionService
         if (subscription.IsActive)
             throw new InvalidOperationException(_localizer["Subscription.AlreadyActive"]);
 
+        var previousStatus = subscription.IsExpired ? LicenseStatus.Expired : LicenseStatus.Suspended;
+        
         subscription.IsActive = true;
         subscription.IsExpired = false;
         subscription.StatusReason = reason ?? "Reactivated by administrator";
@@ -770,6 +802,11 @@ public class SubscriptionService : ISubscriptionService
         }
 
         await _subscriptionRepo.UpdateAsync(subscription);
+        
+        // Record history
+        await RecordHistoryAsync(subscriptionId, "Reactivated", previousStatus, LicenseStatus.Active, 
+            reason: reason ?? "Reactivated by administrator");
+        
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
@@ -789,24 +826,48 @@ public class SubscriptionService : ISubscriptionService
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
 
-        // Return audit trail - in a full implementation, you'd have a separate audit table
-        return new List<object>
+        // Get actual history from database
+        var historyEntries = await _historyRepo.GetBySubscriptionIdAsync(subscriptionId);
+        
+        return historyEntries.Select(h => new
         {
-            new
-            {
-                Action = "Created",
-                Timestamp = subscription.CreatedTimestamp,
-                Reason = "Subscription created",
-                Details = new { subscription.PlanId, subscription.CompanyId }
-            },
-            new
-            {
-                Action = "Current Status",
-                Timestamp = subscription.UpdatedTimestamp ?? subscription.CreatedTimestamp,
-                Reason = subscription.StatusReason,
-                Details = new { subscription.IsActive, subscription.IsExpired, subscription.IsTrial }
-            }
+            Action = h.Action,
+            Timestamp = h.CreatedTimestamp,
+            Reason = h.Reason,
+            Notes = h.Notes,
+            PreviousStatus = h.PreviousStatus?.ToString(),
+            NewStatus = h.NewStatus?.ToString(),
+            PreviousExpiryDate = h.PreviousExpiryDate,
+            NewExpiryDate = h.NewExpiryDate,
+            PerformedBy = h.CreatedBy,
+            IpAddress = h.IpAddress
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Helper method to record subscription history
+    /// </summary>
+    private async Task RecordHistoryAsync(Guid subscriptionId, string action, LicenseStatus? previousStatus = null, 
+        LicenseStatus? newStatus = null, DateTime? previousExpiryDate = null, DateTime? newExpiryDate = null, 
+        string? reason = null, string? notes = null, string? ipAddress = null)
+    {
+        var historyEntry = new SubscriptionHistory
+        {
+            Id = Guid.NewGuid(),
+            SubscriptionId = subscriptionId,
+            Action = action,
+            PreviousStatus = previousStatus,
+            NewStatus = newStatus,
+            PreviousExpiryDate = previousExpiryDate,
+            NewExpiryDate = newExpiryDate,
+            Reason = reason,
+            Notes = notes,
+            PerformedByAdminId = _currentUserService.UserId,
+            IpAddress = ipAddress,
+            UserAgent = null // Could be passed from controller if needed
         };
+
+        await _historyRepo.AddHistoryEntryAsync(historyEntry);
     }
 
     public async Task<object> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate)

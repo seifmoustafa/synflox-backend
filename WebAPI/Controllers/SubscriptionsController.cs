@@ -124,7 +124,11 @@ public class SubscriptionsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var subscription = await _subscriptionService.RenewSubscriptionAsync(id, dto);
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        var subscription = await _subscriptionService.RenewSubscriptionAsync(decryptedSubscriptionId, dto);
         return Ok(subscription);
     }
 
@@ -139,7 +143,11 @@ public class SubscriptionsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var response = await _subscriptionService.UpgradeSubscriptionAsync(id, dto);
+        // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
+        var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
+
+        var response = await _subscriptionService.UpgradeSubscriptionAsync(decryptedSubscriptionId, dto);
         return Ok(response);
     }
 

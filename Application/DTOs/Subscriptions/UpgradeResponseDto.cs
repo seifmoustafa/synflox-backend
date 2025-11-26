@@ -7,6 +7,11 @@ namespace Application.DTOs.Subscriptions;
 /// </summary>
 public class UpgradeResponseDto
 {
+    /// <summary>
+    /// Localized success message for user feedback
+    /// </summary>
+    public string Message { get; set; } = string.Empty;
+    
     public string Mode { get; set; } = string.Empty;
     public string OldPlanName { get; set; } = string.Empty;
     public string NewPlanName { get; set; } = string.Empty;

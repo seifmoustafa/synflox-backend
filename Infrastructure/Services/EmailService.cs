@@ -2062,7 +2062,7 @@ public class EmailService : IEmailService
         {
             var subject = $"Subscription Created - {companyName}";
             var message = $"Your subscription to <strong>{planName}</strong> has been successfully created and is now active.<br><br>Expiry Date: <strong>{expiryDate:MMMM dd, yyyy}</strong>";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            var htmlBody = BuildCustomLocalizedEmailTemplate(companyName, subject, message, "#4CAF50", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2075,10 +2075,21 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Renewed - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription to <strong>{planName}</strong> has been successfully renewed.<br><br>New Expiry Date: <strong>{newExpiryDate:MMMM dd, yyyy}</strong>{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionRenewedContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var expiryFormat = isRtl ? newExpiryDate.ToString("yyyy/MM/dd") : newExpiryDate.ToString("MMMM dd, yyyy");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+                <strong>📅 {content.ExpiryDateLabel}:</strong> {expiryFormat}
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2091,10 +2102,22 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Upgraded - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription has been upgraded from <strong>{oldPlanName}</strong> to <strong>{newPlanName}</strong>.<br><br>New Expiry Date: <strong>{expiryDate:MMMM dd, yyyy}</strong>{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#3B82F6");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionUpgradedContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var expiryFormat = isRtl ? expiryDate.ToString("yyyy/MM/dd") : expiryDate.ToString("MMMM dd, yyyy");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel} (Old):</strong> {oldPlanName}<br>
+                <strong>📦 {content.PlanLabel} (New):</strong> {newPlanName}<br>
+                <strong>📅 {content.ExpiryDateLabel}:</strong> {expiryFormat}
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#2196F3", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2107,10 +2130,22 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Extended - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription to <strong>{planName}</strong> has been extended by <strong>{extensionDays} days</strong>.<br><br>New Expiry Date: <strong>{newExpiryDate:MMMM dd, yyyy}</strong>{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionExtendedContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var expiryFormat = isRtl ? newExpiryDate.ToString("yyyy/MM/dd") : newExpiryDate.ToString("MMMM dd, yyyy");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+                <strong>📅 {content.ExpiryDateLabel}:</strong> {expiryFormat}<br>
+                <strong>📆 {content.ExtensionPeriodLabel}:</strong> {extensionDays} {content.DaysLabel}
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#00BCD4", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2123,10 +2158,21 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Cancelled - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription to <strong>{planName}</strong> has been cancelled.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#EF4444");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionCanceledContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var dateFormat = isRtl ? DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm") : DateTime.UtcNow.ToString("MMMM dd, yyyy HH:mm");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+                <strong>📅 {content.DateLabel}:</strong> {dateFormat} UTC
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#F44336", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2139,10 +2185,21 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Suspended - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription to <strong>{planName}</strong> has been temporarily suspended.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#F59E0B");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionSuspendedContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var dateFormat = isRtl ? DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm") : DateTime.UtcNow.ToString("MMMM dd, yyyy HH:mm");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+                <strong>📅 {content.DateLabel}:</strong> {dateFormat} UTC
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#FF9800", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2155,10 +2212,21 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Resumed - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription to <strong>{planName}</strong> has been resumed and is now active.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionResumedContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var dateFormat = isRtl ? DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm") : DateTime.UtcNow.ToString("MMMM dd, yyyy HH:mm");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+                <strong>📅 {content.DateLabel}:</strong> {dateFormat} UTC
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2171,10 +2239,21 @@ public class EmailService : IEmailService
     {
         try
         {
-            var subject = $"Subscription Paused - {companyName}";
-            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
-            var message = $"Your subscription to <strong>{planName}</strong> has been paused.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#6366F1");
+            _localizationHelper.SetCulture(language);
+            var content = _localizationHelper.GetSubscriptionPausedContent();
+            var isRtl = _localizationHelper.IsRtl();
+            
+            var subject = string.Format(content.Subject, companyName);
+            var dateFormat = isRtl ? DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm") : DateTime.UtcNow.ToString("MMMM dd, yyyy HH:mm");
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><strong>{content.ReasonLabel}:</strong> {reason}" : "";
+            
+            var message = $@"{content.Description}
+                <br><br>
+                <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+                <strong>📅 {content.DateLabel}:</strong> {dateFormat} UTC
+                {reasonText}";
+            
+            var htmlBody = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#9C27B0", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2190,7 +2269,7 @@ public class EmailService : IEmailService
             var subject = $"Subscription Unpaused - {companyName}";
             var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
             var message = $"Your subscription to <strong>{planName}</strong> has been unpaused and is now active.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            var htmlBody = BuildCustomLocalizedEmailTemplate(companyName, subject, message, "#4CAF50", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2206,7 +2285,7 @@ public class EmailService : IEmailService
             var subject = $"Subscription Reactivated - {companyName}";
             var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
             var message = $"Your subscription to <strong>{planName}</strong> has been reactivated and is now active.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            var htmlBody = BuildCustomLocalizedEmailTemplate(companyName, subject, message, "#4CAF50", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)
@@ -2222,7 +2301,7 @@ public class EmailService : IEmailService
             var subject = $"Trial Converted to Paid - {companyName}";
             var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
             var message = $"Your trial subscription to <strong>{planName}</strong> has been converted to a paid subscription.{reasonText}";
-            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#8B5CF6");
+            var htmlBody = BuildCustomLocalizedEmailTemplate(companyName, subject, message, "#607D8B", language);
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
         catch (Exception ex)

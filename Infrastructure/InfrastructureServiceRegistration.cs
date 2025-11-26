@@ -1,5 +1,6 @@
 using Application.Services;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Infrastructure.Authentication;
 using Infrastructure.Resources;
 using System.Globalization;
@@ -286,6 +287,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IModuleRepository, ModuleRepository>();
         services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+        services.AddScoped<ISubscriptionHistoryRepository, SubscriptionHistoryRepository>();
         services.AddScoped<IOutboxEventRepository, OutboxEventRepository>();
         
         // Client Token Repositories (Phase 2)

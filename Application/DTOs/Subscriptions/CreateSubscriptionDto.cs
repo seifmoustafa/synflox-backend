@@ -12,8 +12,10 @@ public class CreateSubscriptionDto
     [Required]
     public Guid PlanId { get; set; }
 
-    [Required]
-    public Currency Currency { get; set; }
+    /// <summary>
+    /// Optional: If not specified, uses the first available price from the plan
+    /// </summary>
+    public Currency? Currency { get; set; }
 
     /// <summary>
     /// Whether to start with trial (if plan allows it)

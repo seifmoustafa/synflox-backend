@@ -151,5 +151,9 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.ParentSubscriptionId, opt => opt.Ignore())
             .ForMember(d => d.StatusReason, opt => opt.Ignore())
             .ForMember(d => d.UpgradePolicyOverride, opt => opt.Ignore());
+
+        // ========== Upgrade Subscription DTO - Decrypt NewPlanId ==========
+        CreateMap<UpgradeNewPlanIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
     }
 }

@@ -1,24 +1,25 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace Application.DTOs.Subscriptions;
 
+/// <summary>
+/// DTO for renewing a subscription.
+/// Strategy: Updates existing subscription record, tracks all changes in SubscriptionHistory.
+/// </summary>
 public class RenewSubscriptionDto
 {
     /// <summary>
-    /// How to handle the renewal
-    /// "CreateFollowUp" (preferred) or "ExtendInPlace"
-    /// </summary>
-    [Required]
-    public string RenewStrategy { get; set; } = "CreateFollowUp";
-
-    /// <summary>
-    /// Override AutoRenew setting for new subscription
+    /// Optional: Override AutoRenew setting
     /// </summary>
     public bool? NewAutoRenew { get; set; }
 
     /// <summary>
-    /// Optionally schedule a next plan
+    /// Optional: Reason for renewal (stored in history)
+    /// </summary>
+    public string? Reason { get; set; }
+
+    /// <summary>
+    /// Optional: Schedule a different plan for next renewal
     /// </summary>
     public Guid? NextPlanId { get; set; }
 

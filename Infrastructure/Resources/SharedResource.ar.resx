@@ -546,6 +546,12 @@
   <data name="Subscription.Extended" xml:space="preserve">
     <value>تم تمديد الاشتراك بنجاح</value>
   </data>
+  <data name="Subscription.UpgradeSuccess" xml:space="preserve">
+    <value>تمت الترقية بنجاح من {0} إلى {1}</value>
+  </data>
+  <data name="Plan.NoPricesAvailable" xml:space="preserve">
+    <value>لا توجد أسعار متاحة لهذه الخطة</value>
+  </data>
   
   <data name="Plan.TrialNotAllowed" xml:space="preserve">
     <value>هذه الخطة لا تسمح بفترات تجريبية</value>
