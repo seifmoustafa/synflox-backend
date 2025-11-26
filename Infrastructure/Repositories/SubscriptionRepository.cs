@@ -113,6 +113,16 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
             .Include(s => s.Company)
             .Include(s => s.Plan)
                 .ThenInclude(p => p.PlanPrices)
+            // Include Plan Projects with their Modules
+            .Include(s => s.Plan)
+                .ThenInclude(p => p.PlanProjects)
+                    .ThenInclude(pp => pp.Project)
+                        .ThenInclude(p => p.ProjectModules)
+                            .ThenInclude(pm => pm.Module)
+            // Include Plan Standalone Modules
+            .Include(s => s.Plan)
+                .ThenInclude(p => p.PlanModules)
+                    .ThenInclude(pm => pm.Module)
             .Include(s => s.NextPlan)
             .Include(s => s.ParentSubscription)
             .Where(s => !s.IsDeleted && s.Id == id)

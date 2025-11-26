@@ -26,6 +26,17 @@ public class SubscriptionsController : ControllerBase
     }
 
     /// <summary>
+    /// Get all subscriptions with pagination
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null)
+    {
+        // For now, get all subscriptions - in production you might want to filter by company or add more filters
+        var subscriptions = await _subscriptionService.GetAllSubscriptionsAsync(page, pageSize, search);
+        return Ok(new { data = subscriptions.Items, pagination = subscriptions.Pagination });
+    }
+
+    /// <summary>
     /// Create a new subscription for a company
     /// </summary>
     [HttpPost]

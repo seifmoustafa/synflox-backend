@@ -27,6 +27,12 @@ public class EmailService : IEmailService
     private readonly string _fromEmail;
     private readonly string _fromName;
     private readonly string _appPassword;
+    
+    // Company settings - centralized configuration
+    private readonly string _companyName;
+    private readonly string _websiteUrl;
+    private readonly string _supportEmail;
+    private readonly string _systemName;
 
     public EmailService(IConfiguration configuration, ILocalizationService localizer, ICompanyRepository companyRepository, IMapper mapper)
     {
@@ -41,426 +47,580 @@ public class EmailService : IEmailService
         _fromEmail = _configuration["EmailSettings:FromEmail"] ?? throw new InvalidOperationException("EmailSettings:FromEmail not configured");
         _fromName = _configuration["EmailSettings:FromName"] ?? "SYNFLOX System";
         _appPassword = _configuration["EmailSettings:Pass"] ?? throw new InvalidOperationException("EmailSettings:Pass not configured");
+        
+        // Load company settings from configuration
+        _companyName = _configuration["CompanySettings:Name"] ?? "SYNFLOX";
+        _websiteUrl = _configuration["CompanySettings:WebsiteUrl"] ?? "https://synflox.com";
+        _supportEmail = _configuration["CompanySettings:SupportEmail"] ?? _fromEmail;
+        _systemName = _configuration["CompanySettings:SystemName"] ?? "Central Licensing System";
     }
 
     public async Task SendSubscriptionCreatedEmailAsync(string toEmail, string companyName, string planName, DateTime expiryDate, bool isTrial, string? language = null)
     {
-        var subject = isTrial 
-            ? $"🎉 Your SYNFLOX Trial Has Started - {companyName}" 
-            : $"✅ Your SYNFLOX Subscription is Active - {companyName}";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = isTrial 
+            ? _localizationHelper.GetTrialStartedContent() 
+            : _localizationHelper.GetSubscriptionActivatedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var title = isTrial ? "🎉 Trial Started Successfully!" : "✅ Subscription Activated!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var message = isTrial 
-            ? $@"Congratulations! Your <strong>{planName}</strong> trial subscription has been successfully activated.
-                <br><br>
-                <strong>📅 Trial Started:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-                <strong>⏰ Trial Expires:</strong> {expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm} UTC<br>
-                <strong>📦 Plan:</strong> {planName}<br>
-                <strong>🏢 Company:</strong> {companyName}<br>
-                <strong>⏱️ Trial Duration:</strong> {(expiryDate - DateTime.UtcNow).Days} days
-                <br><br>
-                <strong>🚀 What's included in your trial:</strong><br>
-                • Full access to all {planName} features<br>
-                • Complete licensing functionality<br>
-                • Technical support during trial period<br>
-                • No limitations or restrictions
-                <br><br>
-                Make the most of your trial period and experience the full power of SYNFLOX!"
-            : $@"Congratulations! Your <strong>{planName}</strong> subscription has been successfully activated.
-                <br><br>
-                <strong>📅 Activation Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-                <strong>⏰ Expires On:</strong> {expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm} UTC<br>
-                <strong>📦 Plan:</strong> {planName}<br>
-                <strong>🏢 Company:</strong> {companyName}<br>
-                <strong>⏱️ Subscription Duration:</strong> {(expiryDate - DateTime.UtcNow).Days} days
-                <br><br>
-                <strong>✨ Your subscription includes:</strong><br>
-                • Complete access to all {planName} features<br>
-                • Advanced licensing management<br>
-                • Priority technical support<br>
-                • Regular updates and improvements<br>
-                • Secure cloud-based infrastructure
-                <br><br>
-                Your subscription is now active and you have full access to all features.";
+        // Format dates based on language
+        var startDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{expiryDate:yyyy/MM/dd} - {expiryDate:HH:mm}"
+            : $"{expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm}";
         
-        var body = BuildEmailTemplate(companyName, title, message, "#4CAF50");
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {startDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(expiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            <br><br>
+            <strong>🚀 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
     public async Task SendSubscriptionActivatedEmailAsync(string toEmail, string companyName, string planName, DateTime expiryDate, string? language = null)
     {
-        var subject = $"✅ SYNFLOX Subscription Activated - {companyName}";
-        var title = "✅ Subscription Successfully Activated!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionActivatedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Great news! Your <strong>{planName}</strong> subscription has been successfully activated.
-            <br><br>
-            <strong>📅 Activation Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ Expires On:</strong> {expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm} UTC<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>⏱️ Duration:</strong> {(expiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>✨ Your subscription includes:</strong><br>
-            • Complete access to all {planName} features<br>
-            • Advanced licensing management tools<br>
-            • Priority technical support<br>
-            • Regular updates and improvements<br>
-            • Secure cloud-based infrastructure<br>
-            • Comprehensive analytics and reporting
-            <br><br>
-            Your subscription is now fully active and ready to use!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#4CAF50");
+        // Format dates based on language
+        var activationDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{expiryDate:yyyy/MM/dd} - {expiryDate:HH:mm}"
+            : $"{expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {activationDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(expiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            <br><br>
+            <strong>✨ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
     public async Task SendSubscriptionExpiredEmailAsync(string toEmail, string companyName, string planName, string? language = null)
     {
-        var subject = $"⚠️ SYNFLOX Subscription Expired - {companyName}";
-        var title = "⚠️ Subscription Has Expired";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionExpiredContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Your <strong>{planName}</strong> subscription has expired and requires renewal.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Expiration Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC
-            <br><br>
-            <strong>⚠️ What this means:</strong><br>
-            • Your access to SYNFLOX services has been suspended<br>
-            • Your data remains safe and secure<br>
-            • You need to renew your subscription to continue using our services<br>
-            • Contact support for renewal options
-            <br><br>
-            <strong>🔄 Next Steps:</strong><br>
-            • Contact our sales team for renewal options<br>
-            • Choose from our available subscription plans<br>
-            • Restore full access to all features
-            <br><br>
-            Don't let your business operations be interrupted - renew today!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#F44336");
+        // Format date based on language
+        var expirationDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {expirationDate} UTC
+            <br><br>
+            <strong>⚠️ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            <strong>🔄 {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#F44336", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionSuspendedEmailAsync(string toEmail, string companyName, string reason, string? language = null)
+    public async Task SendSubscriptionSuspendedEmailAsync(string toEmail, string companyName, string reason, string? language = null, string? notes = null, string? planName = null)
     {
-        var subject = $"⚠️ SYNFLOX Subscription Suspended - {companyName}";
-        var title = "⚠️ Subscription Suspended";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionSuspendedContent();
+        var commonContent = _localizationHelper.GetCommonContent();
         
-        var message = $@"Your SYNFLOX subscription has been temporarily suspended.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📅 Suspension Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>📝 Reason:</strong> {reason}
-            <br><br>
-            <strong>What this means:</strong><br>
-            • Your access to SYNFLOX services is temporarily restricted<br>
-            • Your data remains safe and secure<br>
-            • Contact support to resolve this issue and reactivate your subscription
-            <br><br>
-            Please contact our support team immediately to resolve this matter.";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#FF9800");
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            {(!string.IsNullOrEmpty(planName) ? $"<strong>📦 {content.PlanLabel}:</strong> {planName}<br>" : "")}
+            <strong>📅 {content.DateLabel}:</strong> {DateTime.UtcNow:MMMM dd, yyyy} - {DateTime.UtcNow:HH:mm} UTC<br>
+            <strong>📝 {content.ReasonLabel}:</strong> {reason}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>⚠️ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            <strong>📋 {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#FF9800", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionRenewedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null)
+    public async Task SendSubscriptionRenewedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null, string? reason = null, string? notes = null)
     {
-        var subject = $"🔄 SYNFLOX Subscription Renewed - {companyName}";
-        var title = "🔄 Subscription Successfully Renewed!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionRenewedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Great news! Your SYNFLOX subscription has been successfully renewed.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Renewal Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ New Expiry Date:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC
-            <br><br>
-            <strong>What's included:</strong><br>
-            • Continued access to all {planName} features<br>
-            • Uninterrupted service until {newExpiryDate:MMMM dd, yyyy}<br>
-            • Full technical support<br>
-            • All future updates and improvements
-            <br><br>
-            Thank you for continuing to trust SYNFLOX for your licensing needs!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#4CAF50");
+        // Format dates based on language
+        var renewalDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {renewalDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            {(!string.IsNullOrEmpty(reason) ? $"<br><strong>📝 {content.ReasonLabel}:</strong> {reason}" : "")}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>✨ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
     public async Task SendSubscriptionUpgradedEmailAsync(string toEmail, string companyName, string oldPlan, string newPlan, DateTime newExpiryDate, string? language = null)
     {
-        var subject = $"🚀 SYNFLOX Subscription Upgraded - {companyName}";
-        var title = "🚀 Subscription Successfully Upgraded!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionUpgradedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Excellent! Your SYNFLOX subscription has been successfully upgraded.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📈 Upgrade:</strong> {oldPlan} → {newPlan}<br>
-            <strong>📅 Upgrade Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ New Expiry Date:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Duration:</strong> {(newExpiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>✨ Your upgraded subscription includes:</strong><br>
-            • All enhanced features of the {newPlan} plan<br>
-            • Improved performance and capabilities<br>
-            • Priority technical support<br>
-            • Advanced analytics and reporting<br>
-            • Extended functionality and integrations<br>
-            • Secure cloud-based infrastructure
-            <br><br>
-            Enjoy your enhanced SYNFLOX experience with {newPlan}!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#9C27B0");
+        // Format dates based on language
+        var upgradeDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📈 {content.UpgradeLabel}:</strong> {oldPlan} → {newPlan}<br>
+            <strong>📅 {content.DateLabel}:</strong> {upgradeDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            <br><br>
+            <strong>✨ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#9C27B0", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionCanceledEmailAsync(string toEmail, string companyName, string planName, string? language = null)
+    public async Task SendSubscriptionCanceledEmailAsync(string toEmail, string companyName, string planName, string? language = null, string? reason = null, string? notes = null)
     {
-        var subject = $"❌ SYNFLOX Subscription Canceled - {companyName}";
-        var title = "❌ Subscription Canceled";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionCanceledContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Your SYNFLOX subscription has been canceled as requested.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Cancellation Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC
-            <br><br>
-            <strong>📝 What this means:</strong><br>
-            • Your subscription has been immediately terminated<br>
-            • Access to SYNFLOX services has been revoked<br>
-            • Your data will be retained for 30 days for recovery<br>
-            • You can reactivate anytime by contacting support
-            <br><br>
-            <strong>🔄 Want to come back?</strong><br>
-            • Contact our support team for reactivation<br>
-            • Choose from our available subscription plans<br>
-            • Your data can be restored within 30 days
-            <br><br>
-            We're sorry to see you go. Thank you for using SYNFLOX!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#607D8B");
+        // Format date based on language
+        var cancelDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {cancelDate} UTC
+            {(!string.IsNullOrEmpty(reason) ? $"<br><strong>📝 {content.ReasonLabel}:</strong> {reason}" : "")}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>📝 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            <strong>🔄 {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#607D8B", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
     public async Task SendTrialStartedEmailAsync(string toEmail, string companyName, string planName, int trialDays, DateTime expiryDate, string? language = null)
     {
-        var subject = $"🎉 Your SYNFLOX Trial Has Started - {companyName}";
-        var title = "🎉 Trial Started Successfully!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetTrialStartedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Welcome to SYNFLOX! Your <strong>{planName}</strong> trial has been successfully activated.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Trial Plan:</strong> {planName}<br>
-            <strong>📅 Trial Started:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ Trial Expires:</strong> {expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Trial Duration:</strong> {trialDays} days
-            <br><br>
-            <strong>🚀 What's included in your trial:</strong><br>
-            • Full access to all {planName} features<br>
-            • Complete licensing functionality<br>
-            • Advanced analytics and reporting<br>
-            • Technical support during trial period<br>
-            • No limitations or restrictions<br>
-            • Secure cloud-based infrastructure
-            <br><br>
-            <strong>💡 Make the most of your trial:</strong><br>
-            • Explore all available features<br>
-            • Test integration with your systems<br>
-            • Contact support for any questions<br>
-            • Consider upgrading before trial expires
-            <br><br>
-            Experience the full power of SYNFLOX during your {trialDays}-day trial!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#00BCD4");
+        // Format dates based on language
+        var startDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{expiryDate:yyyy/MM/dd} - {expiryDate:HH:mm}"
+            : $"{expiryDate:MMMM dd, yyyy} at {expiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {startDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {trialDays} {content.DaysLabel}
+            <br><br>
+            <strong>🚀 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            <strong>💡 {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#00BCD4", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
     public async Task SendTrialExpiringEmailAsync(string toEmail, string companyName, string planName, int daysRemaining, string? language = null)
     {
-        var subject = $"⚠️ SYNFLOX Trial Expiring Soon - {companyName}";
-        var title = $"⚠️ Trial Expires in {daysRemaining} Days!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetTrialExpiringContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Your SYNFLOX <strong>{planName}</strong> trial is expiring soon!
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Trial Plan:</strong> {planName}<br>
-            <strong>⏰ Days Remaining:</strong> {daysRemaining} days<br>
-            <strong>📅 Expiration Date:</strong> {DateTime.UtcNow.AddDays(daysRemaining):MMMM dd, yyyy}
-            <br><br>
-            <strong>🚀 Don't lose access to:</strong><br>
-            • All {planName} premium features<br>
-            • Advanced licensing management<br>
-            • Analytics and reporting tools<br>
-            • Priority technical support<br>
-            • Secure cloud infrastructure
-            <br><br>
-            <strong>💳 Upgrade now to continue enjoying:</strong><br>
-            • Uninterrupted service<br>
-            • All premium features<br>
-            • Priority support<br>
-            • Regular updates and improvements
-            <br><br>
-            <strong>📧 Contact our sales team today to upgrade your subscription!</strong>";
+        var subject = string.Format(content.Subject, companyName, daysRemaining);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#FF5722");
+        // Format date based on language
+        var expirationDate = isRtl 
+            ? $"{DateTime.UtcNow.AddDays(daysRemaining):yyyy/MM/dd}"
+            : $"{DateTime.UtcNow.AddDays(daysRemaining):MMMM dd, yyyy}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>⏰ {content.RemainingTimeLabel}:</strong> {daysRemaining} {content.DaysLabel}<br>
+            <strong>📅 {content.ExpiryDateLabel}:</strong> {expirationDate}
+            <br><br>
+            <strong>🚀 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            <strong>💳 {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, string.Format(content.Title, daysRemaining), message, "#FF5722", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
     public async Task SendAutoRenewalEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null)
     {
-        var subject = $"🔄 SYNFLOX Auto-Renewal Successful - {companyName}";
-        var title = "🔄 Subscription Auto-Renewed!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetAutoRenewalContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Great news! Your SYNFLOX subscription has been automatically renewed.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Renewal Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ New Expiry Date:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Extended Duration:</strong> {(newExpiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>✨ Your renewed subscription includes:</strong><br>
-            • Continued access to all {planName} features<br>
-            • Uninterrupted service until {newExpiryDate:MMMM dd, yyyy}<br>
-            • Priority technical support<br>
-            • All future updates and improvements<br>
-            • Secure cloud-based infrastructure
-            <br><br>
-            Thank you for your continued trust in SYNFLOX!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#4CAF50");
+        // Format dates based on language
+        var renewalDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {renewalDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            <br><br>
+            <strong>✨ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionPausedEmailAsync(string toEmail, string companyName, string planName, string reason, string? language = null)
+    public async Task SendSubscriptionPausedEmailAsync(string toEmail, string companyName, string planName, string reason, string? language = null, string? notes = null)
     {
-        var subject = $"⏸️ SYNFLOX Subscription Paused - {companyName}";
-        var title = "⏸️ Subscription Temporarily Paused";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionPausedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Your SYNFLOX subscription has been temporarily paused.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Pause Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>📝 Reason:</strong> {reason}
-            <br><br>
-            <strong>What this means:</strong><br>
-            • Your subscription timer is paused<br>
-            • No billing will occur during pause period<br>
-            • Your data remains safe and secure<br>
-            • You can resume anytime by contacting support
-            <br><br>
-            Contact our support team when you're ready to resume your subscription.";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#FF9800");
+        // Format date based on language
+        var pauseDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {pauseDate} UTC<br>
+            <strong>📝 {content.ReasonLabel}:</strong> {reason}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>⏸️ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#FF9800", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionResumedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null)
+    public async Task SendSubscriptionResumedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null, string? reason = null, string? notes = null)
     {
-        var subject = $"▶️ SYNFLOX Subscription Resumed - {companyName}";
-        var title = "▶️ Subscription Successfully Resumed!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionResumedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Welcome back! Your SYNFLOX subscription has been successfully resumed.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Resume Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ Current Expiry Date:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Remaining Time:</strong> {(newExpiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>🚀 You now have full access to:</strong><br>
-            • All {planName} features and capabilities<br>
-            • Complete licensing functionality<br>
-            • Priority technical support<br>
-            • Regular updates and improvements<br>
-            • Secure cloud-based infrastructure
-            <br><br>
-            Thank you for choosing SYNFLOX for your licensing needs!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#4CAF50");
+        // Format dates based on language
+        var resumeDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDate = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {resumeDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDate} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            {(!string.IsNullOrEmpty(reason) ? $"<br><strong>📝 {content.ReasonLabel}:</strong> {reason}" : "")}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>🚀 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendTrialStoppedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null)
+    public async Task SendTrialStoppedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null, string? reason = null, string? notes = null)
     {
-        var subject = $"🎯 SYNFLOX Trial Converted to Paid - {companyName}";
-        var title = "🎯 Trial Successfully Converted!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetTrialStoppedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Congratulations! Your SYNFLOX trial has been converted to a full paid subscription.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Conversion Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ Subscription Expires:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Full Subscription Duration:</strong> {(newExpiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>🎉 Welcome to the full SYNFLOX experience:</strong><br>
-            • Complete access to all {planName} features<br>
-            • Advanced licensing management tools<br>
-            • Priority technical support<br>
-            • Regular updates and new features<br>
-            • Enterprise-grade security and reliability
-            <br><br>
-            Thank you for upgrading to our full subscription!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#9C27B0");
+        // Format dates based on language
+        var conversionDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {conversionDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            {(!string.IsNullOrEmpty(reason) ? $"<br><strong>📝 {content.ReasonLabel}:</strong> {reason}" : "")}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>🎉 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#9C27B0", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionExtendedEmailAsync(string toEmail, string companyName, string planName, DateTime oldExpiryDate, DateTime newExpiryDate, int extensionDays, string? language = null)
+    public async Task SendSubscriptionExtendedEmailAsync(string toEmail, string companyName, string planName, DateTime oldExpiryDate, DateTime newExpiryDate, int extensionDays, string? language = null, string? reason = null, string? notes = null)
     {
-        var subject = $"📅 SYNFLOX Subscription Extended - {companyName}";
-        var title = "📅 Subscription Successfully Extended!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionExtendedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Great news! Your SYNFLOX subscription has been extended.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Extension Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ Previous Expiry:</strong> {oldExpiryDate:MMMM dd, yyyy}<br>
-            <strong>⏰ New Expiry Date:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Extension Period:</strong> {extensionDays} days<br>
-            <strong>⏱️ Total Remaining Time:</strong> {(newExpiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>✨ Your extended subscription includes:</strong><br>
-            • Continued access to all {planName} features<br>
-            • Extended service until {newExpiryDate:MMMM dd, yyyy}<br>
-            • Priority technical support<br>
-            • All future updates and improvements<br>
-            • Secure cloud-based infrastructure
-            <br><br>
-            Enjoy your extended SYNFLOX experience!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#2196F3");
+        // Format dates based on language
+        var extensionDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var oldExpiryStr = isRtl 
+            ? $"{oldExpiryDate:yyyy/MM/dd}"
+            : $"{oldExpiryDate:MMMM dd, yyyy}";
+        var newExpiryStr = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {extensionDate} UTC<br>
+            <strong>⏰ {content.PreviousExpiryLabel}:</strong> {oldExpiryStr}<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {newExpiryStr} UTC<br>
+            <strong>⏱️ {content.ExtensionPeriodLabel}:</strong> {extensionDays} {content.DaysLabel}<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            {(!string.IsNullOrEmpty(reason) ? $"<br><strong>📝 {content.ReasonLabel}:</strong> {reason}" : "")}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>✨ {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#2196F3", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
-    public async Task SendSubscriptionReactivatedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null)
+    public async Task SendSubscriptionReactivatedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? language = null, string? reason = null, string? notes = null)
     {
-        var subject = $"🔄 SYNFLOX Subscription Reactivated - {companyName}";
-        var title = "🔄 Subscription Successfully Reactivated!";
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetSubscriptionReactivatedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var message = $@"Welcome back! Your SYNFLOX subscription has been successfully reactivated.
-            <br><br>
-            <strong>🏢 Company:</strong> {companyName}<br>
-            <strong>📦 Plan:</strong> {planName}<br>
-            <strong>📅 Reactivation Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>⏰ Subscription Expires:</strong> {newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm} UTC<br>
-            <strong>⏱️ Subscription Duration:</strong> {(newExpiryDate - DateTime.UtcNow).Days} days
-            <br><br>
-            <strong>🚀 You now have full access to:</strong><br>
-            • All {planName} features and capabilities<br>
-            • Complete licensing functionality<br>
-            • Priority technical support<br>
-            • Regular updates and improvements<br>
-            • Secure cloud-based infrastructure
-            <br><br>
-            We're glad to have you back with SYNFLOX!";
+        var subject = string.Format(content.Subject, companyName);
+        var whatThisMeansItems = string.Join("<br>", content.WhatThisMeansItems.Select(item => $"• {item}"));
         
-        var body = BuildEmailTemplate(companyName, title, message, "#4CAF50");
+        // Format dates based on language
+        var reactivationDate = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
+        var expiryDateStr = isRtl 
+            ? $"{newExpiryDate:yyyy/MM/dd} - {newExpiryDate:HH:mm}"
+            : $"{newExpiryDate:MMMM dd, yyyy} at {newExpiryDate:HH:mm}";
+        
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>🏢 {content.CompanyLabel}:</strong> {companyName}<br>
+            <strong>📦 {content.PlanLabel}:</strong> {planName}<br>
+            <strong>📅 {content.DateLabel}:</strong> {reactivationDate} UTC<br>
+            <strong>⏰ {content.ExpiryDateLabel}:</strong> {expiryDateStr} UTC<br>
+            <strong>⏱️ {content.RemainingTimeLabel}:</strong> {(newExpiryDate - DateTime.UtcNow).Days} {content.DaysLabel}
+            {(!string.IsNullOrEmpty(reason) ? $"<br><strong>📝 {content.ReasonLabel}:</strong> {reason}" : "")}
+            {(!string.IsNullOrEmpty(notes) ? $"<br><strong>💬 {content.NotesLabel}:</strong> {notes}" : "")}
+            <br><br>
+            <strong>🚀 {content.WhatThisMeansTitle}:</strong><br>
+            {whatThisMeansItems}
+            <br><br>
+            {content.ClosingMessage}
+            <br><br>
+            <em>{content.ActionSignature}</em>";
+        
+        var body = BuildSubscriptionActionEmailTemplate(companyName, content.Title, message, "#4CAF50", language);
         await SendEmailAsync(toEmail, subject, body);
     }
 
@@ -566,8 +726,8 @@ public class EmailService : IEmailService
                                             Our support team is here to help you with any questions or concerns.
                                         </p>
                                         <p style=""margin: 0; color: #4a5568; font-size: 14px;"">
-                                            📧 Email: <a href=""mailto:{_fromEmail}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_fromEmail}</a><br>
-                                            🌐 Website: <a href=""https://synflox.com"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">synflox.com</a>
+                                            📧 Email: <a href=""mailto:{_supportEmail}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_supportEmail}</a><br>
+                                            🌐 Website: <a href=""{_websiteUrl}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_websiteUrl.Replace("https://", "").Replace("http://", "")}</a>
                                         </p>
                                     </td>
                                 </tr>
@@ -575,7 +735,7 @@ public class EmailService : IEmailService
                             
                             <div style=""margin-top: 40px; padding-top: 30px; border-top: 1px solid #e2e8f0;"">
                                 <p style=""color: #a0aec0; font-size: 13px; margin: 0; line-height: 1.6; text-align: center;"">
-                                    This is an automated notification from SYNFLOX Central Licensing System.<br>
+                                    This is an automated notification from {_companyName} {_systemName}.<br>
                                     Please do not reply to this email. For support, use the contact information above.
                                 </p>
                             </div>
@@ -584,10 +744,131 @@ public class EmailService : IEmailService
                     <tr>
                         <td style=""background: linear-gradient(90deg, #f7fafc 0%, #edf2f7 100%); padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;"">
                             <p style=""margin: 0 0 10px 0; color: #718096; font-size: 14px; font-weight: 500;"">
-                                SYNFLOX - Professional Licensing Solutions
+                                {_companyName} - Professional Licensing Solutions
                             </p>
                             <p style=""margin: 0; color: #a0aec0; font-size: 12px;"">
-                                &copy; {currentYear} SYNFLOX. All rights reserved. | Powered by Advanced Technology
+                                &copy; {currentYear} {_companyName}. All rights reserved. | Powered by Advanced Technology
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+    }
+
+    /// <summary>
+    /// Build RTL-aware localized email template for subscription actions
+    /// Supports Arabic (RTL) and English (LTR) with proper text alignment
+    /// </summary>
+    private string BuildSubscriptionActionEmailTemplate(string companyName, string title, string message, string accentColor, string? language = null)
+    {
+        // Set culture for localization
+        _localizationHelper.SetCulture(language);
+        var commonContent = _localizationHelper.GetCommonContent();
+        var isRtl = _localizationHelper.IsRtl();
+        var direction = _localizationHelper.GetTextDirection();
+        var textAlign = _localizationHelper.GetTextAlign();
+        var borderSide = isRtl ? "border-right" : "border-left";
+        
+        var logoUrl = GetLogoUrl();
+        var logoStyle = GetLogoStyle();
+        var currentYear = DateTime.UtcNow.Year;
+        
+        // Format date based on language
+        var notificationTime = isRtl 
+            ? DateTime.UtcNow.ToString("yyyy/MM/dd - HH:mm")
+            : DateTime.UtcNow.ToString("MMMM dd, yyyy 'at' HH:mm");
+        
+        var fontFamily = isRtl 
+            ? "'Segoe UI', 'Arabic Typesetting', 'Traditional Arabic', Tahoma, Arial, sans-serif"
+            : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+        
+        return $@"<!DOCTYPE html>
+<html dir=""{direction}"" lang=""{language ?? "en"}"">
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>{title}</title>
+    <!--[if mso]>
+    <style type=""text/css"">
+        table {{ border-collapse: collapse; }}
+        .mobile-padding {{ padding: 20px !important; }}
+    </style>
+    <![endif]-->
+    <style type=""text/css"">
+        @media only screen and (max-width: 620px) {{
+            .email-container {{ width: 100% !important; max-width: 100% !important; }}
+            .mobile-padding {{ padding: 25px 15px !important; }}
+            .header-padding {{ padding: 30px 20px !important; }}
+            .logo-title {{ font-size: 28px !important; }}
+            .content-title {{ font-size: 22px !important; }}
+            .content-text {{ font-size: 14px !important; }}
+        }}
+    </style>
+</head>
+<body style=""margin: 0; padding: 0; font-family: {fontFamily}; background-color: #f8fafc; direction: {direction}; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;"">
+    <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color: #f8fafc; padding: 10px;"">
+        <tr>
+            <td align=""center"" style=""padding: 10px;"">
+                <table class=""email-container"" width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""max-width: 600px; width: 100%; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);"">
+                    <tr>
+                        <td class=""header-padding"" style=""background: linear-gradient(135deg, {accentColor} 0%, {accentColor}dd 100%); padding: 40px 20px; text-align: center;"">
+                            {(string.IsNullOrEmpty(logoUrl) ? "" : $@"<img src=""{logoUrl}"" alt=""SYNFLOX Logo"" style=""{logoStyle} max-width: 80px;"" />")}
+                            <h1 class=""logo-title"" style=""color: white; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;"">SYNFLOX</h1>
+                            <p style=""color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px; font-weight: 500;"">{(isRtl ? "نظام الترخيص المركزي" : "Central Licensing System")}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class=""mobile-padding"" style=""padding: 40px 30px; text-align: {textAlign};"">
+                            <h2 class=""content-title"" style=""color: #1a202c; margin: 0 0 25px 0; font-size: 24px; font-weight: 600; line-height: 1.3; text-align: {textAlign};"">{title}</h2>
+                            <p class=""content-text"" style=""color: #4a5568; line-height: 1.7; margin: 0 0 20px 0; font-size: 15px; text-align: {textAlign};"">{commonContent.HelloLabel} <strong style=""color: #2d3748;"">{companyName}</strong>,</p>
+                            <div class=""content-text"" style=""color: #4a5568; line-height: 1.8; margin: 0 0 30px 0; font-size: 15px; text-align: {textAlign};"">{message}</div>
+                            
+                            <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""margin: 25px 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;"">
+                                <tr>
+                                    <td style=""background: linear-gradient(90deg, {accentColor}15 0%, {accentColor}08 100%); padding: 20px; {borderSide}: 4px solid {accentColor};"">
+                                        <h3 style=""margin: 0 0 15px 0; color: #2d3748; font-size: 18px; font-weight: 600; text-align: {textAlign};"">{(isRtl ? "📋" : "📋")} {commonContent.NotificationDetailsTitle}</h3>
+                                        <div style=""color: #4a5568; font-size: 14px; line-height: 1.6; text-align: {textAlign};"">
+                                            <p style=""margin: 5px 0;""><strong>{commonContent.CompanyLabel}:</strong> {companyName}</p>
+                                            <p style=""margin: 5px 0;""><strong>{commonContent.NotificationTimeLabel}:</strong> {notificationTime} UTC</p>
+                                            <p style=""margin: 5px 0;""><strong>{commonContent.SystemLabel}:</strong> SYNFLOX</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""margin: 35px 0; background-color: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;"">
+                                <tr>
+                                    <td style=""padding: 25px; text-align: {textAlign};"">
+                                        <h3 style=""margin: 0 0 15px 0; color: #2d3748; font-size: 16px; font-weight: 600;"">{(isRtl ? "🆘" : "🆘")} {commonContent.NeedAssistanceTitle}</h3>
+                                        <p style=""margin: 0 0 15px 0; color: #4a5568; font-size: 14px; line-height: 1.6;"">
+                                            {commonContent.NeedAssistanceMessage}
+                                        </p>
+                                        <p style=""margin: 0; color: #4a5568; font-size: 14px;"">
+                                            {(isRtl ? "📧" : "📧")} {commonContent.EmailLabel}: <a href=""mailto:{_supportEmail}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_supportEmail}</a><br>
+                                            {(isRtl ? "🌐" : "🌐")} {commonContent.WebsiteLabel}: <a href=""{_websiteUrl}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_websiteUrl.Replace("https://", "").Replace("http://", "")}</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <div style=""margin-top: 40px; padding-top: 30px; border-top: 1px solid #e2e8f0;"">
+                                <p style=""color: #a0aec0; font-size: 13px; margin: 0; line-height: 1.6; text-align: center;"">
+                                    {commonContent.AutomatedMessage}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style=""background: linear-gradient(90deg, #f7fafc 0%, #edf2f7 100%); padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;"">
+                            <p style=""margin: 0 0 10px 0; color: #718096; font-size: 14px; font-weight: 500;"">
+                                {commonContent.FooterText}
+                            </p>
+                            <p style=""margin: 0; color: #a0aec0; font-size: 12px;"">
+                                {string.Format(commonContent.CopyrightText, currentYear)}
                             </p>
                         </td>
                     </tr>
@@ -645,7 +926,7 @@ public class EmailService : IEmailService
                                         <div style=""color: #4a5568; font-size: 14px; line-height: 1.6;"">
                                             <p style=""margin: 5px 0;""><strong>{commonContent.CompanyLabel}:</strong> {companyName}</p>
                                             <p style=""margin: 5px 0;""><strong>{commonContent.NotificationTimeLabel}:</strong> {notificationTime} UTC</p>
-                                            <p style=""margin: 5px 0;""><strong>{commonContent.SystemLabel}:</strong> SYNFLOX Central Licensing</p>
+                                            <p style=""margin: 5px 0;""><strong>{commonContent.SystemLabel}:</strong> {_companyName} {_systemName}</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -659,8 +940,8 @@ public class EmailService : IEmailService
                                             {commonContent.NeedAssistanceMessage}
                                         </p>
                                         <p style=""margin: 0; color: #4a5568; font-size: 14px;"">
-                                            📧 {commonContent.EmailLabel}: <a href=""mailto:{_fromEmail}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_fromEmail}</a><br>
-                                            🌐 {commonContent.WebsiteLabel}: <a href=""https://synflox.com"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">synflox.com</a>
+                                            📧 {commonContent.EmailLabel}: <a href=""mailto:{_supportEmail}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_supportEmail}</a><br>
+                                            🌐 {commonContent.WebsiteLabel}: <a href=""{_websiteUrl}"" style=""color: {accentColor}; text-decoration: none; font-weight: 500;"">{_websiteUrl.Replace("https://", "").Replace("http://", "")}</a>
                                         </p>
                                     </td>
                                 </tr>
@@ -844,67 +1125,66 @@ public class EmailService : IEmailService
     {
         // Set culture for localization
         _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetEmailChangedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var subject = "🔐 Email Address Changed - SYNFLOX";
-        var title = "Email Address Changed";
+        var securityNoticeItems = string.Join("<br>", content.SecurityNoticeItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var message = $@"Hello {adminName},
-            <br><br>
-            Your email address has been successfully changed.
-            <br><br>
-            <strong>📧 Previous Email:</strong> {oldEmail}<br>
-            <strong>✅ New Email:</strong> {newEmail}<br>
-            <strong>📅 Changed At:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC
-            <br><br>
-            <strong>🔒 Security Notice:</strong><br>
-            • This notification has been sent to both your old and new email addresses<br>
-            • If you did not make this change, please contact support immediately<br>
-            • Your account security may be compromised
-            <br><br>
-            <strong>🛡️ Next Steps:</strong><br>
-            • Verify that you can access your account with the new email<br>
-            • Update your email in any third-party systems<br>
-            • Consider enabling Two-Factor Authentication for extra security
-            <br><br>
-            Thank you for keeping your account secure!";
+        var changedAt = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
         
-        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#2196F3", language);
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>📧 {content.PreviousEmailLabel}:</strong> {oldEmail}<br>
+            <strong>✅ {content.NewEmailLabel}:</strong> {newEmail}<br>
+            <strong>📅 {content.ChangedAtLabel}:</strong> {changedAt} UTC
+            <br><br>
+            <strong>🔒 {content.SecurityNoticeTitle}:</strong><br>
+            {securityNoticeItems}
+            <br><br>
+            <strong>🛡️ {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}";
+        
+        var body = BuildSubscriptionActionEmailTemplate(adminName, content.Title, message, "#2196F3", language);
         
         // Send to BOTH old and new email addresses
-        await SendEmailAsync(oldEmail, subject, body);
-        await SendEmailAsync(newEmail, subject, body);
+        await SendEmailAsync(oldEmail, content.Subject, body);
+        await SendEmailAsync(newEmail, content.Subject, body);
     }
 
     public async Task SendPasswordChangedNotificationAsync(string toEmail, string adminName, string? language = null)
     {
         // Set culture for localization
         _localizationHelper.SetCulture(language);
+        var content = _localizationHelper.GetPasswordChangedContent();
+        var isRtl = _localizationHelper.IsRtl();
         
-        var subject = "🔐 Password Changed - SYNFLOX";
-        var title = "Password Changed";
+        var securityNoticeItems = string.Join("<br>", content.SecurityNoticeItems.Select(item => $"• {item}"));
+        var nextStepsItems = string.Join("<br>", content.NextStepsItems.Select(item => $"• {item}"));
         
-        var message = $@"Hello {adminName},
-            <br><br>
-            Your password has been successfully changed.
-            <br><br>
-            <strong>📅 Changed At:</strong> {DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm} UTC<br>
-            <strong>📧 Account Email:</strong> {toEmail}
-            <br><br>
-            <strong>🔒 Security Notice:</strong><br>
-            • If you did not make this change, your account may be compromised<br>
-            • Contact support immediately if this was unauthorized<br>
-            • Consider enabling Two-Factor Authentication
-            <br><br>
-            <strong>🛡️ Security Tips:</strong><br>
-            • Use a strong, unique password for your account<br>
-            • Never share your password with anyone<br>
-            • Change your password regularly<br>
-            • Enable 2FA for maximum security
-            <br><br>
-            Thank you for keeping your account secure!";
+        var changedAt = isRtl 
+            ? $"{DateTime.UtcNow:yyyy/MM/dd} - {DateTime.UtcNow:HH:mm}"
+            : $"{DateTime.UtcNow:MMMM dd, yyyy} at {DateTime.UtcNow:HH:mm}";
         
-        var body = BuildLocalizedEmailTemplate(adminName, title, message, "#FF9800", language);
-        await SendEmailAsync(toEmail, subject, body);
+        var message = $@"{content.Description}
+            <br><br>
+            <strong>📅 {content.ChangedAtLabel}:</strong> {changedAt} UTC<br>
+            <strong>📧 {content.AccountEmailLabel}:</strong> {toEmail}
+            <br><br>
+            <strong>🔒 {content.SecurityNoticeTitle}:</strong><br>
+            {securityNoticeItems}
+            <br><br>
+            <strong>🛡️ {content.NextStepsTitle}:</strong><br>
+            {nextStepsItems}
+            <br><br>
+            {content.ClosingMessage}";
+        
+        var body = BuildSubscriptionActionEmailTemplate(adminName, content.Title, message, "#FF9800", language);
+        await SendEmailAsync(toEmail, content.Subject, body);
     }
 
     public async Task SendPasswordResetOtpEmailAsync(string toEmail, string adminName, string otpCode, string magicLinkToken, int expiryMinutes, string ipAddress, string? language = null)

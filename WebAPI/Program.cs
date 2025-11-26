@@ -166,9 +166,13 @@ app.UseMiddleware<CustomClaimsPrincipalMiddleware>();
 app.UseMiddleware<DeletedUserMiddleware>(); // Check if user is deleted/deactivated
 app.UseMiddleware<ClientAuthenticationMiddleware>();
 
-app.UseResponseCaching();
-app.UseMiddleware<ETagMiddleware>();
-app.UseMiddleware<CacheHeadersMiddleware>();
+// Only use caching in production to avoid development cache issues
+if (!app.Environment.IsDevelopment())
+{
+    app.UseResponseCaching();
+    app.UseMiddleware<ETagMiddleware>();
+    app.UseMiddleware<CacheHeadersMiddleware>();
+}
 app.UseMiddleware<EarlyUnicodeHeaderMiddleware>();
 app.UseMiddleware<UnicodeHeaderMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();

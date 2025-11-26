@@ -93,18 +93,35 @@ public class SubscriptionMappingProfile : Profile
         CreateMap<PlanDtos.UpdatePlanDto, SubscriptionPlan>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
+        // ========== Subscription Plan Feature Mappings ==========
+        CreateMap<Project, SubscriptionProjectDto>()
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
+                s.ProjectModules.Select(pm => pm.Module)));
+
+        CreateMap<Module, SubscriptionModuleDto>()
+            .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
+
         // ========== Subscription Mappings ==========
         CreateMap<Subscription, SubscriptionDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.CompanyId))
+            .ForMember(d => d.CompanyName, opt => opt.MapFrom(s => s.Company.Name))
             .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.PlanId))
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
+            .ForMember(d => d.PlanDescription, opt => opt.MapFrom(s => s.Plan.Description))
             .ForMember(d => d.IsLifetime, opt => opt.MapFrom(s => s.IsLifetime))
             .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextPlanId))
             .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
             .ForMember(d => d.OfflineLicenseKey, opt => opt.Ignore()) // Set manually based on user role
             .ForMember(d => d.LicenseKeyGeneratedAt, opt => opt.MapFrom(s => s.LicenseKeyGeneratedAt))
-            .ForMember(d => d.LicenseKeyVersion, opt => opt.MapFrom(s => s.LicenseKeyVersion));
+            .ForMember(d => d.LicenseKeyVersion, opt => opt.MapFrom(s => s.LicenseKeyVersion))
+            // Plan Features
+            .ForMember(d => d.Projects, opt => opt.MapFrom(s => 
+                s.Plan.PlanProjects.Select(pp => pp.Project)))
+            .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
+                s.Plan.PlanModules.Select(pm => pm.Module)))
+            .ForMember(d => d.CustomFeatures, opt => opt.MapFrom(s => s.Plan.CustomFeatures));
 
         CreateMap<Subscription, SubscriptionStatusDto>()
             .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))

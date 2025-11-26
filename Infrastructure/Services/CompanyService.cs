@@ -60,7 +60,7 @@ public class CompanyService : ICompanyService
                 created.ContactEmail,
                 created.Name,
                 "System",
-                language ?? "en"); // Use provided language or default to English
+                language); // Uses request culture if null
         }
         catch (Exception ex)
         {
@@ -310,7 +310,7 @@ public class CompanyService : ICompanyService
                 {
                     try
                     {
-                        await _emailService.SendCompanyDeletedEmailAsync(contactEmail, companyName);
+                        await _emailService.SendCompanyDeletedEmailAsync(contactEmail, companyName, null); // Uses request culture
                     }
                     catch (Exception ex)
                     {
@@ -375,7 +375,7 @@ public class CompanyService : ICompanyService
                 {
                     try
                     {
-                        await _emailService.SendCompanyActivatedEmailAsync(company.ContactEmail, company.Name);
+                        await _emailService.SendCompanyActivatedEmailAsync(company.ContactEmail, company.Name, null); // Uses request culture
                     }
                     catch (Exception ex)
                     {
@@ -443,7 +443,8 @@ public class CompanyService : ICompanyService
                         await _emailService.SendCompanyDeactivatedEmailAsync(
                             company.ContactEmail, 
                             company.Name, 
-                            request.Reason);
+                            request.Reason,
+                            null); // Uses request culture
                     }
                     catch (Exception ex)
                     {

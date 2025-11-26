@@ -7,6 +7,7 @@ using Application.DTOs.Subscriptions;
 using Application.Services;
 using AutoMapper;
 using Domain.Entities.Subscriptions;
+using Domain.Entities.Common;
 using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
@@ -191,6 +192,26 @@ public class SubscriptionService : ISubscriptionService
         return subscriptionDto;
     }
 
+    public async Task<(IEnumerable<SubscriptionDto> Items, PaginationMetadata Pagination)> GetAllSubscriptionsAsync(int page, int pageSize, string? search = null)
+    {
+        var (subscriptions, pagination) = await _subscriptionRepo.GetAllAsync(
+            new[] { "Plan", "Company" }, // Include related data
+            page,
+            pageSize,
+            search,
+            default,
+            s => s.Company.Name, s => s.Plan.Name); // Search by company name and plan name
+
+        var dtos = subscriptions.Select(s => {
+            var dto = _mapper.Map<SubscriptionDto>(s);
+            // Set license key visibility based on role (handled by controller/auth)
+            dto.OfflineLicenseKey = null; // Will be set by controller if user has permission
+            return dto;
+        });
+
+        return (dtos, pagination);
+    }
+
     public async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid id)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(id);
@@ -303,6 +324,14 @@ public class SubscriptionService : ISubscriptionService
             await _subscriptionRepo.AddAsync(newSubscription);
             await _unitOfWork.SaveChangesAsync();
         }
+
+        // Send renewal email notification
+        await _emailService.SendSubscriptionRenewedEmailAsync(
+            company.ContactEmail,
+            company.Name,
+            plan.Name,
+            newSubscription.ExpiryDateUtc,
+            null); // Uses request culture
 
         // Create outbox event
         await CreateOutboxEventAsync(
@@ -444,6 +473,15 @@ public class SubscriptionService : ISubscriptionService
 
         await _unitOfWork.SaveChangesAsync();
 
+        // Send upgrade email notification
+        await _emailService.SendSubscriptionUpgradedEmailAsync(
+            company.ContactEmail,
+            company.Name,
+            oldPlan.Name,
+            newPlan.Name,
+            newSubscription?.ExpiryDateUtc ?? oldSubscription.ExpiryDateUtc,
+            null); // Uses request culture
+
         // Create outbox event
         await CreateOutboxEventAsync(
             SubscriptionEventType.Upgraded,
@@ -573,13 +611,14 @@ public class SubscriptionService : ISubscriptionService
         await _subscriptionRepo.UpdateAsync(subscription);
         await _unitOfWork.SaveChangesAsync();
 
-        // Send email notification
+        // Send email notification with reason
         await _emailService.SendSubscriptionResumedEmailAsync(
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
             subscription.ExpiryDateUtc,
-            language);
+            language,
+            reason);
 
         // Create outbox event
         await CreateOutboxEventAsync(

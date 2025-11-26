@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using Application.DTOs.ModuleDto;
+using Application.DTOs.ProjectDto;
 using Domain.Enums;
 
 namespace Application.DTOs.Subscriptions;
@@ -7,8 +10,10 @@ public class SubscriptionDto
 {
     public Guid Id { get; set; }
     public Guid CompanyId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
     public Guid PlanId { get; set; }
     public string PlanName { get; set; } = string.Empty;
+    public string? PlanDescription { get; set; }
     public DateTime StartDateUtc { get; set; }
     public DateTime ExpiryDateUtc { get; set; }
     public bool IsActive { get; set; }
@@ -33,4 +38,67 @@ public class SubscriptionDto
     public DateTime? LicenseKeyGeneratedAt { get; set; }
     public int LicenseKeyVersion { get; set; }
     public bool HasLicenseKey => !string.IsNullOrEmpty(OfflineLicenseKey);
+    
+    // Computed Properties for Business Logic
+    public string Status
+    {
+        get
+        {
+            if (IsLifetime) return "Lifetime";
+            if (IsTrial) return "Trial";
+            if (IsExpired) return "Expired";
+            if (!IsActive) return "Suspended";
+            
+            // Check if expiring soon (within 30 days)
+            var daysUntilExpiry = (ExpiryDateUtc - DateTime.UtcNow).Days;
+            if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) return "Expiring";
+            
+            return IsActive ? "Active" : "Unknown";
+        }
+    }
+    
+    public int DaysRemaining
+    {
+        get
+        {
+            if (IsLifetime) return int.MaxValue;
+            var days = (ExpiryDateUtc - DateTime.UtcNow).Days;
+            return Math.Max(0, days);
+        }
+    }
+    
+    // Action Permissions
+    public bool CanRenew => (IsActive || IsExpired) && !IsLifetime;
+    public bool CanSuspend => IsActive && !IsLifetime;
+    public bool CanResume => !IsActive && !IsExpired && !IsLifetime;
+    public bool CanCancel => IsActive && !IsLifetime;
+    public bool CanUpgrade => IsActive && !IsLifetime;
+    public bool CanExtend => IsActive && !IsLifetime;
+    public bool CanReactivate => IsExpired && !IsLifetime;
+    
+    // Plan Features - Included projects, modules, and custom features
+    public List<SubscriptionProjectDto> Projects { get; set; } = new();
+    public List<SubscriptionModuleDto> Modules { get; set; } = new();
+    public List<string> CustomFeatures { get; set; } = new();
+}
+
+/// <summary>
+/// Simplified project DTO for subscription display
+/// </summary>
+public class SubscriptionProjectDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public List<SubscriptionModuleDto> Modules { get; set; } = new();
+}
+
+/// <summary>
+/// Simplified module DTO for subscription display
+/// </summary>
+public class SubscriptionModuleDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
 }

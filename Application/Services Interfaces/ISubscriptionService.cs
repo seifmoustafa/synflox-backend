@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Application.DTOs.Subscriptions;
+using Domain.Entities.Common;
 
 namespace Application.Services;
 
@@ -14,6 +15,11 @@ public interface ISubscriptionService
     /// Creates a new subscription for a company
     /// </summary>
     Task<SubscriptionDto> CreateSubscriptionAsync(CreateSubscriptionDto dto);
+
+    /// <summary>
+    /// Gets all subscriptions with pagination and search
+    /// </summary>
+    Task<(IEnumerable<SubscriptionDto> Items, PaginationMetadata Pagination)> GetAllSubscriptionsAsync(int page, int pageSize, string? search = null);
 
     /// <summary>
     /// Gets a subscription by ID with full details

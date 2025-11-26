@@ -517,6 +517,36 @@
   <data name="Subscription.NotTrial" xml:space="preserve">
     <value>الاشتراك ليس في فترة تجريبية</value>
   </data>
+  
+  <!-- Subscription Action Success Messages -->
+  <data name="Subscription.Suspended" xml:space="preserve">
+    <value>تم تعليق الاشتراك بنجاح</value>
+  </data>
+  <data name="Subscription.Resumed" xml:space="preserve">
+    <value>تم استئناف الاشتراك بنجاح</value>
+  </data>
+  <data name="Subscription.Canceled" xml:space="preserve">
+    <value>تم إلغاء الاشتراك بنجاح</value>
+  </data>
+  <data name="Subscription.Paused" xml:space="preserve">
+    <value>تم إيقاف الاشتراك مؤقتاً بنجاح</value>
+  </data>
+  <data name="Subscription.Unpaused" xml:space="preserve">
+    <value>تم إلغاء إيقاف الاشتراك بنجاح</value>
+  </data>
+  <data name="Subscription.Reactivated" xml:space="preserve">
+    <value>تم إعادة تفعيل الاشتراك بنجاح</value>
+  </data>
+  <data name="Subscription.TrialStopped" xml:space="preserve">
+    <value>تم إيقاف الفترة التجريبية والاشتراك نشط الآن</value>
+  </data>
+  <data name="Subscription.Renewed" xml:space="preserve">
+    <value>تم تجديد الاشتراك بنجاح</value>
+  </data>
+  <data name="Subscription.Extended" xml:space="preserve">
+    <value>تم تمديد الاشتراك بنجاح</value>
+  </data>
+  
   <data name="Plan.TrialNotAllowed" xml:space="preserve">
     <value>هذه الخطة لا تسمح بفترات تجريبية</value>
   </data>
@@ -866,6 +896,1022 @@
 
   <data name="BackupCodes.Generated" xml:space="preserve">
     <value>تم إنشاء رموز النسخ الاحتياطي بنجاح. احفظها في مكان آمن - سيتم عرضها مرة واحدة فقط.</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION EMAIL LOCALIZATION (Arabic) ===== -->
+  
+  <!-- Common Subscription Labels -->
+  <data name="Email.Subscription.CompanyLabel" xml:space="preserve">
+    <value>الشركة</value>
+  </data>
+  <data name="Email.Subscription.PlanLabel" xml:space="preserve">
+    <value>الخطة</value>
+  </data>
+  <data name="Email.Subscription.ReasonLabel" xml:space="preserve">
+    <value>السبب</value>
+  </data>
+  <data name="Email.Subscription.NotesLabel" xml:space="preserve">
+    <value>ملاحظات إضافية</value>
+  </data>
+  <data name="Email.Subscription.ExpiryDateLabel" xml:space="preserve">
+    <value>تاريخ الانتهاء</value>
+  </data>
+  <data name="Email.Subscription.DaysRemainingLabel" xml:space="preserve">
+    <value>الأيام المتبقية</value>
+  </data>
+  <data name="Email.Subscription.RemainingTimeLabel" xml:space="preserve">
+    <value>الوقت المتبقي</value>
+  </data>
+  <data name="Email.Subscription.DaysLabel" xml:space="preserve">
+    <value>يوم</value>
+  </data>
+  <data name="Email.Subscription.NextSteps" xml:space="preserve">
+    <value>الخطوات التالية</value>
+  </data>
+
+  <!-- Suspended Email -->
+  <data name="Email.Subscription.Suspended.Subject" xml:space="preserve">
+    <value>⚠️ تم تعليق اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Title" xml:space="preserve">
+    <value>⚠️ تم تعليق الاشتراك</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Description" xml:space="preserve">
+    <value>تم تعليق اشتراكك في SYNFLOX مؤقتاً.</value>
+  </data>
+  <data name="Email.Subscription.SuspendedDateLabel" xml:space="preserve">
+    <value>تاريخ التعليق</value>
+  </data>
+  <data name="Email.Subscription.Suspended.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.AccessDisabled" xml:space="preserve">
+    <value>تم تعطيل الوصول إلى خدمات SYNFLOX مؤقتاً</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.DataSafe" xml:space="preserve">
+    <value>بياناتك تبقى آمنة ومحمية</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.CanResume" xml:space="preserve">
+    <value>يمكن استئناف الاشتراك بعد حل المشكلة</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.ContactSupport" xml:space="preserve">
+    <value>يرجى التواصل مع الدعم لمزيد من المعلومات</value>
+  </data>
+  <data name="Email.Subscription.Suspended.NextSteps.ReviewReason" xml:space="preserve">
+    <value>راجع سبب التعليق أعلاه</value>
+  </data>
+  <data name="Email.Subscription.Suspended.NextSteps.ContactSupport" xml:space="preserve">
+    <value>تواصل مع فريق الدعم للتوضيح</value>
+  </data>
+  <data name="Email.Subscription.Suspended.NextSteps.ResolveIssue" xml:space="preserve">
+    <value>حل المشكلة لاستعادة الوصول</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Closing" xml:space="preserve">
+    <value>يرجى التواصل مع فريق الدعم فوراً لحل هذا الأمر واستعادة وصولك.</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Resumed Email -->
+  <data name="Email.Subscription.Resumed.Subject" xml:space="preserve">
+    <value>▶️ تم استئناف اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Title" xml:space="preserve">
+    <value>▶️ تم استئناف الاشتراك بنجاح!</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Description" xml:space="preserve">
+    <value>مرحباً بعودتك! تم استئناف اشتراكك في SYNFLOX بنجاح.</value>
+  </data>
+  <data name="Email.Subscription.ResumedDateLabel" xml:space="preserve">
+    <value>تاريخ الاستئناف</value>
+  </data>
+  <data name="Email.Subscription.Resumed.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.AccessRestored" xml:space="preserve">
+    <value>تم استعادة وصولك الكامل إلى خدمات SYNFLOX</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.AllFeatures" xml:space="preserve">
+    <value>جميع ميزات الخطة متاحة الآن</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.Support" xml:space="preserve">
+    <value>الدعم الفني الكامل متاح</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.DataIntact" xml:space="preserve">
+    <value>جميع بياناتك سليمة</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Closing" xml:space="preserve">
+    <value>شكراً لاختيارك SYNFLOX. يسعدنا عودتك!</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Canceled Email -->
+  <data name="Email.Subscription.Canceled.Subject" xml:space="preserve">
+    <value>❌ تم إلغاء اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Title" xml:space="preserve">
+    <value>❌ تم إلغاء الاشتراك</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Description" xml:space="preserve">
+    <value>تم إلغاء اشتراكك في SYNFLOX.</value>
+  </data>
+  <data name="Email.Subscription.CanceledDateLabel" xml:space="preserve">
+    <value>تاريخ الإلغاء</value>
+  </data>
+  <data name="Email.Subscription.Canceled.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.Terminated" xml:space="preserve">
+    <value>تم إنهاء اشتراكك فوراً</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.AccessRevoked" xml:space="preserve">
+    <value>تم إلغاء الوصول إلى خدمات SYNFLOX</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.DataRetention" xml:space="preserve">
+    <value>سيتم الاحتفاظ ببياناتك لمدة 30 يوماً للاسترداد</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.CanReactivate" xml:space="preserve">
+    <value>يمكنك إعادة التفعيل في أي وقت بالتواصل مع الدعم</value>
+  </data>
+  <data name="Email.Subscription.Canceled.WantToReturn" xml:space="preserve">
+    <value>تريد العودة؟</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Return.ContactSupport" xml:space="preserve">
+    <value>تواصل مع فريق الدعم لإعادة التفعيل</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Return.ChoosePlan" xml:space="preserve">
+    <value>اختر من خطط الاشتراك المتاحة</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Return.RestoreData" xml:space="preserve">
+    <value>يمكن استعادة بياناتك خلال 30 يوماً</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Closing" xml:space="preserve">
+    <value>نأسف لرحيلك. شكراً لاستخدامك SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Paused Email -->
+  <data name="Email.Subscription.Paused.Subject" xml:space="preserve">
+    <value>⏸️ تم إيقاف اشتراك SYNFLOX مؤقتاً - {0}</value>
+  </data>
+  <data name="Email.Subscription.Paused.Title" xml:space="preserve">
+    <value>⏸️ تم إيقاف الاشتراك مؤقتاً</value>
+  </data>
+  <data name="Email.Subscription.Paused.Description" xml:space="preserve">
+    <value>تم إيقاف اشتراكك في SYNFLOX مؤقتاً.</value>
+  </data>
+  <data name="Email.Subscription.PausedDateLabel" xml:space="preserve">
+    <value>تاريخ الإيقاف</value>
+  </data>
+  <data name="Email.Subscription.Paused.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.TimerPaused" xml:space="preserve">
+    <value>تم إيقاف عداد اشتراكك</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.NoBilling" xml:space="preserve">
+    <value>لن يتم إصدار فواتير خلال فترة الإيقاف</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.DataSafe" xml:space="preserve">
+    <value>بياناتك تبقى آمنة ومحمية</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.CanResume" xml:space="preserve">
+    <value>يمكنك الاستئناف في أي وقت بالتواصل مع الدعم</value>
+  </data>
+  <data name="Email.Subscription.Paused.Closing" xml:space="preserve">
+    <value>تواصل مع فريق الدعم عندما تكون مستعداً لاستئناف اشتراكك.</value>
+  </data>
+  <data name="Email.Subscription.Paused.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Unpaused Email -->
+  <data name="Email.Subscription.Unpaused.Subject" xml:space="preserve">
+    <value>▶️ تم إلغاء إيقاف اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Title" xml:space="preserve">
+    <value>▶️ تم إلغاء إيقاف الاشتراك!</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Description" xml:space="preserve">
+    <value>تم إلغاء إيقاف اشتراكك في SYNFLOX وهو نشط الآن.</value>
+  </data>
+  <data name="Email.Subscription.UnpausedDateLabel" xml:space="preserve">
+    <value>تاريخ إلغاء الإيقاف</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Means.TimerResumed" xml:space="preserve">
+    <value>تم استئناف عداد اشتراكك</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Means.FullAccess" xml:space="preserve">
+    <value>تم استعادة الوصول الكامل لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Means.BillingResumes" xml:space="preserve">
+    <value>تستأنف دورة الفوترة الطبيعية</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Closing" xml:space="preserve">
+    <value>شكراً لعودتك إلى SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Reactivated Email -->
+  <data name="Email.Subscription.Reactivated.Subject" xml:space="preserve">
+    <value>✅ تم إعادة تفعيل اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Title" xml:space="preserve">
+    <value>✅ تم إعادة تفعيل الاشتراك!</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Description" xml:space="preserve">
+    <value>مرحباً بعودتك! تم إعادة تفعيل اشتراكك في SYNFLOX بنجاح.</value>
+  </data>
+  <data name="Email.Subscription.ReactivatedDateLabel" xml:space="preserve">
+    <value>تاريخ إعادة التفعيل</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.FullAccess" xml:space="preserve">
+    <value>تم استعادة الوصول الكامل إلى SYNFLOX</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.AllFeatures" xml:space="preserve">
+    <value>جميع ميزات الخطة متاحة</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.Support" xml:space="preserve">
+    <value>الدعم الفني الكامل متاح</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.DataRestored" xml:space="preserve">
+    <value>تم استعادة جميع بياناتك</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Closing" xml:space="preserve">
+    <value>يسعدنا عودتك إلى SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Trial Stopped Email -->
+  <data name="Email.Subscription.TrialStopped.Subject" xml:space="preserve">
+    <value>🎉 تم تحويل تجربة SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Title" xml:space="preserve">
+    <value>🎉 تم تحويل التجربة إلى اشتراك مدفوع!</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Description" xml:space="preserve">
+    <value>تهانينا! تم تحويل تجربتك إلى اشتراك مدفوع.</value>
+  </data>
+  <data name="Email.Subscription.ConversionDateLabel" xml:space="preserve">
+    <value>تاريخ التحويل</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.Converted" xml:space="preserve">
+    <value>تجربتك الآن اشتراك مدفوع</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.FullAccess" xml:space="preserve">
+    <value>وصول كامل لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية متضمن</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.NoInterruption" xml:space="preserve">
+    <value>لا انقطاع في الخدمة</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Closing" xml:space="preserve">
+    <value>شكراً لترقيتك إلى اشتراكنا الكامل!</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- Renewed Email -->
+  <data name="Email.Subscription.Renewed.Subject" xml:space="preserve">
+    <value>🔄 تم تجديد اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Title" xml:space="preserve">
+    <value>🔄 تم تجديد الاشتراك بنجاح!</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Description" xml:space="preserve">
+    <value>أخبار رائعة! تم تجديد اشتراكك في SYNFLOX بنجاح.</value>
+  </data>
+  <data name="Email.Subscription.RenewalDateLabel" xml:space="preserve">
+    <value>تاريخ التجديد</value>
+  </data>
+  <data name="Email.Subscription.NewExpiryDateLabel" xml:space="preserve">
+    <value>تاريخ الانتهاء الجديد</value>
+  </data>
+  <data name="Email.Subscription.ExtendedDaysLabel" xml:space="preserve">
+    <value>المدة الممددة</value>
+  </data>
+  <data name="Email.Subscription.Renewed.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.Continued" xml:space="preserve">
+    <value>استمرار الوصول لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.AllFeatures" xml:space="preserve">
+    <value>خدمة بدون انقطاع</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.Support" xml:space="preserve">
+    <value>دعم فني كامل</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.Updates" xml:space="preserve">
+    <value>جميع التحديثات والتحسينات المستقبلية</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Closing" xml:space="preserve">
+    <value>شكراً لثقتك المستمرة في SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Signature" xml:space="preserve">
+    <value>— فريق إدارة اشتراكات SYNFLOX</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION ACTIVATED ===== -->
+  <data name="Email.Subscription.Activated.Subject" xml:space="preserve">
+    <value>✅ تم تفعيل اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Activated.Title" xml:space="preserve">
+    <value>✅ تم تفعيل الاشتراك بنجاح!</value>
+  </data>
+  <data name="Email.Subscription.Activated.Description" xml:space="preserve">
+    <value>أخبار رائعة! تم تفعيل اشتراكك بنجاح.</value>
+  </data>
+  <data name="Email.Subscription.ActivationDateLabel" xml:space="preserve">
+    <value>تاريخ التفعيل</value>
+  </data>
+  <data name="Email.Subscription.Activated.WhatThisMeans" xml:space="preserve">
+    <value>يشمل اشتراكك</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.FullAccess" xml:space="preserve">
+    <value>وصول كامل لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.AllFeatures" xml:space="preserve">
+    <value>أدوات إدارة تراخيص متقدمة</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.Updates" xml:space="preserve">
+    <value>تحديثات وتحسينات منتظمة</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.Secure" xml:space="preserve">
+    <value>بنية تحتية سحابية آمنة</value>
+  </data>
+  <data name="Email.Subscription.Activated.Closing" xml:space="preserve">
+    <value>اشتراكك الآن نشط بالكامل وجاهز للاستخدام!</value>
+  </data>
+  <data name="Email.Subscription.Activated.Signature" xml:space="preserve">
+    <value>— فريق تفعيل SYNFLOX</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION EXPIRED ===== -->
+  <data name="Email.Subscription.Expired.Subject" xml:space="preserve">
+    <value>⚠️ انتهى اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Expired.Title" xml:space="preserve">
+    <value>⚠️ انتهت صلاحية الاشتراك</value>
+  </data>
+  <data name="Email.Subscription.Expired.Description" xml:space="preserve">
+    <value>انتهت صلاحية اشتراكك ويتطلب التجديد لمواصلة استخدام خدماتنا.</value>
+  </data>
+  <data name="Email.Subscription.ExpirationDateLabel" xml:space="preserve">
+    <value>تاريخ الانتهاء</value>
+  </data>
+  <data name="Email.Subscription.Expired.WhatThisMeans" xml:space="preserve">
+    <value>ماذا يعني هذا</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.AccessSuspended" xml:space="preserve">
+    <value>تم تعليق وصولك لخدمات SYNFLOX</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.DataSafe" xml:space="preserve">
+    <value>بياناتك تبقى آمنة ومحمية</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.NeedRenew" xml:space="preserve">
+    <value>تحتاج للتجديد لمواصلة استخدام خدماتنا</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.ContactSupport" xml:space="preserve">
+    <value>تواصل مع الدعم لخيارات التجديد</value>
+  </data>
+  <data name="Email.Subscription.Expired.NextSteps" xml:space="preserve">
+    <value>الخطوات التالية</value>
+  </data>
+  <data name="Email.Subscription.Expired.Steps.ContactSales" xml:space="preserve">
+    <value>تواصل مع فريق المبيعات لخيارات التجديد</value>
+  </data>
+  <data name="Email.Subscription.Expired.Steps.ChoosePlan" xml:space="preserve">
+    <value>اختر من خطط الاشتراك المتاحة</value>
+  </data>
+  <data name="Email.Subscription.Expired.Steps.RestoreAccess" xml:space="preserve">
+    <value>استعد الوصول الكامل لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.Expired.Closing" xml:space="preserve">
+    <value>لا تدع عملياتك التجارية تتوقف - جدد اليوم!</value>
+  </data>
+  <data name="Email.Subscription.Expired.Signature" xml:space="preserve">
+    <value>— فريق تجديد SYNFLOX</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION UPGRADED ===== -->
+  <data name="Email.Subscription.Upgraded.Subject" xml:space="preserve">
+    <value>🚀 تمت ترقية اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Title" xml:space="preserve">
+    <value>🚀 تمت ترقية الاشتراك بنجاح!</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Description" xml:space="preserve">
+    <value>ممتاز! تمت ترقية اشتراكك في SYNFLOX بنجاح.</value>
+  </data>
+  <data name="Email.Subscription.UpgradeLabel" xml:space="preserve">
+    <value>الترقية</value>
+  </data>
+  <data name="Email.Subscription.UpgradeDateLabel" xml:space="preserve">
+    <value>تاريخ الترقية</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.WhatThisMeans" xml:space="preserve">
+    <value>يشمل اشتراكك المحسّن</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Enhanced" xml:space="preserve">
+    <value>جميع الميزات المحسنة للخطة الجديدة</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Improved" xml:space="preserve">
+    <value>أداء وقدرات محسنة</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Analytics" xml:space="preserve">
+    <value>تحليلات وتقارير متقدمة</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Extended" xml:space="preserve">
+    <value>وظائف وتكاملات موسعة</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Secure" xml:space="preserve">
+    <value>بنية تحتية سحابية آمنة</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Closing" xml:space="preserve">
+    <value>استمتع بتجربة SYNFLOX المحسنة!</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Signature" xml:space="preserve">
+    <value>— فريق ترقية SYNFLOX</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION EXTENDED ===== -->
+  <data name="Email.Subscription.Extended.Subject" xml:space="preserve">
+    <value>📅 تم تمديد اشتراك SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.Extended.Title" xml:space="preserve">
+    <value>📅 تم تمديد الاشتراك بنجاح!</value>
+  </data>
+  <data name="Email.Subscription.Extended.Description" xml:space="preserve">
+    <value>أخبار رائعة! تم تمديد اشتراكك في SYNFLOX.</value>
+  </data>
+  <data name="Email.Subscription.ExtensionDateLabel" xml:space="preserve">
+    <value>تاريخ التمديد</value>
+  </data>
+  <data name="Email.Subscription.PreviousExpiryLabel" xml:space="preserve">
+    <value>الانتهاء السابق</value>
+  </data>
+  <data name="Email.Subscription.ExtensionPeriodLabel" xml:space="preserve">
+    <value>فترة التمديد</value>
+  </data>
+  <data name="Email.Subscription.Extended.WhatThisMeans" xml:space="preserve">
+    <value>يشمل اشتراكك الممدد</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Continued" xml:space="preserve">
+    <value>استمرار الوصول لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Extended" xml:space="preserve">
+    <value>فترة خدمة ممددة</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Updates" xml:space="preserve">
+    <value>جميع التحديثات والتحسينات المستقبلية</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Secure" xml:space="preserve">
+    <value>بنية تحتية سحابية آمنة</value>
+  </data>
+  <data name="Email.Subscription.Extended.Closing" xml:space="preserve">
+    <value>استمتع بتجربة SYNFLOX الممددة!</value>
+  </data>
+  <data name="Email.Subscription.Extended.Signature" xml:space="preserve">
+    <value>— فريق تمديد SYNFLOX</value>
+  </data>
+
+  <!-- ===== TRIAL STARTED ===== -->
+  <data name="Email.Subscription.TrialStarted.Subject" xml:space="preserve">
+    <value>🎉 بدأت فترتك التجريبية في SYNFLOX - {0}</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Title" xml:space="preserve">
+    <value>🎉 بدأت الفترة التجريبية بنجاح!</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Description" xml:space="preserve">
+    <value>أهلاً بك في SYNFLOX! تم تفعيل فترتك التجريبية بنجاح.</value>
+  </data>
+  <data name="Email.Subscription.TrialStartedDateLabel" xml:space="preserve">
+    <value>بدأت التجربة</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiresDateLabel" xml:space="preserve">
+    <value>تنتهي التجربة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.WhatThisMeans" xml:space="preserve">
+    <value>ما تتضمنه فترتك التجريبية</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.FullAccess" xml:space="preserve">
+    <value>وصول كامل لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.AllFeatures" xml:space="preserve">
+    <value>وظائف ترخيص كاملة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.Analytics" xml:space="preserve">
+    <value>تحليلات وتقارير متقدمة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.Support" xml:space="preserve">
+    <value>دعم فني خلال فترة التجربة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.NoLimits" xml:space="preserve">
+    <value>بدون قيود أو حدود</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.Secure" xml:space="preserve">
+    <value>بنية تحتية سحابية آمنة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.NextSteps" xml:space="preserve">
+    <value>حقق أقصى استفادة من تجربتك</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Explore" xml:space="preserve">
+    <value>استكشف جميع الميزات المتاحة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Test" xml:space="preserve">
+    <value>اختبر التكامل مع أنظمتك</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Support" xml:space="preserve">
+    <value>تواصل مع الدعم لأي استفسار</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Upgrade" xml:space="preserve">
+    <value>فكر في الترقية قبل انتهاء التجربة</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Closing" xml:space="preserve">
+    <value>اختبر القوة الكاملة لـ SYNFLOX خلال تجربتك!</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Signature" xml:space="preserve">
+    <value>— فريق الترحيب في SYNFLOX</value>
+  </data>
+
+  <!-- ===== TRIAL EXPIRING ===== -->
+  <data name="Email.Subscription.TrialExpiring.Subject" xml:space="preserve">
+    <value>⚠️ فترتك التجريبية في SYNFLOX تنتهي قريباً - {0}</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Title" xml:space="preserve">
+    <value>⚠️ تنتهي التجربة خلال {0} أيام!</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Description" xml:space="preserve">
+    <value>فترتك التجريبية في SYNFLOX تنتهي قريباً! لا تفوت ميزاتنا.</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.WhatThisMeans" xml:space="preserve">
+    <value>لا تفقد الوصول إلى</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Premium" xml:space="preserve">
+    <value>جميع الميزات المميزة</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Management" xml:space="preserve">
+    <value>إدارة تراخيص متقدمة</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Analytics" xml:space="preserve">
+    <value>أدوات التحليلات والتقارير</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Secure" xml:space="preserve">
+    <value>بنية تحتية سحابية آمنة</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.NextSteps" xml:space="preserve">
+    <value>قم بالترقية الآن للاستمرار في الاستمتاع</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.Uninterrupted" xml:space="preserve">
+    <value>خدمة بدون انقطاع</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.AllFeatures" xml:space="preserve">
+    <value>جميع الميزات المميزة</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.Support" xml:space="preserve">
+    <value>دعم ذو أولوية</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.Updates" xml:space="preserve">
+    <value>تحديثات وتحسينات منتظمة</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Closing" xml:space="preserve">
+    <value>تواصل مع فريق المبيعات اليوم لترقية اشتراكك!</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Signature" xml:space="preserve">
+    <value>— فريق مبيعات SYNFLOX</value>
+  </data>
+
+  <!-- ===== AUTO RENEWAL ===== -->
+  <data name="Email.Subscription.AutoRenewal.Subject" xml:space="preserve">
+    <value>🔄 تم التجديد التلقائي لـ SYNFLOX بنجاح - {0}</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Title" xml:space="preserve">
+    <value>🔄 تم تجديد الاشتراك تلقائياً!</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Description" xml:space="preserve">
+    <value>أخبار رائعة! تم تجديد اشتراكك في SYNFLOX تلقائياً.</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.WhatThisMeans" xml:space="preserve">
+    <value>يشمل اشتراكك المجدد</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Continued" xml:space="preserve">
+    <value>استمرار الوصول لجميع الميزات</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Uninterrupted" xml:space="preserve">
+    <value>خدمة بدون انقطاع</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Support" xml:space="preserve">
+    <value>دعم فني ذو أولوية</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Updates" xml:space="preserve">
+    <value>جميع التحديثات والتحسينات المستقبلية</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Secure" xml:space="preserve">
+    <value>بنية تحتية سحابية آمنة</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Closing" xml:space="preserve">
+    <value>شكراً لثقتك المستمرة في SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Signature" xml:space="preserve">
+    <value>— فريق الفوترة في SYNFLOX</value>
+  </data>
+
+  <!-- ===== SECURITY EMAIL COMMON LABELS ===== -->
+  <data name="Email.Security.PreviousEmailLabel" xml:space="preserve">
+    <value>البريد الإلكتروني السابق</value>
+  </data>
+  <data name="Email.Security.NewEmailLabel" xml:space="preserve">
+    <value>البريد الإلكتروني الجديد</value>
+  </data>
+  <data name="Email.Security.ChangedAtLabel" xml:space="preserve">
+    <value>تم التغيير في</value>
+  </data>
+  <data name="Email.Security.AccountEmailLabel" xml:space="preserve">
+    <value>بريد الحساب</value>
+  </data>
+  <data name="Email.Security.SecurityNoticeTitle" xml:space="preserve">
+    <value>إشعار أمني</value>
+  </data>
+  <data name="Email.Security.NextStepsTitle" xml:space="preserve">
+    <value>الخطوات التالية</value>
+  </data>
+  <data name="Email.Security.SecurityTipsTitle" xml:space="preserve">
+    <value>نصائح أمنية</value>
+  </data>
+  <data name="Email.Security.ThankYouSecure" xml:space="preserve">
+    <value>شكراً لحفاظك على أمان حسابك!</value>
+  </data>
+  <data name="Email.Security.SecurityTeam" xml:space="preserve">
+    <value>— فريق أمان SYNFLOX</value>
+  </data>
+  <data name="Email.Security.SecurityAlertTitle" xml:space="preserve">
+    <value>تنبيه أمني</value>
+  </data>
+  <data name="Email.Security.IpAddressLabel" xml:space="preserve">
+    <value>عنوان IP</value>
+  </data>
+  <data name="Email.Security.TimeLabel" xml:space="preserve">
+    <value>الوقت</value>
+  </data>
+  <data name="Email.Security.AccountLabel" xml:space="preserve">
+    <value>الحساب</value>
+  </data>
+  <data name="Email.Security.RequestDetailsLabel" xml:space="preserve">
+    <value>تفاصيل الطلب</value>
+  </data>
+  <data name="Email.Security.ProtectAccountTitle" xml:space="preserve">
+    <value>احمِ حسابك</value>
+  </data>
+  <data name="Email.Security.ImportantTitle" xml:space="preserve">
+    <value>مهم</value>
+  </data>
+  <data name="Email.Security.UrgentTitle" xml:space="preserve">
+    <value>إجراء عاجل مطلوب</value>
+  </data>
+  <data name="Email.Security.RecommendationTitle" xml:space="preserve">
+    <value>توصية</value>
+  </data>
+  <data name="Email.Security.GeneratedAtLabel" xml:space="preserve">
+    <value>تم الإنشاء في</value>
+  </data>
+  <data name="Email.Security.UsedAtLabel" xml:space="preserve">
+    <value>تم الاستخدام في</value>
+  </data>
+  <data name="Email.Security.DisabledAtLabel" xml:space="preserve">
+    <value>تم التعطيل في</value>
+  </data>
+  <data name="Email.Security.ResetAtLabel" xml:space="preserve">
+    <value>تم إعادة التعيين في</value>
+  </data>
+
+  <!-- ===== EMAIL CHANGED ===== -->
+  <data name="Email.Security.EmailChanged.Subject" xml:space="preserve">
+    <value>🔐 تم تغيير البريد الإلكتروني - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Title" xml:space="preserve">
+    <value>تم تغيير البريد الإلكتروني</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Description" xml:space="preserve">
+    <value>تم تغيير بريدك الإلكتروني بنجاح.</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Notice.SentToBoth" xml:space="preserve">
+    <value>تم إرسال هذا الإشعار إلى عنواني بريدك الإلكتروني القديم والجديد</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Notice.NotYou" xml:space="preserve">
+    <value>إذا لم تقم بهذا التغيير، يرجى الاتصال بالدعم فوراً</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Notice.Compromised" xml:space="preserve">
+    <value>قد يكون أمان حسابك معرضاً للخطر</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Steps.Verify" xml:space="preserve">
+    <value>تحقق من أنك تستطيع الوصول لحسابك بالبريد الجديد</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Steps.Update" xml:space="preserve">
+    <value>حدّث بريدك الإلكتروني في أي أنظمة خارجية</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Steps.Enable2FA" xml:space="preserve">
+    <value>فكر في تفعيل المصادقة الثنائية لأمان إضافي</value>
+  </data>
+
+  <!-- ===== PASSWORD CHANGED ===== -->
+  <data name="Email.Security.PasswordChanged.Subject" xml:space="preserve">
+    <value>🔐 تم تغيير كلمة المرور - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Title" xml:space="preserve">
+    <value>تم تغيير كلمة المرور</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Description" xml:space="preserve">
+    <value>تم تغيير كلمة مرورك بنجاح.</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Notice.NotYou" xml:space="preserve">
+    <value>إذا لم تقم بهذا التغيير، قد يكون حسابك معرضاً للخطر</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Notice.ContactSupport" xml:space="preserve">
+    <value>اتصل بالدعم فوراً إذا كان هذا غير مصرح به</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Notice.Enable2FA" xml:space="preserve">
+    <value>فكر في تفعيل المصادقة الثنائية</value>
+  </data>
+  <data name="Email.Security.Tips.StrongPassword" xml:space="preserve">
+    <value>استخدم كلمة مرور قوية وفريدة لحسابك</value>
+  </data>
+  <data name="Email.Security.Tips.NeverShare" xml:space="preserve">
+    <value>لا تشارك كلمة مرورك مع أي شخص</value>
+  </data>
+  <data name="Email.Security.Tips.ChangeRegularly" xml:space="preserve">
+    <value>غيّر كلمة مرورك بانتظام</value>
+  </data>
+  <data name="Email.Security.Tips.Enable2FA" xml:space="preserve">
+    <value>فعّل المصادقة الثنائية لأقصى أمان</value>
+  </data>
+
+  <!-- ===== PASSWORD RESET OTP ===== -->
+  <data name="Email.Security.PasswordReset.Subject" xml:space="preserve">
+    <value>تنبيه أمني: طلب إعادة تعيين كلمة المرور - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Title" xml:space="preserve">
+    <value>طلب إعادة تعيين كلمة المرور</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Description" xml:space="preserve">
+    <value>تلقينا طلباً لإعادة تعيين كلمة مرور حساب مسؤول SYNFLOX الخاص بك.</value>
+  </data>
+  <data name="Email.Security.PasswordReset.ResetLabel" xml:space="preserve">
+    <value>أعد تعيين كلمة مرورك</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Instructions" xml:space="preserve">
+    <value>لأمانك، يمكنك إعادة تعيين كلمة مرورك باستخدام رابط آمن أو بإدخال رمز التحقق يدوياً.</value>
+  </data>
+  <data name="Email.Security.PasswordReset.ButtonLabel" xml:space="preserve">
+    <value>إعادة تعيين كلمة المرور</value>
+  </data>
+  <data name="Email.Security.PasswordReset.LinkExpires" xml:space="preserve">
+    <value>ينتهي هذا الرابط خلال {0} دقائق.</value>
+  </data>
+  <data name="Email.Security.PasswordReset.OrUseCode" xml:space="preserve">
+    <value>أو استخدم رمز التحقق هذا</value>
+  </data>
+  <data name="Email.Security.PasswordReset.CodeInstructions" xml:space="preserve">
+    <value>إذا كنت تفضل، يمكنك إعادة تعيين كلمة مرورك بإدخال رمز التحقق هذا في صفحة إعادة التعيين:</value>
+  </data>
+  <data name="Email.Security.PasswordReset.CodeExpires" xml:space="preserve">
+    <value>ينتهي هذا الرمز خلال {0} دقائق</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.NotChanged" xml:space="preserve">
+    <value>لم يتم تغيير كلمة مرورك بعد</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.SomeoneTrying" xml:space="preserve">
+    <value>قد يحاول شخص ما الوصول لحسابك</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.Enable2FA" xml:space="preserve">
+    <value>نوصي بتأمين حسابك بتفعيل المصادقة الثنائية</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.ContactSupport" xml:space="preserve">
+    <value>اتصل بفريق الدعم إذا لاحظت أي نشاط مشبوه</value>
+  </data>
+  <data name="Email.Security.Protect.NeverShare" xml:space="preserve">
+    <value>لا تشارك كلمة مرورك أو رموز التحقق مع أي شخص</value>
+  </data>
+  <data name="Email.Security.Protect.NeverAsk" xml:space="preserve">
+    <value>لن يطلب منك SYNFLOX كلمة مرورك عبر البريد الإلكتروني</value>
+  </data>
+  <data name="Email.Security.Protect.StrongPassword" xml:space="preserve">
+    <value>استخدم كلمة مرور قوية وفريدة لا تستخدمها في مكان آخر</value>
+  </data>
+  <data name="Email.Security.Protect.Enable2FA" xml:space="preserve">
+    <value>فعّل المصادقة الثنائية لطبقة أمان إضافية</value>
+  </data>
+  <data name="Email.Security.Protect.KeepUpdated" xml:space="preserve">
+    <value>حافظ على تحديث معلومات الاسترداد الخاصة بك</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Closing" xml:space="preserve">
+    <value>إذا كان لديك أي أسئلة أو مخاوف بشأن أمان حسابك، لا تتردد في الاتصال بفريق الدعم.</value>
+  </data>
+
+  <!-- ===== PASSWORD RESET SUCCESS ===== -->
+  <data name="Email.Security.PasswordResetSuccess.Subject" xml:space="preserve">
+    <value>تم تغيير كلمة مرور SYNFLOX الخاصة بك</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Title" xml:space="preserve">
+    <value>تم تغيير كلمة المرور بنجاح</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Description" xml:space="preserve">
+    <value>يؤكد هذا البريد أنه تم تغيير كلمة مرور حساب مسؤول SYNFLOX بنجاح.</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Message" xml:space="preserve">
+    <value>تم تحديث كلمة مرورك بنجاح. يمكنك الآن تسجيل الدخول لحسابك باستخدام كلمة مرورك الجديدة.</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Alert.NotYou" xml:space="preserve">
+    <value>إذا لم تغير كلمة مرورك، قد يكون شخص آخر لديه وصول لحسابك</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Alert.ContactSupport" xml:space="preserve">
+    <value>أعد تعيين كلمة مرورك واتصل بفريق الدعم فوراً</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Alert.Enable2FA" xml:space="preserve">
+    <value>فعّل المصادقة الثنائية لأمان إضافي</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Closing" xml:space="preserve">
+    <value>إذا كان لديك أي أسئلة أو مخاوف بشأن أمان حسابك، يرجى الاتصال بفريق الدعم.</value>
+  </data>
+
+  <!-- ===== BACKUP CODES GENERATED ===== -->
+  <data name="Email.Security.BackupCodes.Generated.Subject" xml:space="preserve">
+    <value>🔐 تم إنشاء رموز النسخ الاحتياطي - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Generated.Title" xml:space="preserve">
+    <value>تم إنشاء رموز نسخ احتياطي جديدة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Generated.Description" xml:space="preserve">
+    <value>تم إنشاء رموز نسخ احتياطي جديدة لحساب مسؤول SYNFLOX الخاص بك.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.CountLabel" xml:space="preserve">
+    <value>الرموز المُنشأة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.SaveSecurely" xml:space="preserve">
+    <value>احفظ رموز النسخ الاحتياطي بأمان في مكان آمن</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.OneTimeUse" xml:space="preserve">
+    <value>يمكن استخدام كل رمز مرة واحدة فقط</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.Use2FARecovery" xml:space="preserve">
+    <value>استخدم هذه الرموز للوصول لحسابك إذا فقدت تطبيق المصادقة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.GenerateNew" xml:space="preserve">
+    <value>أنشئ رموزاً جديدة عندما تنخفض الرموز المتبقية</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Generated.Closing" xml:space="preserve">
+    <value>احتفظ برموز النسخ الاحتياطي بأمان ولا تشاركها مع أي شخص.</value>
+  </data>
+
+  <!-- ===== BACKUP CODE USED ===== -->
+  <data name="Email.Security.BackupCodes.Used.Subject" xml:space="preserve">
+    <value>🔓 تم استخدام رمز نسخ احتياطي - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Title" xml:space="preserve">
+    <value>تم استخدام رمز نسخ احتياطي</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Description" xml:space="preserve">
+    <value>تم استخدام رمز نسخ احتياطي لتسجيل الدخول لحساب SYNFLOX الخاص بك.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.RemainingLabel" xml:space="preserve">
+    <value>الرموز المتبقية</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Notice.OneUsed" xml:space="preserve">
+    <value>تم استخدام أحد رموز النسخ الاحتياطي وهو الآن غير صالح</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Notice.NotYou" xml:space="preserve">
+    <value>إذا لم يكن هذا أنت، غيّر كلمة مرورك فوراً</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Notice.GenerateNew" xml:space="preserve">
+    <value>فكر في إنشاء رموز نسخ احتياطي جديدة إذا كانت منخفضة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Closing" xml:space="preserve">
+    <value>راقب حسابك بحثاً عن أي نشاط مشبوه.</value>
+  </data>
+
+  <!-- ===== BACKUP CODES LOW ===== -->
+  <data name="Email.Security.BackupCodes.Low.Subject" xml:space="preserve">
+    <value>⚠️ رموز النسخ الاحتياطي منخفضة - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Title" xml:space="preserve">
+    <value>رموز النسخ الاحتياطي منخفضة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Description" xml:space="preserve">
+    <value>رموز النسخ الاحتياطي الخاصة بك منخفضة. فكر في إنشاء رموز جديدة قريباً.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Notice.GenerateSoon" xml:space="preserve">
+    <value>أنشئ رموز نسخ احتياطي جديدة قبل نفادها</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Notice.AvoidLockout" xml:space="preserve">
+    <value>تجنب الإغلاق إذا فقدت الوصول لتطبيق المصادقة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Notice.GoToSettings" xml:space="preserve">
+    <value>اذهب لإعدادات الأمان لإنشاء رموز جديدة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Closing" xml:space="preserve">
+    <value>لا تنتظر حتى تُستخدم كل الرموز. أنشئ رموزاً جديدة الآن.</value>
+  </data>
+
+  <!-- ===== BACKUP CODES DEPLETED ===== -->
+  <data name="Email.Security.BackupCodes.Depleted.Subject" xml:space="preserve">
+    <value>🚨 نفدت رموز النسخ الاحتياطي - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Title" xml:space="preserve">
+    <value>تم استخدام كل رموز النسخ الاحتياطي</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Description" xml:space="preserve">
+    <value>تم استخدام كل رموز النسخ الاحتياطي. أنشئ رموزاً جديدة فوراً.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Notice.NoCodesLeft" xml:space="preserve">
+    <value>لا توجد لديك رموز نسخ احتياطي متبقية</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Notice.GenerateNow" xml:space="preserve">
+    <value>أنشئ رموزاً جديدة فوراً في إعدادات الأمان</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Notice.RiskLockout" xml:space="preserve">
+    <value>بدون رموز نسخ احتياطي، تخاطر بالإغلاق إذا فقدت تطبيق المصادقة</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Closing" xml:space="preserve">
+    <value>اتخذ إجراءً الآن للحفاظ على الوصول لحسابك.</value>
+  </data>
+
+  <!-- ===== 2FA DISABLED ===== -->
+  <data name="Email.Security.2FA.Disabled.Subject" xml:space="preserve">
+    <value>⚠️ تم تعطيل المصادقة الثنائية - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Title" xml:space="preserve">
+    <value>تم تعطيل المصادقة الثنائية</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Description" xml:space="preserve">
+    <value>تم تعطيل المصادقة الثنائية على حساب SYNFLOX الخاص بك.</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Notice.LessSecure" xml:space="preserve">
+    <value>حسابك الآن أقل أماناً بدون المصادقة الثنائية</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Notice.NotYou" xml:space="preserve">
+    <value>إذا لم تعطل المصادقة الثنائية، قد يكون حسابك معرضاً للخطر</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Notice.ReEnable" xml:space="preserve">
+    <value>نوصي بشدة بإعادة تفعيل المصادقة الثنائية لأقصى أمان</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Closing" xml:space="preserve">
+    <value>يرجى إعادة تفعيل المصادقة الثنائية لحماية حسابك.</value>
+  </data>
+
+  <!-- ===== 2FA RESET ===== -->
+  <data name="Email.Security.2FA.Reset.Subject" xml:space="preserve">
+    <value>🔄 تم إعادة تعيين المصادقة الثنائية - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Title" xml:space="preserve">
+    <value>تم إعادة تعيين المصادقة الثنائية</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Description" xml:space="preserve">
+    <value>تم إعادة تعيين المصادقة الثنائية على حساب SYNFLOX الخاص بك.</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Notice.SetupAgain" xml:space="preserve">
+    <value>ستحتاج لإعداد المصادقة الثنائية مرة أخرى باستخدام رمز QR جديد</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Notice.NewQRCode" xml:space="preserve">
+    <value>اذهب لإعدادات الأمان لمسح رمز QR الجديد</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Notice.SaveBackupCodes" xml:space="preserve">
+    <value>تذكر حفظ رموز النسخ الاحتياطي الجديدة بعد الإعداد</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Closing" xml:space="preserve">
+    <value>أكمل إعداد المصادقة الثنائية لاستعادة الأمان الكامل لحسابك.</value>
   </data>
 
 </root>

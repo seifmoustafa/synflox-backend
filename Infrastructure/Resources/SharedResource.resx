@@ -517,6 +517,36 @@
   <data name="Subscription.NotTrial" xml:space="preserve">
     <value>Subscription is not in trial period</value>
   </data>
+  
+  <!-- Subscription Action Success Messages -->
+  <data name="Subscription.Suspended" xml:space="preserve">
+    <value>Subscription has been suspended successfully</value>
+  </data>
+  <data name="Subscription.Resumed" xml:space="preserve">
+    <value>Subscription has been resumed successfully</value>
+  </data>
+  <data name="Subscription.Canceled" xml:space="preserve">
+    <value>Subscription has been canceled successfully</value>
+  </data>
+  <data name="Subscription.Paused" xml:space="preserve">
+    <value>Subscription has been paused successfully</value>
+  </data>
+  <data name="Subscription.Unpaused" xml:space="preserve">
+    <value>Subscription has been unpaused successfully</value>
+  </data>
+  <data name="Subscription.Reactivated" xml:space="preserve">
+    <value>Subscription has been reactivated successfully</value>
+  </data>
+  <data name="Subscription.TrialStopped" xml:space="preserve">
+    <value>Trial period has been stopped and subscription is now active</value>
+  </data>
+  <data name="Subscription.Renewed" xml:space="preserve">
+    <value>Subscription has been renewed successfully</value>
+  </data>
+  <data name="Subscription.Extended" xml:space="preserve">
+    <value>Subscription has been extended successfully</value>
+  </data>
+  
   <data name="Plan.TrialNotAllowed" xml:space="preserve">
     <value>This plan does not allow trial periods</value>
   </data>
@@ -867,4 +897,1021 @@
   <data name="BackupCodes.Generated" xml:space="preserve">
     <value>Backup codes generated successfully. Save them in a secure location - they will only be shown once.</value>
   </data>
+
+  <!-- ===== SUBSCRIPTION EMAIL LOCALIZATION ===== -->
+  
+  <!-- Common Subscription Labels -->
+  <data name="Email.Subscription.CompanyLabel" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="Email.Subscription.PlanLabel" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="Email.Subscription.ReasonLabel" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="Email.Subscription.NotesLabel" xml:space="preserve">
+    <value>Additional Notes</value>
+  </data>
+  <data name="Email.Subscription.ExpiryDateLabel" xml:space="preserve">
+    <value>Expiry Date</value>
+  </data>
+  <data name="Email.Subscription.DaysRemainingLabel" xml:space="preserve">
+    <value>Days Remaining</value>
+  </data>
+  <data name="Email.Subscription.RemainingTimeLabel" xml:space="preserve">
+    <value>Remaining Time</value>
+  </data>
+  <data name="Email.Subscription.DaysLabel" xml:space="preserve">
+    <value>days</value>
+  </data>
+  <data name="Email.Subscription.NextSteps" xml:space="preserve">
+    <value>Next Steps</value>
+  </data>
+
+  <!-- Suspended Email -->
+  <data name="Email.Subscription.Suspended.Subject" xml:space="preserve">
+    <value>⚠️ SYNFLOX Subscription Suspended - {0}</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Title" xml:space="preserve">
+    <value>⚠️ Subscription Suspended</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Description" xml:space="preserve">
+    <value>Your SYNFLOX subscription has been temporarily suspended.</value>
+  </data>
+  <data name="Email.Subscription.SuspendedDateLabel" xml:space="preserve">
+    <value>Suspension Date</value>
+  </data>
+  <data name="Email.Subscription.Suspended.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.AccessDisabled" xml:space="preserve">
+    <value>Access to SYNFLOX services is temporarily disabled</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.DataSafe" xml:space="preserve">
+    <value>Your data remains safe and secure</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.CanResume" xml:space="preserve">
+    <value>Subscription can be resumed after issue resolution</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Means.ContactSupport" xml:space="preserve">
+    <value>Please contact support for more information</value>
+  </data>
+  <data name="Email.Subscription.Suspended.NextSteps.ReviewReason" xml:space="preserve">
+    <value>Review the suspension reason above</value>
+  </data>
+  <data name="Email.Subscription.Suspended.NextSteps.ContactSupport" xml:space="preserve">
+    <value>Contact our support team for clarification</value>
+  </data>
+  <data name="Email.Subscription.Suspended.NextSteps.ResolveIssue" xml:space="preserve">
+    <value>Resolve the issue to restore access</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Closing" xml:space="preserve">
+    <value>Please contact our support team immediately to resolve this matter and restore your access.</value>
+  </data>
+  <data name="Email.Subscription.Suspended.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Resumed Email -->
+  <data name="Email.Subscription.Resumed.Subject" xml:space="preserve">
+    <value>▶️ SYNFLOX Subscription Resumed - {0}</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Title" xml:space="preserve">
+    <value>▶️ Subscription Successfully Resumed!</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Description" xml:space="preserve">
+    <value>Welcome back! Your SYNFLOX subscription has been successfully resumed.</value>
+  </data>
+  <data name="Email.Subscription.ResumedDateLabel" xml:space="preserve">
+    <value>Resume Date</value>
+  </data>
+  <data name="Email.Subscription.Resumed.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.AccessRestored" xml:space="preserve">
+    <value>Your access to SYNFLOX services has been fully restored</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.AllFeatures" xml:space="preserve">
+    <value>All plan features are now available</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.Support" xml:space="preserve">
+    <value>Full technical support is available</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Means.DataIntact" xml:space="preserve">
+    <value>All your data remains intact</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Closing" xml:space="preserve">
+    <value>Thank you for choosing SYNFLOX. We're glad to have you back!</value>
+  </data>
+  <data name="Email.Subscription.Resumed.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Canceled Email -->
+  <data name="Email.Subscription.Canceled.Subject" xml:space="preserve">
+    <value>❌ SYNFLOX Subscription Canceled - {0}</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Title" xml:space="preserve">
+    <value>❌ Subscription Canceled</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Description" xml:space="preserve">
+    <value>Your SYNFLOX subscription has been canceled.</value>
+  </data>
+  <data name="Email.Subscription.CanceledDateLabel" xml:space="preserve">
+    <value>Cancellation Date</value>
+  </data>
+  <data name="Email.Subscription.Canceled.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.Terminated" xml:space="preserve">
+    <value>Your subscription has been immediately terminated</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.AccessRevoked" xml:space="preserve">
+    <value>Access to SYNFLOX services has been revoked</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.DataRetention" xml:space="preserve">
+    <value>Your data will be retained for 30 days for recovery</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Means.CanReactivate" xml:space="preserve">
+    <value>You can reactivate anytime by contacting support</value>
+  </data>
+  <data name="Email.Subscription.Canceled.WantToReturn" xml:space="preserve">
+    <value>Want to come back?</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Return.ContactSupport" xml:space="preserve">
+    <value>Contact our support team for reactivation</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Return.ChoosePlan" xml:space="preserve">
+    <value>Choose from our available subscription plans</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Return.RestoreData" xml:space="preserve">
+    <value>Your data can be restored within 30 days</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Closing" xml:space="preserve">
+    <value>We're sorry to see you go. Thank you for using SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Canceled.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Paused Email -->
+  <data name="Email.Subscription.Paused.Subject" xml:space="preserve">
+    <value>⏸️ SYNFLOX Subscription Paused - {0}</value>
+  </data>
+  <data name="Email.Subscription.Paused.Title" xml:space="preserve">
+    <value>⏸️ Subscription Temporarily Paused</value>
+  </data>
+  <data name="Email.Subscription.Paused.Description" xml:space="preserve">
+    <value>Your SYNFLOX subscription has been temporarily paused.</value>
+  </data>
+  <data name="Email.Subscription.PausedDateLabel" xml:space="preserve">
+    <value>Pause Date</value>
+  </data>
+  <data name="Email.Subscription.Paused.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.TimerPaused" xml:space="preserve">
+    <value>Your subscription timer is paused</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.NoBilling" xml:space="preserve">
+    <value>No billing will occur during pause period</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.DataSafe" xml:space="preserve">
+    <value>Your data remains safe and secure</value>
+  </data>
+  <data name="Email.Subscription.Paused.Means.CanResume" xml:space="preserve">
+    <value>You can resume anytime by contacting support</value>
+  </data>
+  <data name="Email.Subscription.Paused.Closing" xml:space="preserve">
+    <value>Contact our support team when you're ready to resume your subscription.</value>
+  </data>
+  <data name="Email.Subscription.Paused.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Unpaused Email -->
+  <data name="Email.Subscription.Unpaused.Subject" xml:space="preserve">
+    <value>▶️ SYNFLOX Subscription Unpaused - {0}</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Title" xml:space="preserve">
+    <value>▶️ Subscription Unpaused!</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Description" xml:space="preserve">
+    <value>Your SYNFLOX subscription has been unpaused and is now active.</value>
+  </data>
+  <data name="Email.Subscription.UnpausedDateLabel" xml:space="preserve">
+    <value>Unpause Date</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Means.TimerResumed" xml:space="preserve">
+    <value>Your subscription timer has resumed</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Means.FullAccess" xml:space="preserve">
+    <value>Full access to all features is restored</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Means.BillingResumes" xml:space="preserve">
+    <value>Normal billing cycle resumes</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Closing" xml:space="preserve">
+    <value>Thank you for returning to SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Unpaused.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Reactivated Email -->
+  <data name="Email.Subscription.Reactivated.Subject" xml:space="preserve">
+    <value>✅ SYNFLOX Subscription Reactivated - {0}</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Title" xml:space="preserve">
+    <value>✅ Subscription Reactivated!</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Description" xml:space="preserve">
+    <value>Welcome back! Your SYNFLOX subscription has been successfully reactivated.</value>
+  </data>
+  <data name="Email.Subscription.ReactivatedDateLabel" xml:space="preserve">
+    <value>Reactivation Date</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.FullAccess" xml:space="preserve">
+    <value>Full access to SYNFLOX is restored</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.AllFeatures" xml:space="preserve">
+    <value>All plan features are available</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.Support" xml:space="preserve">
+    <value>Full technical support is available</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Means.DataRestored" xml:space="preserve">
+    <value>All your data has been restored</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Closing" xml:space="preserve">
+    <value>We're glad to have you back with SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Reactivated.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Trial Stopped Email -->
+  <data name="Email.Subscription.TrialStopped.Subject" xml:space="preserve">
+    <value>🎉 SYNFLOX Trial Converted - {0}</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Title" xml:space="preserve">
+    <value>🎉 Trial Converted to Paid Subscription!</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Description" xml:space="preserve">
+    <value>Congratulations! Your trial has been converted to a paid subscription.</value>
+  </data>
+  <data name="Email.Subscription.ConversionDateLabel" xml:space="preserve">
+    <value>Conversion Date</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.Converted" xml:space="preserve">
+    <value>Your trial is now a paid subscription</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.FullAccess" xml:space="preserve">
+    <value>Full access to all features</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.Support" xml:space="preserve">
+    <value>Priority technical support included</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Means.NoInterruption" xml:space="preserve">
+    <value>No interruption in service</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Closing" xml:space="preserve">
+    <value>Thank you for upgrading to our full subscription!</value>
+  </data>
+  <data name="Email.Subscription.TrialStopped.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- Renewed Email -->
+  <data name="Email.Subscription.Renewed.Subject" xml:space="preserve">
+    <value>🔄 SYNFLOX Subscription Renewed - {0}</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Title" xml:space="preserve">
+    <value>🔄 Subscription Successfully Renewed!</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Description" xml:space="preserve">
+    <value>Great news! Your SYNFLOX subscription has been successfully renewed.</value>
+  </data>
+  <data name="Email.Subscription.RenewalDateLabel" xml:space="preserve">
+    <value>Renewal Date</value>
+  </data>
+  <data name="Email.Subscription.NewExpiryDateLabel" xml:space="preserve">
+    <value>New Expiry Date</value>
+  </data>
+  <data name="Email.Subscription.ExtendedDaysLabel" xml:space="preserve">
+    <value>Extended Duration</value>
+  </data>
+  <data name="Email.Subscription.Renewed.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.Continued" xml:space="preserve">
+    <value>Continued access to all features</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.AllFeatures" xml:space="preserve">
+    <value>Uninterrupted service</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.Support" xml:space="preserve">
+    <value>Full technical support</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Means.Updates" xml:space="preserve">
+    <value>All future updates and improvements</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Closing" xml:space="preserve">
+    <value>Thank you for your continued trust in SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.Renewed.Signature" xml:space="preserve">
+    <value>— SYNFLOX Subscription Management Team</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION ACTIVATED ===== -->
+  <data name="Email.Subscription.Activated.Subject" xml:space="preserve">
+    <value>✅ SYNFLOX Subscription Activated - {0}</value>
+  </data>
+  <data name="Email.Subscription.Activated.Title" xml:space="preserve">
+    <value>✅ Subscription Successfully Activated!</value>
+  </data>
+  <data name="Email.Subscription.Activated.Description" xml:space="preserve">
+    <value>Great news! Your subscription has been successfully activated.</value>
+  </data>
+  <data name="Email.Subscription.ActivationDateLabel" xml:space="preserve">
+    <value>Activation Date</value>
+  </data>
+  <data name="Email.Subscription.Activated.WhatThisMeans" xml:space="preserve">
+    <value>Your subscription includes</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.FullAccess" xml:space="preserve">
+    <value>Complete access to all features</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.AllFeatures" xml:space="preserve">
+    <value>Advanced licensing management tools</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.Support" xml:space="preserve">
+    <value>Priority technical support</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.Updates" xml:space="preserve">
+    <value>Regular updates and improvements</value>
+  </data>
+  <data name="Email.Subscription.Activated.Means.Secure" xml:space="preserve">
+    <value>Secure cloud-based infrastructure</value>
+  </data>
+  <data name="Email.Subscription.Activated.Closing" xml:space="preserve">
+    <value>Your subscription is now fully active and ready to use!</value>
+  </data>
+  <data name="Email.Subscription.Activated.Signature" xml:space="preserve">
+    <value>— SYNFLOX Activation Team</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION EXPIRED ===== -->
+  <data name="Email.Subscription.Expired.Subject" xml:space="preserve">
+    <value>⚠️ SYNFLOX Subscription Expired - {0}</value>
+  </data>
+  <data name="Email.Subscription.Expired.Title" xml:space="preserve">
+    <value>⚠️ Subscription Has Expired</value>
+  </data>
+  <data name="Email.Subscription.Expired.Description" xml:space="preserve">
+    <value>Your subscription has expired and requires renewal to continue using our services.</value>
+  </data>
+  <data name="Email.Subscription.ExpirationDateLabel" xml:space="preserve">
+    <value>Expiration Date</value>
+  </data>
+  <data name="Email.Subscription.Expired.WhatThisMeans" xml:space="preserve">
+    <value>What this means</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.AccessSuspended" xml:space="preserve">
+    <value>Your access to SYNFLOX services has been suspended</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.DataSafe" xml:space="preserve">
+    <value>Your data remains safe and secure</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.NeedRenew" xml:space="preserve">
+    <value>You need to renew to continue using our services</value>
+  </data>
+  <data name="Email.Subscription.Expired.Means.ContactSupport" xml:space="preserve">
+    <value>Contact support for renewal options</value>
+  </data>
+  <data name="Email.Subscription.Expired.NextSteps" xml:space="preserve">
+    <value>Next Steps</value>
+  </data>
+  <data name="Email.Subscription.Expired.Steps.ContactSales" xml:space="preserve">
+    <value>Contact our sales team for renewal options</value>
+  </data>
+  <data name="Email.Subscription.Expired.Steps.ChoosePlan" xml:space="preserve">
+    <value>Choose from our available subscription plans</value>
+  </data>
+  <data name="Email.Subscription.Expired.Steps.RestoreAccess" xml:space="preserve">
+    <value>Restore full access to all features</value>
+  </data>
+  <data name="Email.Subscription.Expired.Closing" xml:space="preserve">
+    <value>Don't let your business operations be interrupted - renew today!</value>
+  </data>
+  <data name="Email.Subscription.Expired.Signature" xml:space="preserve">
+    <value>— SYNFLOX Renewal Team</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION UPGRADED ===== -->
+  <data name="Email.Subscription.Upgraded.Subject" xml:space="preserve">
+    <value>🚀 SYNFLOX Subscription Upgraded - {0}</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Title" xml:space="preserve">
+    <value>🚀 Subscription Successfully Upgraded!</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Description" xml:space="preserve">
+    <value>Excellent! Your SYNFLOX subscription has been successfully upgraded.</value>
+  </data>
+  <data name="Email.Subscription.UpgradeLabel" xml:space="preserve">
+    <value>Upgrade</value>
+  </data>
+  <data name="Email.Subscription.UpgradeDateLabel" xml:space="preserve">
+    <value>Upgrade Date</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.WhatThisMeans" xml:space="preserve">
+    <value>Your upgraded subscription includes</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Enhanced" xml:space="preserve">
+    <value>All enhanced features of the new plan</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Improved" xml:space="preserve">
+    <value>Improved performance and capabilities</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Support" xml:space="preserve">
+    <value>Priority technical support</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Analytics" xml:space="preserve">
+    <value>Advanced analytics and reporting</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Extended" xml:space="preserve">
+    <value>Extended functionality and integrations</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Means.Secure" xml:space="preserve">
+    <value>Secure cloud-based infrastructure</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Closing" xml:space="preserve">
+    <value>Enjoy your enhanced SYNFLOX experience!</value>
+  </data>
+  <data name="Email.Subscription.Upgraded.Signature" xml:space="preserve">
+    <value>— SYNFLOX Upgrade Team</value>
+  </data>
+
+  <!-- ===== SUBSCRIPTION EXTENDED ===== -->
+  <data name="Email.Subscription.Extended.Subject" xml:space="preserve">
+    <value>📅 SYNFLOX Subscription Extended - {0}</value>
+  </data>
+  <data name="Email.Subscription.Extended.Title" xml:space="preserve">
+    <value>📅 Subscription Successfully Extended!</value>
+  </data>
+  <data name="Email.Subscription.Extended.Description" xml:space="preserve">
+    <value>Great news! Your SYNFLOX subscription has been extended.</value>
+  </data>
+  <data name="Email.Subscription.ExtensionDateLabel" xml:space="preserve">
+    <value>Extension Date</value>
+  </data>
+  <data name="Email.Subscription.PreviousExpiryLabel" xml:space="preserve">
+    <value>Previous Expiry</value>
+  </data>
+  <data name="Email.Subscription.ExtensionPeriodLabel" xml:space="preserve">
+    <value>Extension Period</value>
+  </data>
+  <data name="Email.Subscription.Extended.WhatThisMeans" xml:space="preserve">
+    <value>Your extended subscription includes</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Continued" xml:space="preserve">
+    <value>Continued access to all features</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Extended" xml:space="preserve">
+    <value>Extended service period</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Support" xml:space="preserve">
+    <value>Priority technical support</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Updates" xml:space="preserve">
+    <value>All future updates and improvements</value>
+  </data>
+  <data name="Email.Subscription.Extended.Means.Secure" xml:space="preserve">
+    <value>Secure cloud-based infrastructure</value>
+  </data>
+  <data name="Email.Subscription.Extended.Closing" xml:space="preserve">
+    <value>Enjoy your extended SYNFLOX experience!</value>
+  </data>
+  <data name="Email.Subscription.Extended.Signature" xml:space="preserve">
+    <value>— SYNFLOX Extension Team</value>
+  </data>
+
+  <!-- ===== TRIAL STARTED ===== -->
+  <data name="Email.Subscription.TrialStarted.Subject" xml:space="preserve">
+    <value>🎉 Your SYNFLOX Trial Has Started - {0}</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Title" xml:space="preserve">
+    <value>🎉 Trial Started Successfully!</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Description" xml:space="preserve">
+    <value>Welcome to SYNFLOX! Your trial has been successfully activated.</value>
+  </data>
+  <data name="Email.Subscription.TrialStartedDateLabel" xml:space="preserve">
+    <value>Trial Started</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiresDateLabel" xml:space="preserve">
+    <value>Trial Expires</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.WhatThisMeans" xml:space="preserve">
+    <value>What's included in your trial</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.FullAccess" xml:space="preserve">
+    <value>Full access to all features</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.AllFeatures" xml:space="preserve">
+    <value>Complete licensing functionality</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.Analytics" xml:space="preserve">
+    <value>Advanced analytics and reporting</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.Support" xml:space="preserve">
+    <value>Technical support during trial period</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.NoLimits" xml:space="preserve">
+    <value>No limitations or restrictions</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Means.Secure" xml:space="preserve">
+    <value>Secure cloud-based infrastructure</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.NextSteps" xml:space="preserve">
+    <value>Make the most of your trial</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Explore" xml:space="preserve">
+    <value>Explore all available features</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Test" xml:space="preserve">
+    <value>Test integration with your systems</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Support" xml:space="preserve">
+    <value>Contact support for any questions</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Steps.Upgrade" xml:space="preserve">
+    <value>Consider upgrading before trial expires</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Closing" xml:space="preserve">
+    <value>Experience the full power of SYNFLOX during your trial!</value>
+  </data>
+  <data name="Email.Subscription.TrialStarted.Signature" xml:space="preserve">
+    <value>— SYNFLOX Welcome Team</value>
+  </data>
+
+  <!-- ===== TRIAL EXPIRING ===== -->
+  <data name="Email.Subscription.TrialExpiring.Subject" xml:space="preserve">
+    <value>⚠️ SYNFLOX Trial Expiring Soon - {0}</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Title" xml:space="preserve">
+    <value>⚠️ Trial Expires in {0} Days!</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Description" xml:space="preserve">
+    <value>Your SYNFLOX trial is expiring soon! Don't miss out on our features.</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.WhatThisMeans" xml:space="preserve">
+    <value>Don't lose access to</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Premium" xml:space="preserve">
+    <value>All premium features</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Management" xml:space="preserve">
+    <value>Advanced licensing management</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Analytics" xml:space="preserve">
+    <value>Analytics and reporting tools</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Support" xml:space="preserve">
+    <value>Priority technical support</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Means.Secure" xml:space="preserve">
+    <value>Secure cloud infrastructure</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.NextSteps" xml:space="preserve">
+    <value>Upgrade now to continue enjoying</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.Uninterrupted" xml:space="preserve">
+    <value>Uninterrupted service</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.AllFeatures" xml:space="preserve">
+    <value>All premium features</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.Support" xml:space="preserve">
+    <value>Priority support</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Steps.Updates" xml:space="preserve">
+    <value>Regular updates and improvements</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Closing" xml:space="preserve">
+    <value>Contact our sales team today to upgrade your subscription!</value>
+  </data>
+  <data name="Email.Subscription.TrialExpiring.Signature" xml:space="preserve">
+    <value>— SYNFLOX Sales Team</value>
+  </data>
+
+  <!-- ===== AUTO RENEWAL ===== -->
+  <data name="Email.Subscription.AutoRenewal.Subject" xml:space="preserve">
+    <value>🔄 SYNFLOX Auto-Renewal Successful - {0}</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Title" xml:space="preserve">
+    <value>🔄 Subscription Auto-Renewed!</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Description" xml:space="preserve">
+    <value>Great news! Your SYNFLOX subscription has been automatically renewed.</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.WhatThisMeans" xml:space="preserve">
+    <value>Your renewed subscription includes</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Continued" xml:space="preserve">
+    <value>Continued access to all features</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Uninterrupted" xml:space="preserve">
+    <value>Uninterrupted service</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Support" xml:space="preserve">
+    <value>Priority technical support</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Updates" xml:space="preserve">
+    <value>All future updates and improvements</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Means.Secure" xml:space="preserve">
+    <value>Secure cloud-based infrastructure</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Closing" xml:space="preserve">
+    <value>Thank you for your continued trust in SYNFLOX!</value>
+  </data>
+  <data name="Email.Subscription.AutoRenewal.Signature" xml:space="preserve">
+    <value>— SYNFLOX Billing Team</value>
+  </data>
+
+  <!-- ===== SECURITY EMAIL COMMON LABELS ===== -->
+  <data name="Email.Security.PreviousEmailLabel" xml:space="preserve">
+    <value>Previous Email</value>
+  </data>
+  <data name="Email.Security.NewEmailLabel" xml:space="preserve">
+    <value>New Email</value>
+  </data>
+  <data name="Email.Security.ChangedAtLabel" xml:space="preserve">
+    <value>Changed At</value>
+  </data>
+  <data name="Email.Security.AccountEmailLabel" xml:space="preserve">
+    <value>Account Email</value>
+  </data>
+  <data name="Email.Security.SecurityNoticeTitle" xml:space="preserve">
+    <value>Security Notice</value>
+  </data>
+  <data name="Email.Security.NextStepsTitle" xml:space="preserve">
+    <value>Next Steps</value>
+  </data>
+  <data name="Email.Security.SecurityTipsTitle" xml:space="preserve">
+    <value>Security Tips</value>
+  </data>
+  <data name="Email.Security.ThankYouSecure" xml:space="preserve">
+    <value>Thank you for keeping your account secure!</value>
+  </data>
+  <data name="Email.Security.SecurityTeam" xml:space="preserve">
+    <value>— SYNFLOX Security Team</value>
+  </data>
+  <data name="Email.Security.SecurityAlertTitle" xml:space="preserve">
+    <value>Security Alert</value>
+  </data>
+  <data name="Email.Security.IpAddressLabel" xml:space="preserve">
+    <value>IP Address</value>
+  </data>
+  <data name="Email.Security.TimeLabel" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Email.Security.AccountLabel" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Email.Security.RequestDetailsLabel" xml:space="preserve">
+    <value>Request Details</value>
+  </data>
+  <data name="Email.Security.ProtectAccountTitle" xml:space="preserve">
+    <value>Protect Your Account</value>
+  </data>
+  <data name="Email.Security.ImportantTitle" xml:space="preserve">
+    <value>Important</value>
+  </data>
+  <data name="Email.Security.UrgentTitle" xml:space="preserve">
+    <value>Urgent Action Required</value>
+  </data>
+  <data name="Email.Security.RecommendationTitle" xml:space="preserve">
+    <value>Recommendation</value>
+  </data>
+  <data name="Email.Security.GeneratedAtLabel" xml:space="preserve">
+    <value>Generated At</value>
+  </data>
+  <data name="Email.Security.UsedAtLabel" xml:space="preserve">
+    <value>Used At</value>
+  </data>
+  <data name="Email.Security.DisabledAtLabel" xml:space="preserve">
+    <value>Disabled At</value>
+  </data>
+  <data name="Email.Security.ResetAtLabel" xml:space="preserve">
+    <value>Reset At</value>
+  </data>
+
+  <!-- ===== EMAIL CHANGED ===== -->
+  <data name="Email.Security.EmailChanged.Subject" xml:space="preserve">
+    <value>🔐 Email Address Changed - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Title" xml:space="preserve">
+    <value>Email Address Changed</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Description" xml:space="preserve">
+    <value>Your email address has been successfully changed.</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Notice.SentToBoth" xml:space="preserve">
+    <value>This notification has been sent to both your old and new email addresses</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Notice.NotYou" xml:space="preserve">
+    <value>If you did not make this change, please contact support immediately</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Notice.Compromised" xml:space="preserve">
+    <value>Your account security may be compromised</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Steps.Verify" xml:space="preserve">
+    <value>Verify that you can access your account with the new email</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Steps.Update" xml:space="preserve">
+    <value>Update your email in any third-party systems</value>
+  </data>
+  <data name="Email.Security.EmailChanged.Steps.Enable2FA" xml:space="preserve">
+    <value>Consider enabling Two-Factor Authentication for extra security</value>
+  </data>
+
+  <!-- ===== PASSWORD CHANGED ===== -->
+  <data name="Email.Security.PasswordChanged.Subject" xml:space="preserve">
+    <value>🔐 Password Changed - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Title" xml:space="preserve">
+    <value>Password Changed</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Description" xml:space="preserve">
+    <value>Your password has been successfully changed.</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Notice.NotYou" xml:space="preserve">
+    <value>If you did not make this change, your account may be compromised</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Notice.ContactSupport" xml:space="preserve">
+    <value>Contact support immediately if this was unauthorized</value>
+  </data>
+  <data name="Email.Security.PasswordChanged.Notice.Enable2FA" xml:space="preserve">
+    <value>Consider enabling Two-Factor Authentication</value>
+  </data>
+  <data name="Email.Security.Tips.StrongPassword" xml:space="preserve">
+    <value>Use a strong, unique password for your account</value>
+  </data>
+  <data name="Email.Security.Tips.NeverShare" xml:space="preserve">
+    <value>Never share your password with anyone</value>
+  </data>
+  <data name="Email.Security.Tips.ChangeRegularly" xml:space="preserve">
+    <value>Change your password regularly</value>
+  </data>
+  <data name="Email.Security.Tips.Enable2FA" xml:space="preserve">
+    <value>Enable 2FA for maximum security</value>
+  </data>
+
+  <!-- ===== PASSWORD RESET OTP ===== -->
+  <data name="Email.Security.PasswordReset.Subject" xml:space="preserve">
+    <value>Security Alert: Password Reset Request - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Title" xml:space="preserve">
+    <value>Password Reset Request</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Description" xml:space="preserve">
+    <value>We received a request to reset the password for your SYNFLOX administrator account.</value>
+  </data>
+  <data name="Email.Security.PasswordReset.ResetLabel" xml:space="preserve">
+    <value>Reset Your Password</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Instructions" xml:space="preserve">
+    <value>For your security, you can choose to reset your password using a secure link or by entering a verification code manually.</value>
+  </data>
+  <data name="Email.Security.PasswordReset.ButtonLabel" xml:space="preserve">
+    <value>Reset Password</value>
+  </data>
+  <data name="Email.Security.PasswordReset.LinkExpires" xml:space="preserve">
+    <value>This link will expire in {0} minutes.</value>
+  </data>
+  <data name="Email.Security.PasswordReset.OrUseCode" xml:space="preserve">
+    <value>Or Use This Verification Code</value>
+  </data>
+  <data name="Email.Security.PasswordReset.CodeInstructions" xml:space="preserve">
+    <value>If you prefer, you can reset your password by entering this verification code on the password reset page:</value>
+  </data>
+  <data name="Email.Security.PasswordReset.CodeExpires" xml:space="preserve">
+    <value>This code will expire in {0} minutes</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.NotChanged" xml:space="preserve">
+    <value>Your password has NOT been changed yet</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.SomeoneTrying" xml:space="preserve">
+    <value>Someone may be trying to access your account</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.Enable2FA" xml:space="preserve">
+    <value>We recommend securing your account by enabling Two-Factor Authentication</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Alert.ContactSupport" xml:space="preserve">
+    <value>Contact our support team if you notice any suspicious activity</value>
+  </data>
+  <data name="Email.Security.Protect.NeverShare" xml:space="preserve">
+    <value>Never share your password or verification codes with anyone</value>
+  </data>
+  <data name="Email.Security.Protect.NeverAsk" xml:space="preserve">
+    <value>SYNFLOX will never ask you for your password via email</value>
+  </data>
+  <data name="Email.Security.Protect.StrongPassword" xml:space="preserve">
+    <value>Use a strong, unique password that you don't use elsewhere</value>
+  </data>
+  <data name="Email.Security.Protect.Enable2FA" xml:space="preserve">
+    <value>Enable Two-Factor Authentication for an extra layer of security</value>
+  </data>
+  <data name="Email.Security.Protect.KeepUpdated" xml:space="preserve">
+    <value>Keep your recovery information up to date</value>
+  </data>
+  <data name="Email.Security.PasswordReset.Closing" xml:space="preserve">
+    <value>If you have any questions or concerns about your account security, please don't hesitate to contact our support team.</value>
+  </data>
+
+  <!-- ===== PASSWORD RESET SUCCESS ===== -->
+  <data name="Email.Security.PasswordResetSuccess.Subject" xml:space="preserve">
+    <value>Your SYNFLOX Password Has Been Changed</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Title" xml:space="preserve">
+    <value>Password Changed Successfully</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Description" xml:space="preserve">
+    <value>This email confirms that the password for your SYNFLOX administrator account was successfully changed.</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Message" xml:space="preserve">
+    <value>Your password has been successfully updated. You can now sign in to your account using your new password.</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Alert.NotYou" xml:space="preserve">
+    <value>If you didn't change your password, someone else may have access to your account</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Alert.ContactSupport" xml:space="preserve">
+    <value>Reset your password again and contact our support team immediately</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Alert.Enable2FA" xml:space="preserve">
+    <value>Enable Two-Factor Authentication for added security</value>
+  </data>
+  <data name="Email.Security.PasswordResetSuccess.Closing" xml:space="preserve">
+    <value>If you have any questions or concerns about your account security, please contact our support team.</value>
+  </data>
+
+  <!-- ===== BACKUP CODES GENERATED ===== -->
+  <data name="Email.Security.BackupCodes.Generated.Subject" xml:space="preserve">
+    <value>🔐 SYNFLOX Backup Codes Generated</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Generated.Title" xml:space="preserve">
+    <value>New Backup Codes Created</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Generated.Description" xml:space="preserve">
+    <value>New backup codes were generated for your SYNFLOX administrator account.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.CountLabel" xml:space="preserve">
+    <value>Codes Generated</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.SaveSecurely" xml:space="preserve">
+    <value>Store your backup codes safely in a secure location</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.OneTimeUse" xml:space="preserve">
+    <value>Each code can only be used once</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.Use2FARecovery" xml:space="preserve">
+    <value>Use these codes to access your account if you lose your authenticator</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Notice.GenerateNew" xml:space="preserve">
+    <value>Generate new codes when running low</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Generated.Closing" xml:space="preserve">
+    <value>Keep your backup codes safe and don't share them with anyone.</value>
+  </data>
+
+  <!-- ===== BACKUP CODE USED ===== -->
+  <data name="Email.Security.BackupCodes.Used.Subject" xml:space="preserve">
+    <value>🔓 SYNFLOX Backup Code Used</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Title" xml:space="preserve">
+    <value>Backup Code Used</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Description" xml:space="preserve">
+    <value>A backup code was used to sign in to your SYNFLOX account.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.RemainingLabel" xml:space="preserve">
+    <value>Remaining Codes</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Notice.OneUsed" xml:space="preserve">
+    <value>One of your backup codes has been used and is now invalid</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Notice.NotYou" xml:space="preserve">
+    <value>If this wasn't you, change your password immediately</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Notice.GenerateNew" xml:space="preserve">
+    <value>Consider generating new backup codes if running low</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Used.Closing" xml:space="preserve">
+    <value>Monitor your account for any suspicious activity.</value>
+  </data>
+
+  <!-- ===== BACKUP CODES LOW ===== -->
+  <data name="Email.Security.BackupCodes.Low.Subject" xml:space="preserve">
+    <value>⚠️ SYNFLOX Backup Codes Running Low</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Title" xml:space="preserve">
+    <value>Backup Codes Running Low</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Description" xml:space="preserve">
+    <value>Your backup codes are running low. Consider generating new codes soon.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Notice.GenerateSoon" xml:space="preserve">
+    <value>Generate new backup codes before you run out</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Notice.AvoidLockout" xml:space="preserve">
+    <value>Avoid being locked out if you lose access to your authenticator</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Notice.GoToSettings" xml:space="preserve">
+    <value>Go to Security Settings to generate new codes</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Low.Closing" xml:space="preserve">
+    <value>Don't wait until all codes are used. Generate new ones now.</value>
+  </data>
+
+  <!-- ===== BACKUP CODES DEPLETED ===== -->
+  <data name="Email.Security.BackupCodes.Depleted.Subject" xml:space="preserve">
+    <value>🚨 SYNFLOX Backup Codes Depleted</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Title" xml:space="preserve">
+    <value>All Backup Codes Used</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Description" xml:space="preserve">
+    <value>All your backup codes have been used. Generate new codes immediately.</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Notice.NoCodesLeft" xml:space="preserve">
+    <value>You have no backup codes remaining</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Notice.GenerateNow" xml:space="preserve">
+    <value>Generate new codes immediately in Security Settings</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Notice.RiskLockout" xml:space="preserve">
+    <value>Without backup codes, you risk being locked out if you lose your authenticator</value>
+  </data>
+  <data name="Email.Security.BackupCodes.Depleted.Closing" xml:space="preserve">
+    <value>Take action now to maintain access to your account.</value>
+  </data>
+
+  <!-- ===== 2FA DISABLED ===== -->
+  <data name="Email.Security.2FA.Disabled.Subject" xml:space="preserve">
+    <value>⚠️ Two-Factor Authentication Disabled - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Title" xml:space="preserve">
+    <value>Two-Factor Authentication Disabled</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Description" xml:space="preserve">
+    <value>Two-Factor Authentication has been disabled on your SYNFLOX account.</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Notice.LessSecure" xml:space="preserve">
+    <value>Your account is now less secure without 2FA</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Notice.NotYou" xml:space="preserve">
+    <value>If you didn't disable 2FA, your account may be compromised</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Notice.ReEnable" xml:space="preserve">
+    <value>We strongly recommend re-enabling 2FA for maximum security</value>
+  </data>
+  <data name="Email.Security.2FA.Disabled.Closing" xml:space="preserve">
+    <value>Please re-enable Two-Factor Authentication to protect your account.</value>
+  </data>
+
+  <!-- ===== 2FA RESET ===== -->
+  <data name="Email.Security.2FA.Reset.Subject" xml:space="preserve">
+    <value>🔄 Two-Factor Authentication Reset - SYNFLOX</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Title" xml:space="preserve">
+    <value>Two-Factor Authentication Reset</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Description" xml:space="preserve">
+    <value>Two-Factor Authentication has been reset on your SYNFLOX account.</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Notice.SetupAgain" xml:space="preserve">
+    <value>You'll need to set up 2FA again using a new QR code</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Notice.NewQRCode" xml:space="preserve">
+    <value>Go to Security Settings to scan the new QR code</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Notice.SaveBackupCodes" xml:space="preserve">
+    <value>Remember to save your new backup codes after setup</value>
+  </data>
+  <data name="Email.Security.2FA.Reset.Closing" xml:space="preserve">
+    <value>Complete 2FA setup to restore full security to your account.</value>
+  </data>
+
 </root>
