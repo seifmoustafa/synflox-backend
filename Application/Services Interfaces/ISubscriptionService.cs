@@ -104,5 +104,5 @@ public interface ISubscriptionService
     /// <summary>
     /// Gets subscription analytics and usage statistics
     /// </summary>
-    Task<object> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate);
+    Task<SubscriptionAnalyticsDto> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate);
 }

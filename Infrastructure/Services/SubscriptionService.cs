@@ -870,36 +870,189 @@ public class SubscriptionService : ISubscriptionService
         await _historyRepo.AddHistoryEntryAsync(historyEntry);
     }
 
-    public async Task<object> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate)
+    public async Task<SubscriptionAnalyticsDto> GetSubscriptionAnalyticsAsync(Guid subscriptionId, DateTime? fromDate, DateTime? toDate)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
 
-        var from = fromDate ?? DateTime.UtcNow.AddMonths(-1);
+        var from = fromDate ?? DateTime.UtcNow.AddMonths(-6);
         var to = toDate ?? DateTime.UtcNow;
+        var now = DateTime.UtcNow;
 
-        return new
+        // Get history for this subscription
+        var history = await _historyRepo.GetBySubscriptionIdAsync(subscriptionId);
+        var recentHistory = history
+            .OrderByDescending(h => h.CreatedTimestamp)
+            .Take(10)
+            .Select(h => new SubscriptionHistoryItemDto
+            {
+                Action = h.Action,
+                Reason = h.Reason,
+                Timestamp = h.CreatedTimestamp,
+                PerformedBy = h.PerformedByAdminId?.ToString()
+            })
+            .ToList();
+
+        // Calculate days remaining
+        var daysRemaining = subscription.IsLifetime ? 999999 : 
+            subscription.IsExpired ? 0 : 
+            Math.Max(0, (subscription.ExpiryDateUtc - now).Days);
+
+        // Calculate utilization
+        var totalDays = Math.Max(1, (subscription.ExpiryDateUtc - subscription.StartDateUtc).Days);
+        var activeDays = subscription.IsActive ? Math.Max(0, (now - subscription.StartDateUtc).Days) : 0;
+        var utilizationPercentage = Math.Min(100, Math.Round((activeDays / (double)totalDays) * 100, 2));
+
+        // Generate monthly trends (last 6 months)
+        var monthlyTrends = GenerateMonthlyTrends(subscription, from, to);
+
+        // Get status distribution for company's subscriptions
+        var statusDistribution = await GetStatusDistributionAsync(subscription.CompanyId);
+
+        // Get feature usage based on plan features
+        var featureUsage = GetFeatureUsage(subscription);
+
+        // Determine status label
+        var statusLabel = subscription.IsExpired ? "Expired" :
+            !subscription.IsActive ? "Suspended" :
+            subscription.IsTrial ? "Trial" :
+            subscription.IsLifetime ? "Lifetime" : "Active";
+
+        return new SubscriptionAnalyticsDto
         {
             SubscriptionId = subscriptionId,
             CompanyName = subscription.Company.Name,
             PlanName = subscription.Plan.Name,
-            Period = new { From = from, To = to },
-            Status = new
+            Period = new AnalyticsPeriodDto { From = from, To = to },
+            Status = new SubscriptionStatusAnalyticsDto
             {
-                subscription.IsActive,
-                subscription.IsExpired,
-                subscription.IsTrial,
-                DaysRemaining = subscription.IsActive ? (subscription.ExpiryDateUtc - DateTime.UtcNow).Days : 0
+                IsActive = subscription.IsActive,
+                IsExpired = subscription.IsExpired,
+                IsTrial = subscription.IsTrial,
+                IsLifetime = subscription.IsLifetime,
+                DaysRemaining = daysRemaining,
+                StatusLabel = statusLabel
             },
-            Usage = new
+            Usage = new UsageAnalyticsDto
             {
-                TotalDays = (to - from).Days,
-                ActiveDays = subscription.IsActive ? (DateTime.UtcNow - subscription.StartDateUtc).Days : 0,
-                UtilizationPercentage = subscription.IsActive ? 
-                    Math.Round(((DateTime.UtcNow - subscription.StartDateUtc).Days / (double)(subscription.ExpiryDateUtc - subscription.StartDateUtc).Days) * 100, 2) : 0
-            }
+                TotalDays = totalDays,
+                ActiveDays = activeDays,
+                UtilizationPercentage = utilizationPercentage,
+                TotalLogins = 0, // Would come from actual login tracking
+                UniqueUsers = 0, // Would come from actual user tracking
+                ApiCalls = 0 // Would come from API tracking
+            },
+            MonthlyTrends = monthlyTrends,
+            StatusDistribution = statusDistribution,
+            FeatureUsage = featureUsage,
+            Performance = new PerformanceMetricsDto(), // Default values for now
+            RecentHistory = recentHistory
         };
+    }
+
+    private List<MonthlyUsageDto> GenerateMonthlyTrends(Subscription subscription, DateTime from, DateTime to)
+    {
+        var trends = new List<MonthlyUsageDto>();
+        var current = new DateTime(from.Year, from.Month, 1);
+        var end = new DateTime(to.Year, to.Month, 1);
+
+        while (current <= end)
+        {
+            var monthStart = current;
+            var monthEnd = current.AddMonths(1).AddDays(-1);
+            
+            // Calculate if subscription was active during this month
+            var wasActive = subscription.StartDateUtc <= monthEnd && 
+                           (subscription.IsLifetime || subscription.ExpiryDateUtc >= monthStart) &&
+                           subscription.IsActive;
+
+            var daysInMonth = DateTime.DaysInMonth(current.Year, current.Month);
+            var activeDaysInMonth = 0;
+
+            if (wasActive)
+            {
+                var effectiveStart = subscription.StartDateUtc > monthStart ? subscription.StartDateUtc : monthStart;
+                var effectiveEnd = subscription.IsLifetime ? monthEnd : 
+                    (subscription.ExpiryDateUtc < monthEnd ? subscription.ExpiryDateUtc : monthEnd);
+                activeDaysInMonth = Math.Max(0, (effectiveEnd - effectiveStart).Days + 1);
+            }
+
+            var usagePercentage = Math.Round((activeDaysInMonth / (double)daysInMonth) * 100, 1);
+
+            trends.Add(new MonthlyUsageDto
+            {
+                Month = current.ToString("MMM"),
+                Year = current.Year,
+                Usage = usagePercentage,
+                Revenue = subscription.Amount,
+                ActiveDays = activeDaysInMonth
+            });
+
+            current = current.AddMonths(1);
+        }
+
+        return trends;
+    }
+
+    private async Task<List<StatusDistributionDto>> GetStatusDistributionAsync(Guid companyId)
+    {
+        var allSubscriptions = await _subscriptionRepo.GetAllByCompanyIdAsync(companyId);
+        
+        var active = allSubscriptions.Count(s => s.IsActive && !s.IsExpired && !s.IsTrial);
+        var trial = allSubscriptions.Count(s => s.IsTrial && s.IsActive);
+        var suspended = allSubscriptions.Count(s => !s.IsActive && !s.IsExpired);
+        var expired = allSubscriptions.Count(s => s.IsExpired);
+
+        var total = Math.Max(1, active + trial + suspended + expired);
+
+        return new List<StatusDistributionDto>
+        {
+            new() { Name = "Active", Value = (int)Math.Round((active / (double)total) * 100), Color = "#10b981" },
+            new() { Name = "Trial", Value = (int)Math.Round((trial / (double)total) * 100), Color = "#3b82f6" },
+            new() { Name = "Suspended", Value = (int)Math.Round((suspended / (double)total) * 100), Color = "#f59e0b" },
+            new() { Name = "Expired", Value = (int)Math.Round((expired / (double)total) * 100), Color = "#ef4444" }
+        };
+    }
+
+    private List<FeatureUsageDto> GetFeatureUsage(Subscription subscription)
+    {
+        var features = new List<FeatureUsageDto>();
+
+        // Add plan projects as features
+        foreach (var project in subscription.Plan.PlanProjects)
+        {
+            features.Add(new FeatureUsageDto
+            {
+                Feature = project.Project.Name,
+                Usage = subscription.IsActive ? 100 : 0, // Would come from actual usage tracking
+                IsEnabled = true
+            });
+        }
+
+        // Add plan modules as features
+        foreach (var module in subscription.Plan.PlanModules)
+        {
+            features.Add(new FeatureUsageDto
+            {
+                Feature = module.Module.Name,
+                Usage = subscription.IsActive ? 100 : 0, // Would come from actual usage tracking
+                IsEnabled = true
+            });
+        }
+
+        // Add custom features
+        foreach (var feature in subscription.Plan.CustomFeatures)
+        {
+            features.Add(new FeatureUsageDto
+            {
+                Feature = feature,
+                Usage = subscription.IsActive ? 100 : 0,
+                IsEnabled = true
+            });
+        }
+
+        return features;
     }
 
     #region Helper Methods
