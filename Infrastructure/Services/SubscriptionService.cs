@@ -535,10 +535,11 @@ public class SubscriptionService : ISubscriptionService
         await _unitOfWork.SaveChangesAsync();
 
         // Send email notification
-        await _emailService.SendSubscriptionCanceledEmailAsync(
+        await _emailService.SendSubscriptionCancelledEmailAsync(
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
+            reason,
             language);
 
         // Create outbox event for cancellation
@@ -616,9 +617,8 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc,
-            language,
-            reason);
+            reason,
+            language);
 
         // Create outbox event
         await CreateOutboxEventAsync(
@@ -681,7 +681,7 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc,
+            null,
             language);
 
         return true;
@@ -711,7 +711,7 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc,
+            reason,
             language);
 
         return true;
@@ -741,9 +741,9 @@ public class SubscriptionService : ISubscriptionService
                 subscription.Company.ContactEmail,
                 subscription.Company.Name,
                 subscription.Plan.Name,
-                oldExpiryDate,
                 subscription.ExpiryDateUtc,
                 dto.ExtensionDays,
+                dto.Reason,
                 language);
         }
 
@@ -777,7 +777,7 @@ public class SubscriptionService : ISubscriptionService
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            subscription.ExpiryDateUtc,
+            reason,
             language);
 
         return true;

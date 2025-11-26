@@ -2051,4 +2051,183 @@ public class EmailService : IEmailService
 </body>
 </html>";
     }
+
+    // ============================================================================
+    // SUBSCRIPTION LIFECYCLE EMAIL METHODS
+    // ============================================================================
+
+    public async Task SendSubscriptionCreatedEmailAsync(string toEmail, string companyName, string planName, DateTime expiryDate, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Created - {companyName}";
+            var message = $"Your subscription to <strong>{planName}</strong> has been successfully created and is now active.<br><br>Expiry Date: <strong>{expiryDate:MMMM dd, yyyy}</strong>";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription created email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionRenewedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Renewed - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been successfully renewed.<br><br>New Expiry Date: <strong>{newExpiryDate:MMMM dd, yyyy}</strong>{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription renewed email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionUpgradedEmailAsync(string toEmail, string companyName, string oldPlanName, string newPlanName, DateTime expiryDate, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Upgraded - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription has been upgraded from <strong>{oldPlanName}</strong> to <strong>{newPlanName}</strong>.<br><br>New Expiry Date: <strong>{expiryDate:MMMM dd, yyyy}</strong>{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#3B82F6");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription upgraded email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionExtendedEmailAsync(string toEmail, string companyName, string planName, DateTime newExpiryDate, int extensionDays, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Extended - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been extended by <strong>{extensionDays} days</strong>.<br><br>New Expiry Date: <strong>{newExpiryDate:MMMM dd, yyyy}</strong>{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription extended email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionCancelledEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Cancelled - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been cancelled.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#EF4444");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription cancelled email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionSuspendedEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Suspended - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been temporarily suspended.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#F59E0B");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription suspended email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionResumedEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Resumed - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been resumed and is now active.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription resumed email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionPausedEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Paused - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been paused.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#6366F1");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription paused email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionUnpausedEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Unpaused - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been unpaused and is now active.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription unpaused email: {ex.Message}");
+        }
+    }
+
+    public async Task SendSubscriptionReactivatedEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Subscription Reactivated - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your subscription to <strong>{planName}</strong> has been reactivated and is now active.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#10B981");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send subscription reactivated email: {ex.Message}");
+        }
+    }
+
+    public async Task SendTrialStoppedEmailAsync(string toEmail, string companyName, string planName, string? reason = null, string? language = null)
+    {
+        try
+        {
+            var subject = $"Trial Converted to Paid - {companyName}";
+            var reasonText = !string.IsNullOrEmpty(reason) ? $"<br><br><strong>Reason:</strong> {reason}" : "";
+            var message = $"Your trial subscription to <strong>{planName}</strong> has been converted to a paid subscription.{reasonText}";
+            var htmlBody = BuildSimpleEmailTemplate(companyName, subject, message, "#8B5CF6");
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send trial stopped email: {ex.Message}");
+        }
+    }
 }

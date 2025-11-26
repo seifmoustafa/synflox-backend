@@ -105,28 +105,30 @@ public class OutboxProcessorBackgroundJob : BackgroundService
                 var createdExpiryDate = payload.GetProperty("ExpiryDate").GetDateTime();
                 var isTrial = payload.GetProperty("IsTrial").GetBoolean();
                 await emailService.SendSubscriptionCreatedEmailAsync(
-                    companyEmail, companyName, createdPlanName, createdExpiryDate, isTrial);
+                    companyEmail, companyName, createdPlanName, createdExpiryDate);
                 break;
 
             case SubscriptionEventType.Activated:
+                // Use reactivated email for activated subscriptions
                 var activatedPlanName = payload.GetProperty("PlanName").GetString() ?? "";
-                var activatedExpiryDate = payload.GetProperty("ExpiryDate").GetDateTime();
-                await emailService.SendSubscriptionActivatedEmailAsync(
-                    companyEmail, companyName, activatedPlanName, activatedExpiryDate);
+                await emailService.SendSubscriptionReactivatedEmailAsync(
+                    companyEmail, companyName, activatedPlanName, "Subscription activated");
                 break;
 
             case SubscriptionEventType.Expired:
+                // Use cancelled email for expired subscriptions
                 var expiredPlanName = payload.GetProperty("PlanName").GetString() ?? "";
-                await emailService.SendSubscriptionExpiredEmailAsync(
-                    companyEmail, companyName, expiredPlanName);
+                await emailService.SendSubscriptionCancelledEmailAsync(
+                    companyEmail, companyName, expiredPlanName, "Subscription expired");
                 break;
 
             case SubscriptionEventType.Suspended:
                 var reason = payload.TryGetProperty("Reason", out var reasonElement) 
                     ? reasonElement.GetString() ?? "Administrative action"
                     : "Administrative action";
+                var suspendedPlanName = payload.GetProperty("PlanName").GetString() ?? "";
                 await emailService.SendSubscriptionSuspendedEmailAsync(
-                    companyEmail, companyName, reason);
+                    companyEmail, companyName, suspendedPlanName, reason);
                 break;
 
             case SubscriptionEventType.Renewed:
@@ -146,32 +148,31 @@ public class OutboxProcessorBackgroundJob : BackgroundService
 
             case SubscriptionEventType.Canceled:
                 var canceledPlanName = payload.GetProperty("PlanName").GetString() ?? "";
-                await emailService.SendSubscriptionCanceledEmailAsync(
-                    companyEmail, companyName, canceledPlanName);
+                await emailService.SendSubscriptionCancelledEmailAsync(
+                    companyEmail, companyName, canceledPlanName, "Subscription canceled");
                 break;
 
             case SubscriptionEventType.TrialStarted:
+                // Use created email for trial started
                 var trialPlanName = payload.GetProperty("PlanName").GetString() ?? "";
                 var trialExpiryDate = payload.GetProperty("ExpiryDate").GetDateTime();
-                var trialDays = payload.TryGetProperty("TrialDays", out var trialDaysElement)
-                    ? trialDaysElement.GetInt32()
-                    : (trialExpiryDate - DateTime.UtcNow).Days;
-                await emailService.SendTrialStartedEmailAsync(
-                    companyEmail, companyName, trialPlanName, trialDays, trialExpiryDate);
+                await emailService.SendSubscriptionCreatedEmailAsync(
+                    companyEmail, companyName, trialPlanName, trialExpiryDate);
                 break;
 
             case SubscriptionEventType.AutoRenewed:
+                // Use renewed email for auto-renewed subscriptions
                 var autoRenewedPlanName = payload.GetProperty("PlanName").GetString() ?? "";
                 var autoRenewedExpiryDate = payload.GetProperty("NewExpiryDate").GetDateTime();
-                await emailService.SendAutoRenewalEmailAsync(
-                    companyEmail, companyName, autoRenewedPlanName, autoRenewedExpiryDate);
+                await emailService.SendSubscriptionRenewedEmailAsync(
+                    companyEmail, companyName, autoRenewedPlanName, autoRenewedExpiryDate, "Auto-renewal");
                 break;
 
             case SubscriptionEventType.DeferredActivated:
+                // Use reactivated email for deferred activated subscriptions
                 var deferredNewPlanName = payload.GetProperty("NewPlanName").GetString() ?? "";
-                var deferredExpiryDate = payload.GetProperty("NewExpiryDate").GetDateTime();
-                await emailService.SendSubscriptionActivatedEmailAsync(
-                    companyEmail, companyName, deferredNewPlanName, deferredExpiryDate);
+                await emailService.SendSubscriptionReactivatedEmailAsync(
+                    companyEmail, companyName, deferredNewPlanName, "Deferred activation");
                 break;
 
             default:
