@@ -37,6 +37,14 @@ namespace WebAPI.Middlewares
                 [typeof(InvalidOtpException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
                 [typeof(TooManyAttemptsException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
 
+                // Subscription-related validation exceptions
+                [typeof(PlanTrialNotAllowedException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
+                [typeof(InvalidNextPlanScheduleException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
+                [typeof(OverlappingActiveSubscriptionException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
+                [typeof(PasswordResetException)] = (StatusCodes.Status400BadRequest, LogLevel.Warning),
+                [typeof(UpgradeConflictException)] = (StatusCodes.Status409Conflict, LogLevel.Warning),
+                [typeof(InternalServerException)] = (StatusCodes.Status500InternalServerError, LogLevel.Error),
+
                 [typeof(NotFoundException)] = (StatusCodes.Status404NotFound, LogLevel.Warning),
                 [typeof(KeyNotFoundException)] = (StatusCodes.Status404NotFound, LogLevel.Warning),
                 [typeof(FileNotFoundException)] = (StatusCodes.Status404NotFound, LogLevel.Warning),
