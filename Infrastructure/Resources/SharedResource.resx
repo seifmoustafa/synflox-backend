@@ -438,6 +438,12 @@
   <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
     <value>System statistics retrieved successfully</value>
   </data>
+  <data name="Dashboard.AlertDismissed" xml:space="preserve">
+    <value>Alert dismissed successfully</value>
+  </data>
+  <data name="Dashboard.AlertRead" xml:space="preserve">
+    <value>Alert marked as read</value>
+  </data>
 
   <!-- Lifetime Plan & Dynamic Duration Messages -->
   <data name="Plan.LifetimeCannotHaveTrial" xml:space="preserve">

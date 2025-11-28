@@ -438,6 +438,12 @@
   <data name="Dashboard.StatisticsRetrieved" xml:space="preserve">
     <value>تم استرجاع إحصائيات النظام بنجاح</value>
   </data>
+  <data name="Dashboard.AlertDismissed" xml:space="preserve">
+    <value>تم تجاهل التنبيه بنجاح</value>
+  </data>
+  <data name="Dashboard.AlertRead" xml:space="preserve">
+    <value>تم وضع علامة مقروءة على التنبيه</value>
+  </data>
 
   <!-- Lifetime Plan & Dynamic Duration Messages -->
   <data name="Plan.LifetimeCannotHaveTrial" xml:space="preserve">
