@@ -1,9 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
+using Application.DTOs.PlanDto;
 using Application.DTOs.Subscriptions;
 using Application.Services;
 using AutoMapper;
+using Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,12 +17,18 @@ namespace WebAPI.Controllers;
 public class SubscriptionsController : ControllerBase
 {
     private readonly ISubscriptionService _subscriptionService;
+    private readonly ISubscriptionPlanRepository _planRepository;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
 
-    public SubscriptionsController(ISubscriptionService subscriptionService, IMapper mapper, ILocalizationService localizer)
+    public SubscriptionsController(
+        ISubscriptionService subscriptionService, 
+        ISubscriptionPlanRepository planRepository,
+        IMapper mapper, 
+        ILocalizationService localizer)
     {
         _subscriptionService = subscriptionService;
+        _planRepository = planRepository;
         _mapper = mapper;
         _localizer = localizer;
     }
@@ -44,6 +52,28 @@ public class SubscriptionsController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
+        // Early validation: Check plan restrictions before processing
+        var planIdRequest = new PlanIdRequest { PlanId = dto.PlanId };
+        var decryptedPlanId = _mapper.Map<Guid>(planIdRequest);
+        var plan = await _planRepository.GetByIdAsync(decryptedPlanId, null);
+        
+        if (plan == null)
+            return NotFound(new { statusCode = 404, message = _localizer["Plan.NotFound"] });
+        
+        // Validate trial request
+        if (dto.StartWithTrial && !plan.AllowTrial)
+            return BadRequest(new { statusCode = 400, message = _localizer["Plan.TrialNotAllowed"] });
+        
+        // Validate lifetime plan restrictions
+        if (plan.IsLifetimePlan)
+        {
+            if (dto.StartWithTrial)
+                return BadRequest(new { statusCode = 400, message = _localizer["Plan.LifetimeCannotHaveTrial"] });
+            
+            if (dto.AutoRenew == true)
+                return BadRequest(new { statusCode = 400, message = _localizer["Plan.LifetimeCannotAutoRenew"] });
+        }
 
         var subscription = await _subscriptionService.CreateSubscriptionAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = subscription.Id }, subscription);
