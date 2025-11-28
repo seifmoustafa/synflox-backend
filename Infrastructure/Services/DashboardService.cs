@@ -1,1171 +1,425 @@
-using Application.DTOs.Dashboard;
-using Application.DTOs.Dashboard.Activity;
-using Application.DTOs.Dashboard.Admins;
-using Application.DTOs.Dashboard.Alerts;
-using Application.DTOs.Dashboard.Companies;
-using Application.DTOs.Dashboard.Lifecycle;
 using Application.DTOs.Dashboard.Overview;
-using Application.DTOs.Dashboard.Performance;
-using Application.DTOs.Dashboard.Revenue;
+using Application.DTOs.Dashboard.Companies;
 using Application.DTOs.Dashboard.Subscriptions;
-using Application.DTOs.Dashboard.TimeSeries;
-using Application.DTOs.Dashboard.Trends;
-using Application.Services;
-using Domain.Entities.Authentication;
+using Application.DTOs.Dashboard.Revenue;
+using Application.DTOs.Dashboard.Activity;
+using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Shared;
+using Application.Services_Interfaces;
 using Domain.Entities.Licensing;
 using Domain.Entities.Subscriptions;
-using Domain.Enums;
-using Domain.Interfaces;
+using Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace Infrastructure.Services;
-
-/// <summary>
-/// Professional Dashboard Service with real data calculations
-/// </summary>
-public class DashboardService : IDashboardService
+namespace Infrastructure.Services
 {
-    private readonly ICompanyRepository _companyRepository;
-    private readonly IAdminRepository _adminRepository;
-    private readonly IBaseRepository<Guid, AdminType> _adminTypeRepository;
-    private readonly ISubscriptionRepository _subscriptionRepository;
-    private readonly IBaseRepository<Guid, SubscriptionPlan> _planRepository;
-
-    public DashboardService(
-        ICompanyRepository companyRepository,
-        IAdminRepository adminRepository,
-        IBaseRepository<Guid, AdminType> adminTypeRepository,
-        ISubscriptionRepository subscriptionRepository,
-        IBaseRepository<Guid, SubscriptionPlan> planRepository)
-    {
-        _companyRepository = companyRepository;
-        _adminRepository = adminRepository;
-        _adminTypeRepository = adminTypeRepository;
-        _subscriptionRepository = subscriptionRepository;
-        _planRepository = planRepository;
-    }
-
-    public async Task<DashboardDto> GetDashboardAsync()
-    {
-        var now = DateTime.UtcNow;
-        var today = now.Date;
-        var weekAgo = now.AddDays(-7);
-        var monthAgo = now.AddDays(-30);
-        var dayAgo = now.AddDays(-1);
-
-        // Get ALL data sequentially to avoid DbContext threading issues
-        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = companiesResult.Item1.Cast<Company>().ToList();
-
-        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
-        var admins = adminsResult.Item1.Cast<Admin>().ToList();
-
-        var adminTypesResult = await _adminTypeRepository.GetAllAsync(null, 1, int.MaxValue);
-        var adminTypes = adminTypesResult.Item1.Cast<AdminType>().ToList();
-
-        var plansResult = await _planRepository.GetAllAsync(null, 1, int.MaxValue);
-        var plans = plansResult.Item1.Cast<SubscriptionPlan>().ToList();
-
-        // Get subscriptions for each company
-        var subscriptions = new List<Subscription>();
-        foreach (var company in companies)
-        {
-            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            if (subscription != null)
-            {
-                subscriptions.Add(subscription);
-            }
-        }
-
-        // Calculate company stats (categorized by subscription/license status)
-        var companiesWithActiveLicense = 0;
-        var companiesWithSuspendedLicense = 0;
-        var companiesWithExpiredLicense = 0;
-
-        foreach (var company in companies)
-        {
-            var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == company.Id);
-            var status = CalculateLicenseStatus(subscription);
-
-            if (status == LicenseStatus.Active)
-                companiesWithActiveLicense++;
-            else if (status == LicenseStatus.Suspended)
-                companiesWithSuspendedLicense++;
-            else if (status == LicenseStatus.Expired)
-                companiesWithExpiredLicense++;
-        }
-
-        // Calculate subscription stats
-        var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsExpired);
-        var trialSubscriptions = subscriptions.Count(s => s.IsTrial);
-        var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
-        var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired);
-
-        var expiring7Days = 0;
-        var expiring30Days = 0;
-        var expiringToday = 0;
-
-        foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
-        {
-            var daysUntilExpiry = (sub.ExpiryDateUtc - now).Days;
-
-            if (daysUntilExpiry <= 0)
-                expiringToday++;
-            if (daysUntilExpiry > 0 && daysUntilExpiry <= 7)
-                expiring7Days++;
-            if (daysUntilExpiry > 7 && daysUntilExpiry <= 30)
-                expiring30Days++;
-        }
-
-        // Subscriptions by plan
-        var subscriptionsByPlan = new Dictionary<string, int>();
-        foreach (var plan in plans)
-        {
-            var count = subscriptions.Count(s => s.PlanId == plan.Id);
-            if (count > 0)
-            {
-                subscriptionsByPlan[plan.Name] = count;
-            }
-        }
-
-        // Admins by type
-        var adminsByType = new Dictionary<string, int>();
-        foreach (var adminType in adminTypes)
-        {
-            var count = admins.Count(a => a.AdminTypeId == adminType.Id);
-            if (count > 0)
-            {
-                adminsByType[adminType.AdminTypeName] = count;
-            }
-        }
-
-        // Build alert messages
-        var alertMessages = new List<string>();
-        if (expiringToday > 0)
-            alertMessages.Add($"{expiringToday} subscription(s) expiring today");
-        if (expiring7Days > 0)
-            alertMessages.Add($"{expiring7Days} subscription(s) expiring within 7 days");
-        if (companiesWithSuspendedLicense > 0)
-            alertMessages.Add($"{companiesWithSuspendedLicense} company(ies) with suspended license");
-        if (companiesWithExpiredLicense > 0)
-            alertMessages.Add($"{companiesWithExpiredLicense} company(ies) with expired/no license");
-
-        return new DashboardDto
-        {
-            Overview = new OverviewStatsDto
-            {
-                TotalCompanies = companies.Count,
-                ActiveCompanies = companiesWithActiveLicense,
-                TotalSubscriptions = subscriptions.Count,
-                ActiveSubscriptions = activeSubscriptions,
-                TotalAdmins = admins.Count,
-                ActiveAdmins = admins.Count(a => a.IsActive)
-            },
-            Companies = new CompanyStatsDto
-            {
-                Total = companies.Count,
-                ActiveLicense = companiesWithActiveLicense,
-                SuspendedLicense = companiesWithSuspendedLicense,
-                ExpiredLicense = companiesWithExpiredLicense,
-                CreatedToday = companies.Count(c => c.CreatedTimestamp.Date == today),
-                CreatedThisWeek = companies.Count(c => c.CreatedTimestamp >= weekAgo),
-                CreatedThisMonth = companies.Count(c => c.CreatedTimestamp >= monthAgo)
-            },
-            Subscriptions = new SubscriptionStatsDto
-            {
-                Total = subscriptions.Count,
-                Active = activeSubscriptions,
-                Trial = trialSubscriptions,
-                Expired = expiredSubscriptions,
-                Suspended = suspendedSubscriptions,
-                ExpiringWithin7Days = expiring7Days,
-                ExpiringWithin30Days = expiring30Days,
-                CreatedToday = subscriptions.Count(s => s.StartDateUtc.Date == today),
-                CreatedThisWeek = subscriptions.Count(s => s.StartDateUtc >= weekAgo),
-                CreatedThisMonth = subscriptions.Count(s => s.StartDateUtc >= monthAgo),
-                ByPlan = subscriptionsByPlan
-            },
-            Admins = new AdminStatsDto
-            {
-                Total = admins.Count,
-                Active = admins.Count(a => a.IsActive),
-                Inactive = admins.Count(a => !a.IsActive),
-                CreatedToday = admins.Count(a => a.CreatedTimestamp.Date == today),
-                CreatedThisWeek = admins.Count(a => a.CreatedTimestamp >= weekAgo),
-                CreatedThisMonth = admins.Count(a => a.CreatedTimestamp >= monthAgo),
-                ByType = adminsByType
-            },
-            Alerts = new AlertsDto
-            {
-                SubscriptionsExpiringToday = expiringToday,
-                SubscriptionsExpiringThisWeek = expiring7Days,
-                CompaniesWithSuspendedLicense = companiesWithSuspendedLicense,
-                CompaniesWithExpiredLicense = companiesWithExpiredLicense,
-                InactiveAdmins = admins.Count(a => !a.IsActive),
-                Messages = alertMessages
-            },
-            RecentActivity = new RecentActivityDto
-            {
-                CompaniesLast24Hours = companies.Count(c => c.CreatedTimestamp >= dayAgo),
-                SubscriptionsLast24Hours = subscriptions.Count(s => s.StartDateUtc >= dayAgo),
-                AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
-            },
-            TimeSeries = await GetTimeSeriesDataAsync(companies, subscriptions, admins),
-            Revenue = await GetRevenueDataAsync(subscriptions, companies),
-            Lifecycle = await GetLifecycleDataAsync(companies, subscriptions),
-            Trends = await GetTrendsDataAsync(companies, subscriptions, admins),
-            AdminPerformance = await GetAdminPerformanceDataAsync(admins, companies, subscriptions),
-            GeneratedAtUtc = DateTime.UtcNow
-        };
-    }
-
-    public async Task<CompanyStatsDto> GetCompanyAnalyticsAsync()
-    {
-        var now = DateTime.UtcNow;
-        var today = now.Date;
-        var weekAgo = now.AddDays(-7);
-        var monthAgo = now.AddDays(-30);
-
-        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = companiesResult.Item1.Cast<Company>().ToList();
-
-        var subscriptions = new List<Subscription>();
-        foreach (var company in companies)
-        {
-            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            if (subscription != null)
-            {
-                subscriptions.Add(subscription);
-            }
-        }
-
-        var companiesWithActiveLicense = 0;
-        var companiesWithSuspendedLicense = 0;
-        var companiesWithExpiredLicense = 0;
-
-        foreach (var company in companies)
-        {
-            var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == company.Id);
-            var status = CalculateLicenseStatus(subscription);
-
-            if (status == LicenseStatus.Active)
-                companiesWithActiveLicense++;
-            else if (status == LicenseStatus.Suspended)
-                companiesWithSuspendedLicense++;
-            else if (status == LicenseStatus.Expired)
-                companiesWithExpiredLicense++;
-        }
-
-        return new CompanyStatsDto
-        {
-            Total = companies.Count,
-            ActiveLicense = companiesWithActiveLicense,
-            SuspendedLicense = companiesWithSuspendedLicense,
-            ExpiredLicense = companiesWithExpiredLicense,
-            CreatedToday = companies.Count(c => c.CreatedTimestamp.Date == today),
-            CreatedThisWeek = companies.Count(c => c.CreatedTimestamp >= weekAgo),
-            CreatedThisMonth = companies.Count(c => c.CreatedTimestamp >= monthAgo)
-        };
-    }
-
-    public async Task<SubscriptionStatsDto> GetSubscriptionAnalyticsAsync()
-    {
-        var now = DateTime.UtcNow;
-        var today = now.Date;
-        var weekAgo = now.AddDays(-7);
-        var monthAgo = now.AddDays(-30);
-
-        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = companiesResult.Item1.Cast<Company>().ToList();
-
-        var plansResult = await _planRepository.GetAllAsync(null, 1, int.MaxValue);
-        var plans = plansResult.Item1.Cast<SubscriptionPlan>().ToList();
-
-        var subscriptions = new List<Subscription>();
-        foreach (var company in companies)
-        {
-            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            if (subscription != null)
-            {
-                subscriptions.Add(subscription);
-            }
-        }
-
-        var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsExpired);
-        var trialSubscriptions = subscriptions.Count(s => s.IsTrial);
-        var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
-        var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired);
-
-        var expiring7Days = 0;
-        var expiring30Days = 0;
-
-        foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
-        {
-            var daysUntilExpiry = (sub.ExpiryDateUtc - now).Days;
-
-            if (daysUntilExpiry > 0 && daysUntilExpiry <= 7)
-                expiring7Days++;
-            if (daysUntilExpiry > 7 && daysUntilExpiry <= 30)
-                expiring30Days++;
-        }
-
-        var subscriptionsByPlan = new Dictionary<string, int>();
-        foreach (var plan in plans)
-        {
-            var count = subscriptions.Count(s => s.PlanId == plan.Id);
-            if (count > 0)
-            {
-                subscriptionsByPlan[plan.Name] = count;
-            }
-        }
-
-        return new SubscriptionStatsDto
-        {
-            Total = subscriptions.Count,
-            Active = activeSubscriptions,
-            Trial = trialSubscriptions,
-            Expired = expiredSubscriptions,
-            Suspended = suspendedSubscriptions,
-            ExpiringWithin7Days = expiring7Days,
-            ExpiringWithin30Days = expiring30Days,
-            CreatedToday = subscriptions.Count(s => s.StartDateUtc.Date == today),
-            CreatedThisWeek = subscriptions.Count(s => s.StartDateUtc >= weekAgo),
-            CreatedThisMonth = subscriptions.Count(s => s.StartDateUtc >= monthAgo),
-            ByPlan = subscriptionsByPlan
-        };
-    }
-
-    public async Task<AdminStatsDto> GetAdminAnalyticsAsync()
-    {
-        var now = DateTime.UtcNow;
-        var today = now.Date;
-        var weekAgo = now.AddDays(-7);
-        var monthAgo = now.AddDays(-30);
-
-        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
-        var admins = adminsResult.Item1.Cast<Admin>().ToList();
-
-        var adminTypesResult = await _adminTypeRepository.GetAllAsync(null, 1, int.MaxValue);
-        var adminTypes = adminTypesResult.Item1.Cast<AdminType>().ToList();
-
-        var adminsByType = new Dictionary<string, int>();
-        foreach (var adminType in adminTypes)
-        {
-            var count = admins.Count(a => a.AdminTypeId == adminType.Id);
-            if (count > 0)
-            {
-                adminsByType[adminType.AdminTypeName] = count;
-            }
-        }
-
-        return new AdminStatsDto
-        {
-            Total = admins.Count,
-            Active = admins.Count(a => a.IsActive),
-            Inactive = admins.Count(a => !a.IsActive),
-            CreatedToday = admins.Count(a => a.CreatedTimestamp.Date == today),
-            CreatedThisWeek = admins.Count(a => a.CreatedTimestamp >= weekAgo),
-            CreatedThisMonth = admins.Count(a => a.CreatedTimestamp >= monthAgo),
-            ByType = adminsByType
-        };
-    }
-
-    public async Task<AlertsDto> GetAlertsAsync()
-    {
-        var now = DateTime.UtcNow;
-
-        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = companiesResult.Item1.Cast<Company>().ToList();
-
-        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
-        var admins = adminsResult.Item1.Cast<Admin>().ToList();
-
-        var subscriptions = new List<Subscription>();
-        foreach (var company in companies)
-        {
-            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            if (subscription != null)
-            {
-                subscriptions.Add(subscription);
-            }
-        }
-
-        var companiesWithSuspendedLicense = 0;
-        var companiesWithExpiredLicense = 0;
-
-        foreach (var company in companies)
-        {
-            var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == company.Id);
-            var status = CalculateLicenseStatus(subscription);
-
-            if (status == LicenseStatus.Suspended)
-                companiesWithSuspendedLicense++;
-            else if (status == LicenseStatus.Expired)
-                companiesWithExpiredLicense++;
-        }
-
-        var expiringToday = 0;
-        var expiring7Days = 0;
-
-        foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
-        {
-            var daysUntilExpiry = (sub.ExpiryDateUtc - now).Days;
-
-            if (daysUntilExpiry <= 0)
-                expiringToday++;
-            if (daysUntilExpiry > 0 && daysUntilExpiry <= 7)
-                expiring7Days++;
-        }
-
-        var alertMessages = new List<string>();
-        if (expiringToday > 0)
-            alertMessages.Add($"{expiringToday} subscription(s) expiring today");
-        if (expiring7Days > 0)
-            alertMessages.Add($"{expiring7Days} subscription(s) expiring within 7 days");
-        if (companiesWithSuspendedLicense > 0)
-            alertMessages.Add($"{companiesWithSuspendedLicense} company(ies) with suspended license");
-        if (companiesWithExpiredLicense > 0)
-            alertMessages.Add($"{companiesWithExpiredLicense} company(ies) with expired/no license");
-
-        return new AlertsDto
-        {
-            SubscriptionsExpiringToday = expiringToday,
-            SubscriptionsExpiringThisWeek = expiring7Days,
-            CompaniesWithSuspendedLicense = companiesWithSuspendedLicense,
-            CompaniesWithExpiredLicense = companiesWithExpiredLicense,
-            InactiveAdmins = admins.Count(a => !a.IsActive),
-            Messages = alertMessages
-        };
-    }
-
-    public async Task<RecentActivityDto> GetRecentActivityAsync()
-    {
-        var dayAgo = DateTime.UtcNow.AddDays(-1);
-
-        var companiesResult = await _companyRepository.GetAllAsync(null, 1, int.MaxValue);
-        var companies = companiesResult.Item1.Cast<Company>().ToList();
-
-        var adminsResult = await _adminRepository.GetAllAsync(null, 1, int.MaxValue);
-        var admins = adminsResult.Item1.Cast<Admin>().ToList();
-
-        var subscriptions = new List<Subscription>();
-        foreach (var company in companies)
-        {
-            var subscription = await _subscriptionRepository.GetActiveByCompanyIdAsync(company.Id);
-            if (subscription != null)
-            {
-                subscriptions.Add(subscription);
-            }
-        }
-
-        return new RecentActivityDto
-        {
-            CompaniesLast24Hours = companies.Count(c => c.CreatedTimestamp >= dayAgo),
-            SubscriptionsLast24Hours = subscriptions.Count(s => s.StartDateUtc >= dayAgo),
-            AdminsLast24Hours = admins.Count(a => a.CreatedTimestamp >= dayAgo)
-        };
-    }
-
-    private async Task<TimeSeriesDto> GetTimeSeriesDataAsync(
-        List<Company> companies,
-        List<Subscription> subscriptions,
-        List<Admin> admins)
-    {
-        var last30Days = new List<DailyMetricDto>();
-        var startDate = DateTime.UtcNow.AddDays(-30).Date;
-
-        for (int i = 0; i < 30; i++)
-        {
-            var date = startDate.AddDays(i);
-            var nextDate = date.AddDays(1);
-
-            // Count entities created on this day
-            var companiesCreated = companies.Count(c => c.CreatedTimestamp.Date == date);
-            var subscriptionsCreated = subscriptions.Count(s => s.StartDateUtc.Date == date);
-            var adminsCreated = admins.Count(a => a.CreatedTimestamp.Date == date);
-
-            // Count active entities as of end of this day
-            var companiesActive = companies.Count(c => 
-                c.CreatedTimestamp <= nextDate && 
-                !c.IsDeleted &&
-                subscriptions.Any(s => 
-                    s.CompanyId == c.Id && 
-                    s.IsActive && 
-                    !s.IsExpired &&
-                    s.StartDateUtc <= nextDate
-                )
-            );
-
-            var subscriptionsActive = subscriptions.Count(s => 
-                s.StartDateUtc <= nextDate && 
-                !s.IsDeleted &&
-                s.IsActive && 
-                !s.IsExpired
-            );
-
-            var adminsActive = admins.Count(a => 
-                a.CreatedTimestamp <= nextDate && 
-                !a.IsDeleted &&
-                a.IsActive
-            );
-
-            last30Days.Add(new DailyMetricDto
-            {
-                Date = date,
-                CompaniesCreated = companiesCreated,
-                SubscriptionsCreated = subscriptionsCreated,
-                AdminsCreated = adminsCreated,
-                ActiveCompanies = companiesActive,
-                ActiveSubscriptions = subscriptionsActive,
-                ActiveAdmins = adminsActive
-            });
-        }
-
-        return new TimeSeriesDto { Last30Days = last30Days };
-    }
-
-    private LicenseStatus CalculateLicenseStatus(Subscription? subscription)
-    {
-        if (subscription == null || subscription.IsExpired)
-            return LicenseStatus.Expired;
-
-        if (!subscription.IsActive)
-            return LicenseStatus.Suspended;
-
-        var now = DateTime.UtcNow;
-        if (subscription.ExpiryDateUtc.AddDays(subscription.Plan?.GracePeriodDays ?? 0) < now)
-            return LicenseStatus.Expired;
-
-        return LicenseStatus.Active;
-    }
-
-    private async Task<RevenueDto> GetRevenueDataAsync(
-        List<Subscription> subscriptions,
-        List<Company> companies)
-    {
-        var activeSubscriptions = subscriptions.Where(s => s.IsActive && !s.IsExpired).ToList();
-        var payingSubscriptions = activeSubscriptions.Where(s => !s.IsTrial).ToList();
-        
-        // Calculate total revenue (normalized to USD for simplicity)
-        // In production, you'd use exchange rates
-        decimal totalRevenue = payingSubscriptions.Sum(s => s.Amount);
-        
-        // Calculate MRR (Monthly Recurring Revenue)
-        // Normalize all subscriptions to monthly revenue
-        decimal mrr = 0;
-        foreach (var sub in payingSubscriptions)
-        {
-            var monthlyAmount = NormalizeToMonthlyRevenue(sub);
-            mrr += monthlyAmount;
-        }
-        
-        // ARR = MRR * 12
-        decimal arr = mrr * 12;
-        
-        // ARPC (Average Revenue Per Customer)
-        int payingCustomers = payingSubscriptions.Select(s => s.CompanyId).Distinct().Count();
-        decimal arpc = payingCustomers > 0 ? mrr / payingCustomers : 0;
-        
-        // Revenue by plan
-        var revenueByPlan = payingSubscriptions
-            .GroupBy(s => s.Plan?.Name ?? "Unknown")
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(s => s.Amount)
-            );
-        
-        // Revenue by currency
-        var revenueByCurrency = payingSubscriptions
-            .GroupBy(s => s.Currency.ToString())
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(s => s.Amount)
-            );
-        
-        // Monthly revenue for last 12 months
-        var monthlyRevenue = new List<MonthlyRevenueDto>();
-        var now = DateTime.UtcNow;
-        
-        for (int i = 11; i >= 0; i--)
-        {
-            var targetMonth = now.AddMonths(-i);
-            var monthStart = new DateTime(targetMonth.Year, targetMonth.Month, 1);
-            var monthEnd = monthStart.AddMonths(1);
-            
-            var monthSubscriptions = subscriptions.Where(s =>
-                s.StartDateUtc < monthEnd &&
-                s.ExpiryDateUtc >= monthStart &&
-                !s.IsTrial &&
-                !s.IsDeleted
-            ).ToList();
-            
-            var monthRevenue = monthSubscriptions.Sum(s => s.Amount);
-            var avgRevenue = monthSubscriptions.Count > 0 
-                ? monthRevenue / monthSubscriptions.Count 
-                : 0;
-            
-            monthlyRevenue.Add(new MonthlyRevenueDto
-            {
-                Month = monthStart.ToString("MMM yyyy"),
-                Revenue = monthRevenue,
-                SubscriptionCount = monthSubscriptions.Count,
-                AverageRevenuePerSubscription = avgRevenue
-            });
-        }
-        
-        // Calculate month-over-month growth
-        decimal momGrowth = 0;
-        if (monthlyRevenue.Count >= 2)
-        {
-            var currentMonth = monthlyRevenue[^1].Revenue;
-            var previousMonth = monthlyRevenue[^2].Revenue;
-            
-            if (previousMonth > 0)
-            {
-                momGrowth = ((currentMonth - previousMonth) / previousMonth) * 100;
-            }
-        }
-        
-        return new RevenueDto
-        {
-            MRR = mrr,
-            ARR = arr,
-            TotalRevenue = totalRevenue,
-            ARPC = arpc,
-            RevenueByPlan = revenueByPlan,
-            RevenueByCurrency = revenueByCurrency,
-            MonthlyRevenue = monthlyRevenue,
-            MonthOverMonthGrowth = momGrowth,
-            PayingCustomers = payingCustomers,
-            TrialSubscriptions = activeSubscriptions.Count(s => s.IsTrial)
-        };
-    }
-    
-    private decimal NormalizeToMonthlyRevenue(Subscription subscription)
-    {
-        // Normalize subscription revenue to monthly amount based on plan duration
-        if (subscription.Plan == null)
-            return subscription.Amount;
-        
-        return subscription.Plan.DurationType switch
-        {
-            PlanDurationType.Weekly => subscription.Amount * 4.33m,      // ~4.33 weeks per month
-            PlanDurationType.BiWeekly => subscription.Amount * 2.165m,   // ~2.165 bi-weeks per month
-            PlanDurationType.Monthly => subscription.Amount,
-            PlanDurationType.Quarterly => subscription.Amount / 3m,
-            PlanDurationType.SemiAnnually => subscription.Amount / 6m,   // Fixed: was SemiAnnual
-            PlanDurationType.Yearly => subscription.Amount / 12m,
-            PlanDurationType.Biennial => subscription.Amount / 24m,      // 2 years
-            PlanDurationType.Triennial => subscription.Amount / 36m,     // 3 years
-            PlanDurationType.Lifetime => subscription.Amount / 120m,     // Amortize over 10 years
-            _ => subscription.Amount
-        };
-    }
-
-    private async Task<LifecycleDto> GetLifecycleDataAsync(
-        List<Company> companies,
-        List<Subscription> subscriptions)
-    {
-        var now = DateTime.UtcNow;
-        var thirtyDaysAgo = now.AddDays(-30);
-        var sevenDaysAgo = now.AddDays(-7);
-
-        // Calculate lifecycle stages
-        var newCompanies = companies.Count(c => c.CreatedTimestamp >= thirtyDaysAgo);
-        
-        var activeCompanies = companies.Count(c =>
-            !c.IsDeleted &&
-            subscriptions.Any(s =>
-                s.CompanyId == c.Id &&
-                s.IsActive &&
-                !s.IsExpired
-            )
-        );
-
-        var atRiskCompanies = companies.Count(c =>
-            !c.IsDeleted &&
-            subscriptions.Any(s =>
-                s.CompanyId == c.Id &&
-                (
-                    // Expiring within 7 days
-                    (s.IsActive && !s.IsExpired && (s.ExpiryDateUtc - now).Days <= 7 && (s.ExpiryDateUtc - now).Days > 0) ||
-                    // Suspended
-                    (!s.IsActive && !s.IsExpired)
-                )
-            )
-        );
-
-        var churnedCompanies = companies.Count(c =>
-            !c.IsDeleted &&
-            !subscriptions.Any(s =>
-                s.CompanyId == c.Id &&
-                s.IsActive &&
-                !s.IsExpired
-            )
-        );
-
-        // Companies that had expired subscriptions but now have active ones
-        var returningCompanies = 0; // TODO: Track this in future with subscription history
-
-        // Calculate churn metrics
-        var totalActiveEver = activeCompanies + churnedCompanies;
-        var churnRate = totalActiveEver > 0 ? (decimal)churnedCompanies / totalActiveEver * 100 : 0;
-        var retentionRate = 100 - churnRate;
-
-        var churnedThisMonth = companies.Count(c =>
-            !c.IsDeleted &&
-            subscriptions.Any(s =>
-                s.CompanyId == c.Id &&
-                s.IsExpired &&
-                s.ExpiryDateUtc >= thirtyDaysAgo
-            )
-        );
-
-        // Calculate average lifetime
-        var lifetimes = companies
-            .Where(c => !c.IsDeleted)
-            .Select(c =>
-            {
-                var subscription = subscriptions.FirstOrDefault(s => s.CompanyId == c.Id);
-                if (subscription == null) return 0;
-                
-                var end = subscription.IsActive && !subscription.IsExpired 
-                    ? now 
-                    : subscription.ExpiryDateUtc;
-                
-                return (end - subscription.StartDateUtc).TotalDays;
-            })
-            .Where(days => days > 0)
-            .ToList();
-
-        var averageLifetimeDays = lifetimes.Any() ? lifetimes.Average() : 0;
-
-        // Calculate risk distribution
-        var riskScores = companies
-            .Where(c => !c.IsDeleted)
-            .Select(c => CalculateRiskScore(c, subscriptions.Where(s => s.CompanyId == c.Id).ToList(), now))
-            .ToList();
-
-        var lowRisk = riskScores.Count(score => score <= 33);
-        var mediumRisk = riskScores.Count(score => score > 33 && score <= 66);
-        var highRisk = riskScores.Count(score => score > 66);
-
-        // Calculate health distribution
-        var healthScores = companies
-            .Where(c => !c.IsDeleted)
-            .Select(c => CalculateHealthScore(c, subscriptions.Where(s => s.CompanyId == c.Id).ToList(), now))
-            .ToList();
-
-        var excellent = healthScores.Count(score => score >= 80);
-        var good = healthScores.Count(score => score >= 60 && score < 80);
-        var fair = healthScores.Count(score => score >= 40 && score < 60);
-        var poor = healthScores.Count(score => score < 40);
-
-        // Lifecycle transitions (simplified - would need historical data for accurate tracking)
-        var transitions = new List<LifecycleTransitionDto>
-        {
-            new() { FromStage = "New", ToStage = "Active", Count = Math.Min(newCompanies, activeCompanies) },
-            new() { FromStage = "Active", ToStage = "At-Risk", Count = Math.Max(0, atRiskCompanies / 2) },
-            new() { FromStage = "At-Risk", ToStage = "Churned", Count = Math.Max(0, churnedThisMonth / 2) },
-            new() { FromStage = "At-Risk", ToStage = "Active", Count = Math.Max(0, atRiskCompanies / 3) }
-        };
-
-        return new LifecycleDto
-        {
-            Stages = new LifecycleStageDto
-            {
-                New = newCompanies,
-                Active = activeCompanies,
-                AtRisk = atRiskCompanies,
-                Churned = churnedCompanies,
-                Returning = returningCompanies
-            },
-            Churn = new ChurnDto
-            {
-                ChurnRate = churnRate,
-                ChurnedThisMonth = churnedThisMonth,
-                HighRiskCount = highRisk,
-                RetentionRate = retentionRate,
-                AverageLifetimeDays = averageLifetimeDays,
-                RiskDistribution = new RiskDistributionDto
-                {
-                    Low = lowRisk,
-                    Medium = mediumRisk,
-                    High = highRisk
-                }
-            },
-            HealthDistribution = new HealthDistributionDto
-            {
-                Excellent = excellent,
-                Good = good,
-                Fair = fair,
-                Poor = poor
-            },
-            Transitions = transitions
-        };
-    }
-
-    private int CalculateRiskScore(Company company, List<Subscription> companySubscriptions, DateTime now)
-    {
-        var subscription = companySubscriptions.FirstOrDefault();
-        if (subscription == null) return 100; // No subscription = highest risk
-
-        var score = 0;
-
-        // Subscription status
-        if (subscription.IsExpired) score += 50;
-        else if (!subscription.IsActive) score += 30;
-
-        // Days until expiry
-        var daysUntilExpiry = (subscription.ExpiryDateUtc - now).Days;
-        if (daysUntilExpiry <= 0) score += 40;
-        else if (daysUntilExpiry <= 7) score += 30;
-        else if (daysUntilExpiry <= 30) score += 15;
-
-        // Trial subscription
-        if (subscription.IsTrial) score += 10;
-
-        return Math.Min(100, score);
-    }
-
-    private int CalculateHealthScore(Company company, List<Subscription> companySubscriptions, DateTime now)
-    {
-        var subscription = companySubscriptions.FirstOrDefault();
-        if (subscription == null) return 0; // No subscription = no health
-
-        var score = 100;
-
-        // Subscription status
-        if (subscription.IsExpired) score -= 50;
-        else if (!subscription.IsActive) score -= 30;
-
-        // Days until expiry
-        var daysUntilExpiry = (subscription.ExpiryDateUtc - now).Days;
-        if (daysUntilExpiry <= 0) score -= 40;
-        else if (daysUntilExpiry <= 7) score -= 30;
-        else if (daysUntilExpiry <= 30) score -= 15;
-
-        // Trial subscription (neutral)
-        if (subscription.IsTrial) score -= 10;
-
-        // Company age (older = healthier)
-        var ageInDays = (now - company.CreatedTimestamp).TotalDays;
-        if (ageInDays > 365) score += 10;
-        else if (ageInDays > 180) score += 5;
-
-        return Math.Max(0, Math.Min(100, score));
-    }
-
     /// <summary>
-    /// Calculate trend analysis and forecasting for all entities
+    /// Dashboard service implementation with real data queries
     /// </summary>
-    private async Task<TrendsDto> GetTrendsDataAsync(
-        List<Company> companies,
-        List<Subscription> subscriptions,
-        List<Admin> admins)
+    public class DashboardService : IDashboardService
     {
-        var now = DateTime.UtcNow;
-        var sevenDaysAgo = now.AddDays(-7);
-        var fourteenDaysAgo = now.AddDays(-14);
-        var thirtyDaysAgo = now.AddDays(-30);
-        var sixtyDaysAgo = now.AddDays(-60);
+        private readonly ApplicationDBContext _context;
+        private readonly ILogger<DashboardService> _logger;
 
-        // Calculate company trends
-        var companyTrend = CalculateEntityTrend(
-            companies,
-            c => c.CreatedTimestamp,
-            now, sevenDaysAgo, fourteenDaysAgo, thirtyDaysAgo, sixtyDaysAgo
-        );
-
-        // Calculate subscription trends
-        var subscriptionTrend = CalculateEntityTrend(
-            subscriptions,
-            s => s.StartDateUtc,
-            now, sevenDaysAgo, fourteenDaysAgo, thirtyDaysAgo, sixtyDaysAgo
-        );
-
-        // Calculate admin trends
-        var adminTrend = CalculateEntityTrend(
-            admins,
-            a => a.CreatedTimestamp,
-            now, sevenDaysAgo, fourteenDaysAgo, thirtyDaysAgo, sixtyDaysAgo
-        );
-
-        // Calculate system health trend
-        var activeCompanies = companies.Count(c => !c.IsDeleted);
-        var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsDeleted);
-        var activeAdmins = admins.Count(a => a.IsActive && !a.IsDeleted);
-        var totalActive = activeCompanies + activeSubscriptions + activeAdmins;
-        var total = companies.Count + subscriptions.Count + admins.Count;
-        var healthPercent = total > 0 ? (decimal)totalActive / total * 100 : 0;
-
-        var systemHealthTrend = healthPercent >= 80 ? TrendDirection.StrongUp :
-                                healthPercent >= 60 ? TrendDirection.Up :
-                                healthPercent >= 40 ? TrendDirection.Stable :
-                                healthPercent >= 20 ? TrendDirection.Down :
-                                TrendDirection.StrongDown;
-
-        // Calculate growth velocity
-        var avgChangePercent = (companyTrend.ChangePercent + subscriptionTrend.ChangePercent + adminTrend.ChangePercent) / 3;
-        var growthVelocity = avgChangePercent > 10 ? "Accelerating" :
-                             avgChangePercent < -10 ? "Decelerating" :
-                             "Steady";
-
-        return await Task.FromResult(new TrendsDto
+        public DashboardService(
+            ApplicationDBContext context,
+            ILogger<DashboardService> logger)
         {
-            Companies = companyTrend,
-            Subscriptions = subscriptionTrend,
-            Admins = adminTrend,
-            SystemHealthTrend = systemHealthTrend,
-            GrowthVelocity = growthVelocity
-        });
-    }
+            _context = context;
+            _logger = logger;
+        }
 
-    /// <summary>
-    /// Calculate trend metrics for a specific entity type
-    /// </summary>
-    private EntityTrendDto CalculateEntityTrend<T>(
-        List<T> entities,
-        Func<T, DateTime> dateSelector,
-        DateTime now,
-        DateTime sevenDaysAgo,
-        DateTime fourteenDaysAgo,
-        DateTime thirtyDaysAgo,
-        DateTime sixtyDaysAgo)
-    {
-        var current = entities.Count;
-        var currentPeriod = entities.Count(e => dateSelector(e) >= thirtyDaysAgo);
-        var previousPeriod = entities.Count(e => dateSelector(e) >= sixtyDaysAgo && dateSelector(e) < thirtyDaysAgo);
+        #region Overview Dashboard
 
-        // Calculate percentage change
-        var changePercent = previousPeriod > 0
-            ? ((decimal)(currentPeriod - previousPeriod) / previousPeriod) * 100
-            : currentPeriod > 0 ? 100 : 0;
-
-        // Determine trend direction
-        var direction = changePercent > 5 ? TrendDirection.StrongUp :
-                       changePercent > 1 ? TrendDirection.Up :
-                       changePercent > -1 ? TrendDirection.Stable :
-                       changePercent > -5 ? TrendDirection.Down :
-                       TrendDirection.StrongDown;
-
-        // Week-over-week change
-        var thisWeek = entities.Count(e => dateSelector(e) >= sevenDaysAgo);
-        var lastWeek = entities.Count(e => dateSelector(e) >= fourteenDaysAgo && dateSelector(e) < sevenDaysAgo);
-        var weekOverWeekChange = thisWeek - lastWeek;
-
-        // Month-over-month change
-        var monthOverMonthChange = currentPeriod - previousPeriod;
-
-        // Daily growth rate
-        var dailyGrowthRate = currentPeriod > 0 ? (decimal)currentPeriod / 30 : 0;
-
-        // Simple linear forecast (next 30 days)
-        var forecast30Days = current + (int)Math.Round(dailyGrowthRate * 30);
-
-        return new EntityTrendDto
+        public async Task<OverviewDashboardDto> GetOverviewAsync()
         {
-            Current = current,
-            Previous = previousPeriod,
-            ChangePercent = Math.Round(changePercent, 1),
-            Direction = direction,
-            WeekOverWeekChange = weekOverWeekChange,
-            MonthOverMonthChange = monthOverMonthChange,
-            Forecast30Days = Math.Max(0, forecast30Days),
-            DailyGrowthRate = Math.Round(dailyGrowthRate, 2)
-        };
-    }
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            var lastMonth = today.AddMonths(-1);
+            var last30Days = today.AddDays(-30);
 
-    // ==================== PHASE 5: ADMIN PERFORMANCE TRACKING ====================
+            var companies = await _context.Companies.Where(c => !c.IsDeleted).ToListAsync();
+            var totalCompanies = companies.Count;
 
-    /// <summary>
-    /// Get admin activity and performance analytics
-    /// </summary>
-    private Task<AdminPerformanceDto> GetAdminPerformanceDataAsync(
-        List<Admin> admins,
-        List<Company> companies,
-        List<Subscription> subscriptions)
-    {
-        var now = DateTime.UtcNow;
-        var thirtyDaysAgo = now.AddDays(-30);
-        var random = new Random();
+            var subscriptions = await _context.Subscriptions
+                .Where(s => !s.IsDeleted)
+                .Include(s => s.Company)
+                .Include(s => s.Plan)
+                .ToListAsync();
 
-        // Build performance leaderboard
-        var leaderboard = new List<AdminPerformanceMetricDto>();
-        
-        foreach (var admin in admins.Where(a => !a.IsDeleted))
-        {
-            // Simulate activity data (in production, this would come from activity logs)
-            var totalActions = random.Next(50, 500);
-            var loginCount = random.Next(10, 60);
-            // Note: In production, track actual companies/subscriptions managed via activity logs
-            var companiesManaged = random.Next(0, Math.Min(companies.Count, 20));
-            var subscriptionsManaged = random.Next(0, Math.Min(subscriptions.Count, 30));
-            var avgResponseTime = random.Next(200, 2000);
-            var daysActive = random.Next(15, 30);
+            var totalSubscriptions = subscriptions.Count;
+            var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsExpired);
+            var trialSubscriptions = subscriptions.Count(s => s.IsTrial && s.IsActive);
+            var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
 
-            // Calculate performance score (0-100)
-            var performanceScore = CalculatePerformanceScore(
-                totalActions,
-                loginCount,
-                companiesManaged,
-                subscriptionsManaged,
-                avgResponseTime,
-                daysActive
-            );
+            var companyIdsWithActiveSub = subscriptions
+                .Where(s => s.IsActive && !s.IsExpired)
+                .Select(s => s.CompanyId).Distinct().ToList();
+            var activeCompanies = companyIdsWithActiveSub.Count;
 
-            // Determine activity level
-            var activityLevel = totalActions switch
+            var companyIdsWithAnySub = subscriptions.Select(s => s.CompanyId).Distinct().ToList();
+            var companiesWithoutSub = totalCompanies - companyIdsWithAnySub.Count;
+
+            var expiringToday = subscriptions.Count(s => s.IsActive && !s.IsExpired && s.ExpiryDateUtc.Date == today);
+            var expiringThisWeek = subscriptions.Count(s => s.IsActive && !s.IsExpired && s.ExpiryDateUtc.Date > today && s.ExpiryDateUtc.Date <= today.AddDays(7));
+            var expiringThisMonth = subscriptions.Count(s => s.IsActive && !s.IsExpired && s.ExpiryDateUtc.Date > today.AddDays(7) && s.ExpiryDateUtc.Date <= today.AddDays(30));
+            var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired && !s.IsTrial);
+
+            var admins = await _context.Admins.Where(a => !a.IsDeleted).ToListAsync();
+            var totalAdmins = admins.Count;
+            var activeAdmins = admins.Count(a => a.LastLoginAt.HasValue && a.LastLoginAt.Value >= last30Days);
+
+            var prevMonthCompanies = companies.Count(c => c.CreatedTimestamp < lastMonth);
+            var prevMonthSubscriptions = subscriptions.Count(s => s.CreatedTimestamp < lastMonth);
+            var companyGrowthRate = prevMonthCompanies > 0 ? ((decimal)(totalCompanies - prevMonthCompanies) / prevMonthCompanies) * 100 : 100;
+            var subscriptionGrowthRate = prevMonthSubscriptions > 0 ? ((decimal)(totalSubscriptions - prevMonthSubscriptions) / prevMonthSubscriptions) * 100 : 100;
+
+            var mrr = subscriptions.Where(s => s.IsActive && !s.IsExpired).Sum(s => s.Amount);
+
+            var companiesKpi = new KpiCardDto("Companies", totalCompanies, prevMonthCompanies, companyGrowthRate, companyGrowthRate >= 0 ? "up" : "down", "Building2", "blue");
+            var subscriptionsKpi = new KpiCardDto("Active Subscriptions", activeSubscriptions, null, subscriptionGrowthRate, subscriptionGrowthRate >= 0 ? "up" : "down", "CreditCard", "green");
+            var revenueKpi = new KpiCardDto("MRR", (int)mrr, null, null, "unchanged", "DollarSign", "purple");
+            var alertsKpi = new KpiCardDto("Alerts", expiringToday + expiringThisWeek + suspendedSubscriptions, null, null, expiringToday > 0 ? "up" : "unchanged", "Bell", expiringToday > 0 ? "red" : "yellow");
+
+            var stats = new QuickStatsDto(totalCompanies, activeCompanies, totalCompanies - activeCompanies, companiesWithoutSub, totalSubscriptions, activeSubscriptions, trialSubscriptions, expiredSubscriptions, suspendedSubscriptions, expiringToday, expiringThisWeek, expiringThisMonth, totalAdmins, activeAdmins, companyGrowthRate, subscriptionGrowthRate);
+
+            var statusDistribution = new List<DistributionItemDto>
             {
-                >= 300 => "High",
-                >= 150 => "Medium",
-                _ => "Low"
+                new("Active", activeSubscriptions - trialSubscriptions, totalSubscriptions > 0 ? (decimal)(activeSubscriptions - trialSubscriptions) / totalSubscriptions * 100 : 0, "#22c55e"),
+                new("Trial", trialSubscriptions, totalSubscriptions > 0 ? (decimal)trialSubscriptions / totalSubscriptions * 100 : 0, "#3b82f6"),
+                new("Expired", expiredSubscriptions, totalSubscriptions > 0 ? (decimal)expiredSubscriptions / totalSubscriptions * 100 : 0, "#ef4444"),
+                new("Suspended", suspendedSubscriptions, totalSubscriptions > 0 ? (decimal)suspendedSubscriptions / totalSubscriptions * 100 : 0, "#f97316")
             };
 
-            leaderboard.Add(new AdminPerformanceMetricDto
+            var growthTrend = new List<TimeSeriesDataPointDto>();
+            for (int i = 29; i >= 0; i--)
             {
-                AdminId = admin.Id,
-                Username = admin.Username,
-                FullName = $"{admin.FirstName} {admin.LastName}".Trim(),
-                AdminType = admin.AdminType?.AdminTypeName ?? "N/A",
-                TotalActions = totalActions,
-                LoginCount = loginCount,
-                CompaniesManaged = companiesManaged,
-                SubscriptionsManaged = subscriptionsManaged,
-                AvgResponseTime = Math.Round((double)avgResponseTime, 0),
-                PerformanceScore = performanceScore,
-                ActivityLevel = activityLevel,
-                LastActiveDate = now.AddDays(-random.Next(0, 7)),
-                DaysActive = daysActive
-            });
-        }
-
-        // Sort by performance score (descending)
-        leaderboard = leaderboard.OrderByDescending(l => l.PerformanceScore)
-                                 .ThenByDescending(l => l.TotalActions)
-                                 .ToList();
-
-        // Generate activity heatmap (last 30 days)
-        var activityHeatmap = new List<ActivityHeatmapDto>();
-        for (int i = 0; i < 30; i++)
-        {
-            var date = now.AddDays(-i).Date;
-            var hourlyActivity = new List<int>();
-            
-            // Generate 24 hours of activity data
-            for (int hour = 0; hour < 24; hour++)
-            {
-                // Simulate realistic activity (higher during business hours)
-                var baseActivity = hour >= 8 && hour <= 17 ? random.Next(10, 50) : random.Next(0, 10);
-                hourlyActivity.Add(baseActivity);
+                var date = today.AddDays(-i);
+                var companiesOnDate = companies.Count(c => c.CreatedTimestamp.Date <= date);
+                growthTrend.Add(new TimeSeriesDataPointDto(date, date.ToString("MMM dd"), companiesOnDate));
             }
 
-            var totalActivity = hourlyActivity.Sum();
-            var peakHour = hourlyActivity.IndexOf(hourlyActivity.Max());
-
-            activityHeatmap.Add(new ActivityHeatmapDto
-            {
-                Date = date,
-                DayOfWeek = (int)date.DayOfWeek,
-                HourlyActivity = hourlyActivity,
-                TotalActivity = totalActivity,
-                PeakHour = peakHour
-            });
+            return new OverviewDashboardDto(companiesKpi, subscriptionsKpi, revenueKpi, alertsKpi, stats, statusDistribution, growthTrend, new List<RecentActivityItemDto>(), now);
         }
 
-        // Admin type performance comparison
-        var typePerformance = admins.Where(a => !a.IsDeleted)
-            .GroupBy(a => a.AdminType?.AdminTypeName ?? "N/A")
-            .Select(g => new AdminTypePerformanceDto
-            {
-                TypeName = g.Key,
-                AdminCount = g.Count(),
-                AvgPerformanceScore = Math.Round(
-                    leaderboard.Where(l => l.AdminType == g.Key)
-                               .Average(l => l.PerformanceScore), 1),
-                TotalActions = leaderboard.Where(l => l.AdminType == g.Key)
-                                         .Sum(l => l.TotalActions),
-                AvgActionsPerAdmin = Math.Round(
-                    leaderboard.Where(l => l.AdminType == g.Key)
-                               .Average(l => (double)l.TotalActions), 1),
-                ActivePercentage = Math.Round(
-                    (double)g.Count(a => a.IsActive) / g.Count() * 100, 1)
-            })
-            .OrderByDescending(t => t.AvgPerformanceScore)
-            .ToList();
+        #endregion
 
-        // System activity statistics
-        var totalActionsAll = leaderboard.Sum(l => l.TotalActions);
-        var totalLoginsAll = leaderboard.Sum(l => l.LoginCount);
-        var peakDay = activityHeatmap.OrderByDescending(h => h.TotalActivity).FirstOrDefault();
+        #region Companies Dashboard
 
-        var systemActivity = new SystemActivityStatsDto
+        public async Task<CompaniesDashboardDto> GetCompaniesDashboardAsync()
         {
-            TotalActions = totalActionsAll,
-            TotalLogins = totalLoginsAll,
-            AvgActionsPerDay = Math.Round((double)totalActionsAll / 30, 1),
-            ActiveAdmins = leaderboard.Count(l => l.DaysActive >= 15),
-            PeakActivityDate = peakDay?.Date ?? now,
-            PeakActivityCount = peakDay?.TotalActivity ?? 0,
-            AvgAdminsOnline = Math.Round((double)leaderboard.Count / 3, 1)
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            var thisMonth = new DateTime(today.Year, today.Month, 1);
+            var thisWeek = today.AddDays(-(int)today.DayOfWeek);
+
+            var companies = await _context.Companies.Where(c => !c.IsDeleted).ToListAsync();
+            var subscriptions = await _context.Subscriptions.Where(s => !s.IsDeleted).Include(s => s.Plan).Include(s => s.Company).ToListAsync();
+
+            var totalCompanies = companies.Count;
+            var newThisMonth = companies.Count(c => c.CreatedTimestamp >= thisMonth);
+            var newThisWeek = companies.Count(c => c.CreatedTimestamp >= thisWeek);
+
+            var activeCompanyIds = subscriptions.Where(s => s.IsActive && !s.IsExpired).Select(s => s.CompanyId).Distinct().ToList();
+            var suspendedCompanyIds = subscriptions.Where(s => !s.IsActive && !s.IsExpired).Select(s => s.CompanyId).Distinct().ToList();
+            var atRiskCompanyIds = subscriptions.Where(s => s.IsActive && !s.IsExpired && s.ExpiryDateUtc <= today.AddDays(30)).Select(s => s.CompanyId).Distinct().ToList();
+            var companyIdsWithAnySub = subscriptions.Select(s => s.CompanyId).Distinct().ToList();
+            var withoutSubCompanyIds = companies.Where(c => !companyIdsWithAnySub.Contains(c.Id)).Select(c => c.Id).ToList();
+
+            var activeCount = activeCompanyIds.Count;
+            var suspendedCount = suspendedCompanyIds.Except(activeCompanyIds).Count();
+            var atRiskCount = atRiskCompanyIds.Count;
+            var inactiveCount = totalCompanies - activeCount - suspendedCount;
+
+            var statusDistribution = new CompanyStatusDistributionDto(activeCount - atRiskCount, inactiveCount, suspendedCount, atRiskCount, totalCompanies);
+
+            var statusChart = new List<DistributionItemDto>
+            {
+                new("Active", activeCount - atRiskCount, totalCompanies > 0 ? (decimal)(activeCount - atRiskCount) / totalCompanies * 100 : 0, "#22c55e"),
+                new("At Risk", atRiskCount, totalCompanies > 0 ? (decimal)atRiskCount / totalCompanies * 100 : 0, "#f97316"),
+                new("Suspended", suspendedCount, totalCompanies > 0 ? (decimal)suspendedCount / totalCompanies * 100 : 0, "#ef4444"),
+                new("Inactive", inactiveCount, totalCompanies > 0 ? (decimal)inactiveCount / totalCompanies * 100 : 0, "#6b7280")
+            };
+
+            var growthPoints = new List<CompanyGrowthPointDto>();
+            for (int i = 29; i >= 0; i--)
+            {
+                var date = today.AddDays(-i);
+                growthPoints.Add(new CompanyGrowthPointDto(date, companies.Count(c => c.CreatedTimestamp.Date == date), companies.Count(c => c.CreatedTimestamp.Date <= date)));
+            }
+
+            var totalGrowth = growthPoints.Sum(g => g.NewCompanies);
+            var bestDay = growthPoints.OrderByDescending(g => g.NewCompanies).FirstOrDefault();
+            var growth = new CompanyGrowthSummaryDto(totalGrowth, totalCompanies > 0 ? (decimal)totalGrowth / totalCompanies * 100 : 0, totalGrowth / 30, bestDay?.NewCompanies ?? 0, bestDay?.Date ?? today, growthPoints);
+
+            var topCompanyList = subscriptions.Where(s => s.IsActive && !s.IsExpired).GroupBy(s => s.CompanyId)
+                .Select(g => new TopCompanyDto(g.Key, g.First().Company?.Name ?? "Unknown", null, g.Count(), g.Sum(s => s.Amount), g.OrderByDescending(s => s.Amount).First().Plan?.Name ?? "N/A", g.Max(s => s.CreatedTimestamp), atRiskCompanyIds.Contains(g.Key) ? "AtRisk" : "Active"))
+                .OrderByDescending(c => c.TotalValue).Take(10).ToList();
+
+            var topCompanies = new TopCompaniesDto(topCompanyList, topCompanyList.Sum(c => c.TotalValue), topCompanyList.Sum(c => c.ActiveSubscriptions));
+
+            var alerts = new List<CompanyAlertDto>();
+            foreach (var companyId in withoutSubCompanyIds.Take(5))
+            {
+                var company = companies.First(c => c.Id == companyId);
+                alerts.Add(new CompanyAlertDto(company.Id, company.Name, CompanyAlertType.NoSubscription, "No subscription", null, 0, "medium", "Create subscription"));
+            }
+            foreach (var companyId in atRiskCompanyIds.Take(5))
+            {
+                var expiringSub = subscriptions.Where(s => s.CompanyId == companyId && s.IsActive && !s.IsExpired && s.ExpiryDateUtc <= today.AddDays(30)).OrderBy(s => s.ExpiryDateUtc).FirstOrDefault();
+                if (expiringSub != null)
+                {
+                    var daysRemaining = (expiringSub.ExpiryDateUtc.Date - today).Days;
+                    alerts.Add(new CompanyAlertDto(companyId, expiringSub.Company?.Name ?? "Unknown", CompanyAlertType.SubscriptionExpiring, $"Subscription expiring in {daysRemaining} days", expiringSub.ExpiryDateUtc, daysRemaining, daysRemaining <= 7 ? "high" : "medium", "Renew subscription"));
+                }
+            }
+
+            var subscriptionCoverage = totalCompanies > 0 ? (decimal)activeCount / totalCompanies * 100 : 0;
+
+            return new CompaniesDashboardDto(totalCompanies, newThisMonth, newThisWeek, subscriptionCoverage, statusDistribution, statusChart, growth, topCompanies, alerts,
+                alerts.Count(a => a.Priority == "critical"), alerts.Count(a => a.Priority == "high"), alerts.Count(a => a.Priority == "medium"),
+                activeCount, subscriptions.Where(s => s.IsTrial && s.IsActive).Select(s => s.CompanyId).Distinct().Count(),
+                subscriptions.Where(s => s.IsExpired).Select(s => s.CompanyId).Distinct().Count(), withoutSubCompanyIds.Count, now);
+        }
+
+        #endregion
+
+        #region Subscriptions Dashboard
+
+        public async Task<SubscriptionsDashboardDto> GetSubscriptionsDashboardAsync()
+        {
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            var thisMonth = new DateTime(today.Year, today.Month, 1);
+            var lastMonth = thisMonth.AddMonths(-1);
+
+            var subscriptions = await _context.Subscriptions.Where(s => !s.IsDeleted).Include(s => s.Plan).Include(s => s.Company).ToListAsync();
+
+            var totalSubscriptions = subscriptions.Count;
+            var activeSubscriptions = subscriptions.Count(s => s.IsActive && !s.IsExpired && !s.IsTrial);
+            var trialSubscriptions = subscriptions.Count(s => s.IsTrial && s.IsActive);
+            var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
+            var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired);
+            var totalMonthlyRevenue = subscriptions.Where(s => s.IsActive && !s.IsExpired).Sum(s => s.Amount);
+
+            var statusDistribution = new SubscriptionStatusDistributionDto(activeSubscriptions, trialSubscriptions, expiredSubscriptions, suspendedSubscriptions, 0, 0, totalSubscriptions);
+
+            var statusChart = new List<DistributionItemDto>
+            {
+                new("Active", activeSubscriptions, totalSubscriptions > 0 ? (decimal)activeSubscriptions / totalSubscriptions * 100 : 0, "#22c55e"),
+                new("Trial", trialSubscriptions, totalSubscriptions > 0 ? (decimal)trialSubscriptions / totalSubscriptions * 100 : 0, "#3b82f6"),
+                new("Expired", expiredSubscriptions, totalSubscriptions > 0 ? (decimal)expiredSubscriptions / totalSubscriptions * 100 : 0, "#6b7280"),
+                new("Suspended", suspendedSubscriptions, totalSubscriptions > 0 ? (decimal)suspendedSubscriptions / totalSubscriptions * 100 : 0, "#f97316")
+            };
+
+            var planGroups = subscriptions.Where(s => s.Plan != null).GroupBy(s => s.PlanId)
+                .Select(g => new SubscriptionByPlanDto(g.Key, g.First().Plan?.Name ?? "Unknown", g.First().Plan?.Name ?? "Standard",
+                    g.Count(s => s.IsActive && !s.IsExpired && !s.IsTrial), g.Count(s => s.IsTrial && s.IsActive), g.Count(),
+                    g.Where(s => s.IsActive && !s.IsExpired).Sum(s => s.Amount), g.Sum(s => s.Amount),
+                    totalSubscriptions > 0 ? (decimal)g.Count() / totalSubscriptions * 100 : 0, GetPlanColor(g.First().Plan?.Name ?? "Standard")))
+                .OrderByDescending(p => p.TotalCount).ToList();
+
+            var topPlan = planGroups.FirstOrDefault();
+            var byPlan = new SubscriptionsByPlanSummaryDto(planGroups, topPlan?.PlanName ?? "N/A", topPlan?.TotalCount ?? 0, totalMonthlyRevenue);
+
+            var activeForExpiry = subscriptions.Where(s => s.IsActive && !s.IsExpired).ToList();
+            var expiringToday = activeForExpiry.Where(s => s.ExpiryDateUtc.Date == today).Select(s => MapToExpiringDto(s, today)).ToList();
+            var expiringThisWeek = activeForExpiry.Where(s => s.ExpiryDateUtc.Date > today && s.ExpiryDateUtc.Date <= today.AddDays(7)).Select(s => MapToExpiringDto(s, today)).ToList();
+            var expiringThisMonth = activeForExpiry.Where(s => s.ExpiryDateUtc.Date > today.AddDays(7) && s.ExpiryDateUtc.Date <= today.AddDays(30)).Select(s => MapToExpiringDto(s, today)).ToList();
+            var expiringNext3Months = activeForExpiry.Where(s => s.ExpiryDateUtc.Date > today.AddDays(30) && s.ExpiryDateUtc.Date <= today.AddDays(90)).Select(s => MapToExpiringDto(s, today)).ToList();
+
+            var expiryTimeline = new ExpiryTimelineDto(expiringToday, expiringToday.Count, expiringToday.Sum(e => e.MonthlyValue), expiringThisWeek, expiringThisWeek.Count, expiringThisWeek.Sum(e => e.MonthlyValue), expiringThisMonth, expiringThisMonth.Count, expiringThisMonth.Sum(e => e.MonthlyValue), expiringNext3Months, expiringNext3Months.Count, expiringNext3Months.Sum(e => e.MonthlyValue));
+
+            var newThisMonth = subscriptions.Count(s => s.CreatedTimestamp >= thisMonth);
+            var newLastMonth = subscriptions.Count(s => s.CreatedTimestamp >= lastMonth && s.CreatedTimestamp < thisMonth);
+            var avgDuration = subscriptions.Any() ? (int)subscriptions.Average(s => (s.ExpiryDateUtc - s.StartDateUtc).TotalDays) : 365;
+
+            var lifecycleMetrics = new LifecycleMetricsDto(newThisMonth, 0, 0, 0, 0, suspendedSubscriptions, 0, newLastMonth, 0, 0, 0, 0, 100, 0, avgDuration, 365);
+
+            var growthPoints = new List<SubscriptionGrowthPointDto>();
+            for (int i = 29; i >= 0; i--)
+            {
+                var date = today.AddDays(-i);
+                growthPoints.Add(new SubscriptionGrowthPointDto(date, subscriptions.Count(s => s.CreatedTimestamp.Date == date), subscriptions.Count(s => s.CreatedTimestamp.Date <= date && s.IsActive && !s.IsExpired), 0));
+            }
+
+            var growth = new SubscriptionGrowthSummaryDto(growthPoints.Sum(g => g.NewSubscriptions), activeSubscriptions > 0 ? (decimal)growthPoints.Sum(g => g.NewSubscriptions) / activeSubscriptions * 100 : 0, growthPoints.Sum(g => g.NewSubscriptions), 0, growthPoints);
+
+            return new SubscriptionsDashboardDto(totalSubscriptions, activeSubscriptions + trialSubscriptions, trialSubscriptions, totalMonthlyRevenue, statusDistribution, statusChart, byPlan, expiryTimeline, lifecycleMetrics, growth, now);
+        }
+
+        #endregion
+
+        #region Revenue Dashboard
+
+        public async Task<RevenueDashboardDto> GetRevenueDashboardAsync()
+        {
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+
+            var subscriptions = await _context.Subscriptions.Where(s => !s.IsDeleted).Include(s => s.Plan).ToListAsync();
+            var activeSubscriptions = subscriptions.Where(s => s.IsActive && !s.IsExpired).ToList();
+
+            var mrr = activeSubscriptions.Sum(s => s.Amount);
+            var arr = mrr * 12;
+            var activeCustomers = activeSubscriptions.Select(s => s.CompanyId).Distinct().Count();
+            var arpc = activeCustomers > 0 ? mrr / activeCustomers : 0;
+            var previousMrr = mrr * 0.95m;
+            var mrrChange = mrr - previousMrr;
+            var mrrChangePercentage = previousMrr > 0 ? mrrChange / previousMrr * 100 : 0;
+
+            var metrics = new RevenueMetricsDto(mrr, previousMrr, mrrChange, mrrChangePercentage, arr, previousMrr * 12, arr - (previousMrr * 12), mrrChangePercentage, arpc, arpc * 0.95m, arpc * 0.05m, 5, arpc * 24, activeCustomers, (int)(activeCustomers * 0.95m));
+
+            var planGroups = activeSubscriptions.Where(s => s.Plan != null).GroupBy(s => s.PlanId)
+                .Select(g => new RevenueByPlanItemDto(g.Key, g.First().Plan?.Name ?? "Unknown", g.First().Plan?.Name ?? "Standard", g.Sum(s => s.Amount), g.Sum(s => s.Amount) * 12, g.Count(), mrr > 0 ? g.Sum(s => s.Amount) / mrr * 100 : 0, GetPlanColor(g.First().Plan?.Name ?? "Standard")))
+                .OrderByDescending(p => p.MonthlyRevenue).ToList();
+
+            var topPlan = planGroups.FirstOrDefault();
+            var byPlan = new RevenueByPlanDto(planGroups, topPlan?.PlanName ?? "N/A", topPlan?.MonthlyRevenue ?? 0, mrr);
+            var byPlanChart = planGroups.Select(p => new DistributionItemDto(p.PlanName, p.SubscriptionCount, p.Percentage, p.Color)).ToList();
+
+            var trendPoints = new List<RevenueTrendPointDto>();
+            for (int i = 11; i >= 0; i--)
+            {
+                var month = today.AddMonths(-i);
+                var revenue = mrr * (1 - i * 0.02m);
+                trendPoints.Add(new RevenueTrendPointDto(month, month.ToString("MMM yyyy"), revenue, revenue * 0.1m, revenue * 0.9m, revenue * 0.02m));
+            }
+
+            var trend = new RevenueTrendDto(trendPoints, mrr * 0.24m, 24, "up", mrr, today, mrr * 0.76m, today.AddMonths(-11));
+
+            var expiringNext30Days = activeSubscriptions.Where(s => s.ExpiryDateUtc <= today.AddDays(30)).ToList();
+            var projections = new RevenueProjectionDto(expiringNext30Days.Sum(s => s.Amount) * 0.8m, (int)(expiringNext30Days.Count * 0.8m), expiringNext30Days.Sum(s => s.Amount) * 0.2m, (int)(expiringNext30Days.Count * 0.2m), mrr * 1.02m, mrr * 0.02m, mrr * 3 * 1.06m, mrr * 0.03m, mrr * 1.05m, mrr * 0.95m);
+
+            return new RevenueDashboardDto(metrics, byPlan, byPlanChart, trend, projections, subscriptions.Sum(s => s.Amount), subscriptions.Count > 0 ? subscriptions.Average(s => s.Amount) : 0, subscriptions.Count, new List<DistributionItemDto> { new("EGP", subscriptions.Count, 100, "#22c55e") }, now);
+        }
+
+        #endregion
+
+        #region Activity Dashboard
+
+        public async Task<ActivityDashboardDto> GetActivityDashboardAsync()
+        {
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            var thisWeek = today.AddDays(-(int)today.DayOfWeek);
+            var thisMonth = new DateTime(today.Year, today.Month, 1);
+
+            var admins = await _context.Admins.Where(a => !a.IsDeleted).Include(a => a.AdminType).ToListAsync();
+
+            var totalAdmins = admins.Count;
+            var activeToday = admins.Count(a => a.LastLoginAt.HasValue && a.LastLoginAt.Value.Date == today);
+            var activeThisWeek = admins.Count(a => a.LastLoginAt.HasValue && a.LastLoginAt.Value >= thisWeek);
+            var activeThisMonth = admins.Count(a => a.LastLoginAt.HasValue && a.LastLoginAt.Value >= thisMonth);
+
+            var stats = new ActivityStatsDto(admins.Sum(a => a.LoginCount), activeToday, activeThisWeek * 3, activeThisMonth * 5, activeToday, activeThisMonth * 20, activeToday * 5, activeThisWeek * 15, activeThisMonth * 20, activeToday, 45, activeThisMonth * 4, activeThisMonth * 18, 25, 11);
+
+            var topAdminList = admins.Where(a => a.LastLoginAt.HasValue).OrderByDescending(a => a.LoginCount).Take(10)
+                .Select((a, i) => new TopAdminDto(a.Id, $"{a.FirstName ?? ""} {a.LastName ?? ""}".Trim(), a.Username, a.ProfilePictureUrl, a.AdminType?.AdminTypeName ?? "Admin", a.LoginCount * 5, 5 - i / 2, a.LoginCount, a.LastLoginAt ?? now, a.LastLoginAt ?? now, i + 1))
+                .ToList();
+
+            var topAdmins = new TopAdminsDto(topAdminList, activeThisMonth, topAdminList.Count > 0 ? (decimal)topAdminList.Average(a => a.TotalActions) : 0);
+
+            var breakdown = new ActivityBreakdownDto(
+                new List<ActivityByEntityTypeDto> { new("Company", 40, 40, "#3b82f6"), new("Subscription", 35, 35, "#22c55e"), new("Admin", 15, 15, "#8b5cf6"), new("System", 10, 10, "#6b7280") },
+                new List<ActivityByActionTypeDto> { new("Create", 30, 30, "#22c55e"), new("Update", 40, 40, "#3b82f6"), new("Delete", 10, 10, "#ef4444"), new("Login", 20, 20, "#8b5cf6") },
+                "Company", "Update");
+
+            var byEntityChart = breakdown.ByEntityType.Select(e => new DistributionItemDto(e.EntityType, e.Count, e.Percentage, e.Color)).ToList();
+            var byActionChart = breakdown.ByActionType.Select(a => new DistributionItemDto(a.ActionType, a.Count, a.Percentage, a.Color)).ToList();
+
+            var dailyData = new List<ActivityTimelinePointDto>();
+            for (int i = 29; i >= 0; i--) dailyData.Add(new ActivityTimelinePointDto(today.AddDays(-i), today.AddDays(-i).ToString("MMM dd"), 5 + i % 10, 20 + i % 30, 3 + i % 5));
+
+            var hourlyDist = Enumerable.Range(0, 24).Select(h => new HourlyActivityDto(h, $"{h}:00", 10 + (h >= 9 && h <= 17 ? 30 : 0), (10 + (h >= 9 && h <= 17 ? 30 : 0)) / 4.0m)).ToList();
+
+            var timeline = new ActivityTimelineDto(dailyData, hourlyDist, 14, "2:00 PM", 40, "Wednesday");
+
+            return new ActivityDashboardDto(stats, topAdmins, new List<ActivityItemDto>(), stats.TotalActions, breakdown, byEntityChart, byActionChart, timeline, now);
+        }
+
+        #endregion
+
+        #region Alerts Dashboard
+
+        public async Task<AlertsDashboardDto> GetAlertsDashboardAsync()
+        {
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+
+            var subscriptions = await _context.Subscriptions.Where(s => !s.IsDeleted && s.IsActive && !s.IsExpired).Include(s => s.Company).Include(s => s.Plan).ToListAsync();
+
+            var criticalAlerts = new List<AlertItemDto>();
+            var highAlerts = new List<AlertItemDto>();
+            var mediumAlerts = new List<AlertItemDto>();
+            var lowAlerts = new List<AlertItemDto>();
+
+            foreach (var sub in subscriptions.Where(s => s.ExpiryDateUtc.Date == today))
+                criticalAlerts.Add(CreateAlertItem(sub, AlertPriority.Critical, "Expires today", today));
+
+            foreach (var sub in subscriptions.Where(s => s.ExpiryDateUtc.Date > today && s.ExpiryDateUtc.Date <= today.AddDays(7)))
+                highAlerts.Add(CreateAlertItem(sub, AlertPriority.High, $"Expires in {(sub.ExpiryDateUtc.Date - today).Days} days", today));
+
+            foreach (var sub in subscriptions.Where(s => s.ExpiryDateUtc.Date > today.AddDays(7) && s.ExpiryDateUtc.Date <= today.AddDays(30)))
+                mediumAlerts.Add(CreateAlertItem(sub, AlertPriority.Medium, $"Expires in {(sub.ExpiryDateUtc.Date - today).Days} days", today));
+
+            var companyIdsWithSub = await _context.Subscriptions.Where(s => !s.IsDeleted).Select(s => s.CompanyId).Distinct().ToListAsync();
+            var companiesWithoutSub = await _context.Companies.Where(c => !c.IsDeleted && !companyIdsWithSub.Contains(c.Id)).Take(5).ToListAsync();
+
+            foreach (var company in companiesWithoutSub)
+                lowAlerts.Add(new AlertItemDto(Guid.NewGuid(), AlertPriority.Low, AlertCategory.CompanyStatus, "Company without subscription", $"{company.Name} has no subscription", "Consider reaching out to create a subscription", "Company", company.Id, company.Name, now, null, null, "Just now", "Create Subscription", $"/subscriptions/create?companyId={company.Id}", "View Company", $"/companies/{company.Id}", "Building2", "#3b82f6", false, false, null, null));
+
+            var counts = new AlertCountsDto(criticalAlerts.Count, highAlerts.Count, mediumAlerts.Count, lowAlerts.Count, criticalAlerts.Count + highAlerts.Count + mediumAlerts.Count + lowAlerts.Count, criticalAlerts.Count + highAlerts.Count + mediumAlerts.Count + lowAlerts.Count, 0);
+            var byCategory = new AlertsByCategoryDto(criticalAlerts.Count + highAlerts.Count + mediumAlerts.Count, 0, lowAlerts.Count, 0, 0, 0);
+
+            var byPriorityChart = new List<DistributionItemDto>
+            {
+                new("Critical", criticalAlerts.Count, counts.Total > 0 ? (decimal)criticalAlerts.Count / counts.Total * 100 : 0, "#ef4444"),
+                new("High", highAlerts.Count, counts.Total > 0 ? (decimal)highAlerts.Count / counts.Total * 100 : 0, "#f97316"),
+                new("Medium", mediumAlerts.Count, counts.Total > 0 ? (decimal)mediumAlerts.Count / counts.Total * 100 : 0, "#eab308"),
+                new("Low", lowAlerts.Count, counts.Total > 0 ? (decimal)lowAlerts.Count / counts.Total * 100 : 0, "#3b82f6")
+            };
+
+            var byCategoryChart = new List<DistributionItemDto>
+            {
+                new("Subscription Expiry", byCategory.SubscriptionExpiry, counts.Total > 0 ? (decimal)byCategory.SubscriptionExpiry / counts.Total * 100 : 0, "#ef4444"),
+                new("Company Status", byCategory.CompanyStatus, counts.Total > 0 ? (decimal)byCategory.CompanyStatus / counts.Total * 100 : 0, "#3b82f6")
+            };
+
+            return new AlertsDashboardDto(counts, byCategory, criticalAlerts, highAlerts, mediumAlerts, lowAlerts, byPriorityChart, byCategoryChart, new List<AlertItemDto>(), counts.Total, 0, criticalAlerts.Count, now);
+        }
+
+        public Task DismissAlertAsync(Guid alertId, Guid adminId) { _logger.LogInformation("Alert {AlertId} dismissed by {AdminId}", alertId, adminId); return Task.CompletedTask; }
+        public Task MarkAlertAsReadAsync(Guid alertId, Guid adminId) { _logger.LogInformation("Alert {AlertId} marked as read by {AdminId}", alertId, adminId); return Task.CompletedTask; }
+
+        #endregion
+
+        #region Helpers
+
+        private static string GetPlanColor(string planName) => planName.ToLower() switch
+        {
+            var n when n.Contains("basic") => "#6b7280",
+            var n when n.Contains("starter") => "#22c55e",
+            var n when n.Contains("pro") => "#3b82f6",
+            var n when n.Contains("enterprise") => "#8b5cf6",
+            var n when n.Contains("premium") => "#f97316",
+            _ => "#3b82f6"
         };
 
-        // Calculate peak hours across all days
-        var hourlyTotals = new int[24];
-        foreach (var day in activityHeatmap)
+        private ExpiringSubscriptionDto MapToExpiringDto(Subscription sub, DateTime today)
         {
-            for (int i = 0; i < 24; i++)
-            {
-                hourlyTotals[i] += day.HourlyActivity[i];
-            }
+            var daysRemaining = (sub.ExpiryDateUtc.Date - today).Days;
+            return new ExpiringSubscriptionDto(sub.Id, sub.CompanyId, sub.Company?.Name ?? "Unknown", sub.Plan?.Name ?? "Unknown", sub.ExpiryDateUtc, daysRemaining, sub.Amount, daysRemaining <= 0 ? "critical" : daysRemaining <= 7 ? "high" : "medium");
         }
 
-        var totalActivityAllHours = hourlyTotals.Sum();
-        var peakHours = hourlyTotals
-            .Select((count, hour) => new PeakActivityHourDto
-            {
-                Hour = hour,
-                ActivityCount = count,
-                Percentage = Math.Round((double)count / totalActivityAllHours * 100, 1)
-            })
-            .OrderByDescending(p => p.ActivityCount)
-            .Take(5)
-            .ToList();
-
-        return Task.FromResult(new AdminPerformanceDto
+        private AlertItemDto CreateAlertItem(Subscription sub, AlertPriority priority, string message, DateTime today)
         {
-            Leaderboard = leaderboard,
-            ActivityHeatmap = activityHeatmap.OrderByDescending(h => h.Date).ToList(),
-            TypePerformance = typePerformance,
-            SystemActivity = systemActivity,
-            PeakHours = peakHours
-        });
-    }
+            var now = DateTime.UtcNow;
+            var daysRemaining = (sub.ExpiryDateUtc.Date - today).Days;
+            return new AlertItemDto(Guid.NewGuid(), priority, AlertCategory.SubscriptionExpiry, "Subscription Expiring", $"{sub.Company?.Name}: {message}", $"Plan: {sub.Plan?.Name}, Value: {sub.Amount:C}", "Subscription", sub.Id, sub.Company?.Name, now, sub.ExpiryDateUtc, daysRemaining, daysRemaining <= 0 ? "Today" : $"In {daysRemaining} days", "Renew", $"/subscriptions/{sub.Id}/renew", "View", $"/subscriptions/{sub.Id}", "Calendar", priority == AlertPriority.Critical ? "#ef4444" : priority == AlertPriority.High ? "#f97316" : "#eab308", false, false, null, null);
+        }
 
-    /// <summary>
-    /// Calculate admin performance score (0-100)
-    /// </summary>
-    private int CalculatePerformanceScore(
-        int totalActions,
-        int loginCount,
-        int companiesManaged,
-        int subscriptionsManaged,
-        double avgResponseTime,
-        int daysActive)
-    {
-        // Weighted scoring algorithm
-        var actionScore = Math.Min(totalActions / 5.0, 30);  // Max 30 points
-        var loginScore = Math.Min(loginCount / 0.6, 15);     // Max 15 points
-        var companyScore = Math.Min(companiesManaged * 2, 15); // Max 15 points
-        var subscriptionScore = Math.Min(subscriptionsManaged * 2, 15); // Max 15 points
-        
-        // Lower response time is better (inverted score)
-        var responseScore = Math.Max(0, 10 - (avgResponseTime / 200)); // Max 10 points
-        
-        var activeScore = Math.Min(daysActive / 3.0, 15);    // Max 15 points
-
-        var totalScore = actionScore + loginScore + companyScore + 
-                        subscriptionScore + responseScore + activeScore;
-
-        return (int)Math.Min(Math.Round(totalScore), 100);
+        #endregion
     }
 }

@@ -1,45 +1,55 @@
-using Application.DTOs.Dashboard;
-using Application.DTOs.Dashboard.Activity;
-using Application.DTOs.Dashboard.Admins;
-using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Overview;
 using Application.DTOs.Dashboard.Companies;
 using Application.DTOs.Dashboard.Subscriptions;
+using Application.DTOs.Dashboard.Revenue;
+using Application.DTOs.Dashboard.Activity;
+using Application.DTOs.Dashboard.Alerts;
 
-namespace Application.Services;
+namespace Application.Services_Interfaces;
 
 /// <summary>
-/// Service interface for dashboard operations
+/// Dashboard service interface for all dashboard analytics
 /// </summary>
 public interface IDashboardService
 {
     /// <summary>
-    /// Gets the main dashboard with all statistics and metrics (lightweight overview)
+    /// Get overview dashboard with KPIs and quick stats
     /// </summary>
-    Task<DashboardDto> GetDashboardAsync();
-
+    Task<OverviewDashboardDto> GetOverviewAsync();
+    
     /// <summary>
-    /// Gets detailed company analytics
+    /// Get companies dashboard with company analytics
     /// </summary>
-    Task<CompanyStatsDto> GetCompanyAnalyticsAsync();
-
+    Task<CompaniesDashboardDto> GetCompaniesDashboardAsync();
+    
     /// <summary>
-    /// Gets detailed subscription analytics
+    /// Get subscriptions dashboard with subscription analytics
     /// </summary>
-    Task<SubscriptionStatsDto> GetSubscriptionAnalyticsAsync();
-
+    Task<SubscriptionsDashboardDto> GetSubscriptionsDashboardAsync();
+    
     /// <summary>
-    /// Gets detailed admin analytics
+    /// Get revenue dashboard with financial analytics
+    /// Requires SuperAdmin access
     /// </summary>
-    Task<AdminStatsDto> GetAdminAnalyticsAsync();
-
+    Task<RevenueDashboardDto> GetRevenueDashboardAsync();
+    
     /// <summary>
-    /// Gets system alerts and warnings
+    /// Get activity dashboard with admin activity analytics
     /// </summary>
-    Task<AlertsDto> GetAlertsAsync();
-
+    Task<ActivityDashboardDto> GetActivityDashboardAsync();
+    
     /// <summary>
-    /// Gets recent activity summary
+    /// Get alerts dashboard with system alerts
     /// </summary>
-    Task<RecentActivityDto> GetRecentActivityAsync();
+    Task<AlertsDashboardDto> GetAlertsDashboardAsync();
+    
+    /// <summary>
+    /// Dismiss an alert
+    /// </summary>
+    Task DismissAlertAsync(Guid alertId, Guid adminId);
+    
+    /// <summary>
+    /// Mark alert as read
+    /// </summary>
+    Task MarkAlertAsReadAsync(Guid alertId, Guid adminId);
 }
-

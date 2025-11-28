@@ -223,6 +223,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<ISearchService, SearchService>();
+        // Dashboard Service
         services.AddScoped<IDashboardService, DashboardService>();
         
         // Subscription Engine Services (Phase 1)

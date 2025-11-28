@@ -1,10 +1,10 @@
-using Application.DTOs.Dashboard;
-using Application.DTOs.Dashboard.Activity;
-using Application.DTOs.Dashboard.Admins;
-using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Overview;
 using Application.DTOs.Dashboard.Companies;
 using Application.DTOs.Dashboard.Subscriptions;
-using Application.DTOs.Responses;
+using Application.DTOs.Dashboard.Revenue;
+using Application.DTOs.Dashboard.Activity;
+using Application.DTOs.Dashboard.Alerts;
+using Application.Services_Interfaces;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,123 +12,127 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebAPI.Controllers;
 
 /// <summary>
-/// Dashboard Controller - Clean and Professional
-/// Provides system statistics and metrics
+/// Dashboard analytics endpoints
 /// </summary>
+[Route("api/[controller]")]
 [ApiController]
-[Route("api/dashboard")]
-[Authorize(Policy = "AdminOrSuperAdmin")]
+[Authorize]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
     private readonly ILocalizationService _localizer;
+    private readonly ILogger<DashboardController> _logger;
 
-    public DashboardController(IDashboardService dashboardService, ILocalizationService localizer)
+    public DashboardController(
+        IDashboardService dashboardService,
+        ILocalizationService localizer,
+        ILogger<DashboardController> logger)
     {
         _dashboardService = dashboardService;
         _localizer = localizer;
+        _logger = logger;
     }
 
     /// <summary>
-    /// Gets the main dashboard with all statistics and metrics (lightweight overview)
+    /// Get overview dashboard with KPIs and quick stats
     /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetDashboard()
+    [HttpGet("overview")]
+    public async Task<ActionResult<OverviewDashboardDto>> GetOverview()
     {
-        try
-        {
-            var result = await _dashboardService.GetDashboardAsync();
-            return Ok(new ApiResponse<DashboardDto>(200, _localizer["Dashboard.Retrieved"], result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
-        }
+        _logger.LogInformation("Getting overview dashboard");
+        var result = await _dashboardService.GetOverviewAsync();
+        return Ok(result);
     }
 
     /// <summary>
-    /// Gets detailed company analytics
+    /// Get companies dashboard with company analytics
     /// </summary>
     [HttpGet("companies")]
-    public async Task<IActionResult> GetCompanyAnalytics()
+    public async Task<ActionResult<CompaniesDashboardDto>> GetCompaniesDashboard()
     {
-        try
-        {
-            var result = await _dashboardService.GetCompanyAnalyticsAsync();
-            return Ok(new ApiResponse<CompanyStatsDto>(200, _localizer["Dashboard.CompaniesRetrieved"], result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
-        }
+        _logger.LogInformation("Getting companies dashboard");
+        var result = await _dashboardService.GetCompaniesDashboardAsync();
+        return Ok(result);
     }
 
     /// <summary>
-    /// Gets detailed subscription analytics
+    /// Get subscriptions dashboard with subscription analytics
     /// </summary>
     [HttpGet("subscriptions")]
-    public async Task<IActionResult> GetSubscriptionAnalytics()
+    public async Task<ActionResult<SubscriptionsDashboardDto>> GetSubscriptionsDashboard()
     {
-        try
-        {
-            var result = await _dashboardService.GetSubscriptionAnalyticsAsync();
-            return Ok(new ApiResponse<SubscriptionStatsDto>(200, _localizer["Dashboard.SubscriptionsRetrieved"], result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
-        }
+        _logger.LogInformation("Getting subscriptions dashboard");
+        var result = await _dashboardService.GetSubscriptionsDashboardAsync();
+        return Ok(result);
     }
 
     /// <summary>
-    /// Gets detailed admin analytics
+    /// Get revenue dashboard with financial analytics
+    /// SuperAdmin only
     /// </summary>
-    [HttpGet("admins")]
-    public async Task<IActionResult> GetAdminAnalytics()
+    [HttpGet("revenue")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<ActionResult<RevenueDashboardDto>> GetRevenueDashboard()
     {
-        try
-        {
-            var result = await _dashboardService.GetAdminAnalyticsAsync();
-            return Ok(new ApiResponse<AdminStatsDto>(200, _localizer["Dashboard.AdminsRetrieved"], result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
-        }
+        _logger.LogInformation("Getting revenue dashboard");
+        var result = await _dashboardService.GetRevenueDashboardAsync();
+        return Ok(result);
     }
 
     /// <summary>
-    /// Gets system alerts and warnings
-    /// </summary>
-    [HttpGet("alerts")]
-    public async Task<IActionResult> GetAlerts()
-    {
-        try
-        {
-            var result = await _dashboardService.GetAlertsAsync();
-            return Ok(new ApiResponse<AlertsDto>(200, _localizer["Dashboard.AlertsRetrieved"], result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
-        }
-    }
-
-    /// <summary>
-    /// Gets recent activity summary
+    /// Get activity dashboard with admin activity analytics
     /// </summary>
     [HttpGet("activity")]
-    public async Task<IActionResult> GetRecentActivity()
+    public async Task<ActionResult<ActivityDashboardDto>> GetActivityDashboard()
     {
-        try
+        _logger.LogInformation("Getting activity dashboard");
+        var result = await _dashboardService.GetActivityDashboardAsync();
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get alerts dashboard with system alerts
+    /// </summary>
+    [HttpGet("alerts")]
+    public async Task<ActionResult<AlertsDashboardDto>> GetAlertsDashboard()
+    {
+        _logger.LogInformation("Getting alerts dashboard");
+        var result = await _dashboardService.GetAlertsDashboardAsync();
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Dismiss an alert
+    /// </summary>
+    [HttpPost("alerts/{alertId}/dismiss")]
+    public async Task<IActionResult> DismissAlert(Guid alertId)
+    {
+        // Get current admin ID from claims
+        var adminIdClaim = User.FindFirst("AdminId")?.Value;
+        if (string.IsNullOrEmpty(adminIdClaim) || !Guid.TryParse(adminIdClaim, out var adminId))
         {
-            var result = await _dashboardService.GetRecentActivityAsync();
-            return Ok(new ApiResponse<RecentActivityDto>(200, _localizer["Dashboard.ActivityRetrieved"], result));
+            return Unauthorized();
         }
-        catch (Exception ex)
+
+        _logger.LogInformation("Dismissing alert {AlertId} by admin {AdminId}", alertId, adminId);
+        await _dashboardService.DismissAlertAsync(alertId, adminId);
+        return Ok(new { message = _localizer["Dashboard.AlertDismissed"] });
+    }
+
+    /// <summary>
+    /// Mark alert as read
+    /// </summary>
+    [HttpPost("alerts/{alertId}/read")]
+    public async Task<IActionResult> MarkAlertAsRead(Guid alertId)
+    {
+        var adminIdClaim = User.FindFirst("AdminId")?.Value;
+        if (string.IsNullOrEmpty(adminIdClaim) || !Guid.TryParse(adminIdClaim, out var adminId))
         {
-            return StatusCode(500, new ApiResponse<string>(500, ex.Message));
+            return Unauthorized();
         }
+
+        _logger.LogInformation("Marking alert {AlertId} as read by admin {AdminId}", alertId, adminId);
+        await _dashboardService.MarkAlertAsReadAsync(alertId, adminId);
+        return Ok(new { message = _localizer["Dashboard.AlertRead"] });
     }
 }
-
