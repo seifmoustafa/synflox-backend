@@ -5,8 +5,8 @@ namespace Application.DTOs.Dashboard.Overview;
 /// </summary>
 public record KpiCardDto(
     string Title,
-    int Value,
-    int? PreviousValue,
+    decimal Value, // Changed from int to decimal to support large revenue values
+    decimal? PreviousValue, // Changed from int? to decimal? for consistency
     decimal? ChangePercentage,
     string? ChangeDirection, // "up", "down", "unchanged"
     string Icon,
