@@ -8,6 +8,7 @@ using Application.DTOs.Dashboard.Shared;
 using Application.Services_Interfaces;
 using Domain.Entities.Licensing;
 using Domain.Entities.Subscriptions;
+using Domain.Interfaces;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -21,13 +22,19 @@ public class DashboardService : IDashboardService
 {
     private readonly ApplicationDBContext _context;
     private readonly ILogger<DashboardService> _logger;
+    private readonly IActivityLogRepository _activityLogRepository;
+    private readonly Application.Services.ILocalizationService _localizer;
 
     public DashboardService(
         ApplicationDBContext context,
-        ILogger<DashboardService> logger)
+        ILogger<DashboardService> logger,
+        IActivityLogRepository activityLogRepository,
+        Application.Services.ILocalizationService localizer)
     {
         _context = context;
         _logger = logger;
+        _activityLogRepository = activityLogRepository;
+        _localizer = localizer;
     }
 
     #region Overview Dashboard
@@ -36,7 +43,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
             var lastMonth = today.AddMonths(-1);
             var last30Days = today.AddDays(-30);
@@ -194,6 +201,23 @@ public class DashboardService : IDashboardService
                 growthTrend.Add(new TimeSeriesDataPointDto(date, date.ToString("MMM dd"), companiesOnDate));
             }
 
+            // Fetch recent activities
+            var recentActivities = await _activityLogRepository.GetRecentAsync(10);
+            var recentActivityDtos = recentActivities.Select(a => new RecentActivityItemDto(
+                Id: a.Id,
+                ActionType: a.ActionType,
+                EntityType: a.EntityType,
+                EntityName: a.EntityName,
+                EntityId: a.EntityId,
+                PerformedBy: a.PerformedByName ?? _localizer["Activity.System"],
+                PerformedById: a.PerformedBy ?? Guid.Empty,
+                PerformedAt: a.Timestamp,
+                Description: GetLocalizedActivityDescription(a.ActionType, a.EntityType, a.EntityName),
+                Icon: GetIconForEntityType(a.EntityType),
+                Color: GetColorForActionType(a.ActionType),
+                TimeAgo: GetLocalizedTimeAgo(a.Timestamp)
+            )).ToList();
+
             return new OverviewDashboardDto(
                 CompaniesKpi: companiesKpi,
                 SubscriptionsKpi: subscriptionsKpi,
@@ -202,7 +226,7 @@ public class DashboardService : IDashboardService
                 Stats: stats,
                 SubscriptionStatusDistribution: statusDistribution,
                 GrowthTrend: growthTrend,
-                RecentActivity: new List<RecentActivityItemDto>(),
+                RecentActivity: recentActivityDtos,
                 GeneratedAt: now
             );
         }
@@ -221,7 +245,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
             var thisMonth = new DateTime(today.Year, today.Month, 1);
             var thisWeek = today.AddDays(-(int)today.DayOfWeek);
@@ -330,7 +354,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
 
             var subscriptions = await _context.Subscriptions
@@ -401,7 +425,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
 
             var subscriptions = await _context.Subscriptions
@@ -470,7 +494,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
             var thisWeek = today.AddDays(-(int)today.DayOfWeek);
             var thisMonth = new DateTime(today.Year, today.Month, 1);
@@ -533,7 +557,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
 
             var subscriptions = await _context.Subscriptions
@@ -1051,7 +1075,7 @@ public class DashboardService : IDashboardService
 
     private AlertItemDto CreateAlertItem(Subscription sub, AlertPriority priority, string message, DateTime today)
     {
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var daysRemaining = (sub.ExpiryDateUtc.Date - today).Days;
         
         return new AlertItemDto(
@@ -1108,6 +1132,65 @@ public class DashboardService : IDashboardService
             DismissedAt: null,
             DismissedById: null
         );
+    }
+
+    #endregion
+
+    #region Activity Helpers
+
+    private string GetLocalizedTimeAgo(DateTime timestamp)
+    {
+        var now = DateTime.Now;
+        var diff = now - timestamp;
+
+        if (diff.TotalMinutes < 1) return _localizer["Activity.Time.JustNow"];
+        if (diff.TotalMinutes < 60) return string.Format(_localizer["Activity.Time.MinutesAgo"], (int)diff.TotalMinutes);
+        if (diff.TotalHours < 24) return string.Format(_localizer["Activity.Time.HoursAgo"], (int)diff.TotalHours);
+        if (diff.TotalDays < 7) return string.Format(_localizer["Activity.Time.DaysAgo"], (int)diff.TotalDays);
+        if (diff.TotalDays < 30) return string.Format(_localizer["Activity.Time.WeeksAgo"], (int)(diff.TotalDays / 7));
+        return timestamp.ToString("MMM dd");
+    }
+
+    private string GetLocalizedActivityDescription(string actionType, string entityType, string entityName)
+    {
+        var localizedEntityType = _localizer[$"Activity.EntityType.{entityType}"];
+        var template = _localizer[$"Activity.Action.{actionType}"];
+        
+        return template
+            .Replace("{entityType}", localizedEntityType)
+            .Replace("{entityName}", entityName);
+    }
+
+    private static string GetIconForEntityType(string entityType)
+    {
+        return entityType switch
+        {
+            "Company" => "Building2",
+            "Subscription" => "CreditCard",
+            "Admin" => "User",
+            "Plan" => "Package",
+            "Project" => "FolderOpen",
+            "Module" => "Box",
+            _ => "Activity"
+        };
+    }
+
+    private static string GetColorForActionType(string actionType)
+    {
+        return actionType switch
+        {
+            "Created" => "#22c55e", // green
+            "Updated" => "#3b82f6", // blue
+            "Deleted" => "#ef4444", // red
+            "Activated" => "#22c55e", // green
+            "Deactivated" => "#f97316", // orange
+            "Suspended" => "#ef4444", // red
+            "Resumed" => "#22c55e", // green
+            "Renewed" => "#8b5cf6", // purple
+            "Upgraded" => "#3b82f6", // blue
+            "Cancelled" => "#ef4444", // red
+            _ => "#6b7280" // gray
+        };
     }
 
     #endregion

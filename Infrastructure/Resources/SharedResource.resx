@@ -1926,4 +1926,94 @@
     <value>Complete 2FA setup to restore full security to your account.</value>
   </data>
 
+  <!-- ===== ACTIVITY TRACKING ===== -->
+  <!-- Entity Types -->
+  <data name="Activity.EntityType.Company" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="Activity.EntityType.Subscription" xml:space="preserve">
+    <value>Subscription</value>
+  </data>
+  <data name="Activity.EntityType.Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Activity.EntityType.Plan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="Activity.EntityType.Project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Activity.EntityType.Module" xml:space="preserve">
+    <value>Module</value>
+  </data>
+  
+  <!-- Action Types -->
+  <data name="Activity.Action.Created" xml:space="preserve">
+    <value>{entityType} "{entityName}" was created</value>
+  </data>
+  <data name="Activity.Action.Updated" xml:space="preserve">
+    <value>{entityType} "{entityName}" was updated</value>
+  </data>
+  <data name="Activity.Action.Deleted" xml:space="preserve">
+    <value>{entityType} "{entityName}" was deleted</value>
+  </data>
+  <data name="Activity.Action.Activated" xml:space="preserve">
+    <value>{entityType} "{entityName}" was activated</value>
+  </data>
+  <data name="Activity.Action.Deactivated" xml:space="preserve">
+    <value>{entityType} "{entityName}" was deactivated</value>
+  </data>
+  <data name="Activity.Action.Suspended" xml:space="preserve">
+    <value>{entityType} "{entityName}" was suspended</value>
+  </data>
+  <data name="Activity.Action.Resumed" xml:space="preserve">
+    <value>{entityType} "{entityName}" was resumed</value>
+  </data>
+  <data name="Activity.Action.Renewed" xml:space="preserve">
+    <value>{entityType} "{entityName}" was renewed</value>
+  </data>
+  <data name="Activity.Action.Upgraded" xml:space="preserve">
+    <value>{entityType} "{entityName}" was upgraded</value>
+  </data>
+  <data name="Activity.Action.Cancelled" xml:space="preserve">
+    <value>{entityType} "{entityName}" was cancelled</value>
+  </data>
+  <data name="Activity.Action.Extended" xml:space="preserve">
+    <value>{entityType} "{entityName}" was extended</value>
+  </data>
+  <data name="Activity.Action.Paused" xml:space="preserve">
+    <value>{entityType} "{entityName}" was paused</value>
+  </data>
+  <data name="Activity.Action.Unpaused" xml:space="preserve">
+    <value>{entityType} "{entityName}" was unpaused</value>
+  </data>
+  <data name="Activity.Action.Reactivated" xml:space="preserve">
+    <value>{entityType} "{entityName}" was reactivated</value>
+  </data>
+  <data name="Activity.Action.TrialStopped" xml:space="preserve">
+    <value>{entityType} "{entityName}" trial was stopped</value>
+  </data>
+  
+  <!-- Time Ago -->
+  <data name="Activity.Time.JustNow" xml:space="preserve">
+    <value>Just now</value>
+  </data>
+  <data name="Activity.Time.MinutesAgo" xml:space="preserve">
+    <value>{0}m ago</value>
+  </data>
+  <data name="Activity.Time.HoursAgo" xml:space="preserve">
+    <value>{0}h ago</value>
+  </data>
+  <data name="Activity.Time.DaysAgo" xml:space="preserve">
+    <value>{0}d ago</value>
+  </data>
+  <data name="Activity.Time.WeeksAgo" xml:space="preserve">
+    <value>{0}w ago</value>
+  </data>
+  
+  <!-- System -->
+  <data name="Activity.System" xml:space="preserve">
+    <value>System</value>
+  </data>
+
 </root>

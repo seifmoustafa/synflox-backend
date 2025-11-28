@@ -5,9 +5,11 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Application.DTOs.Company;
 using Application.Services;
+using Application.Services_Interfaces;
 using AutoMapper;
 using Domain.Entities.Common;
 using Domain.Entities.Licensing;
+using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
 
@@ -21,6 +23,7 @@ public class CompanyService : ICompanyService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
+    private readonly IActivityLogService _activityLogService;
 
     public CompanyService(
         ICompanyRepository repository,
@@ -28,7 +31,8 @@ public class CompanyService : ICompanyService
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IEmailService emailService)
+        IEmailService emailService,
+        IActivityLogService activityLogService)
     {
         _repository = repository;
         _mapper = mapper;
@@ -36,6 +40,7 @@ public class CompanyService : ICompanyService
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _emailService = emailService;
+        _activityLogService = activityLogService;
     }
 
     public async Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto, string? language = null)
@@ -52,6 +57,22 @@ public class CompanyService : ICompanyService
         await _unitOfWork.SaveChangesAsync();
 
         var result = _mapper.Map<CompanyDto>(created);
+        
+        // Log activity
+        try
+        {
+            var currentUserId = _currentUserService.UserId;
+            await _activityLogService.LogCompanyActivityAsync(
+                ActivityActionType.Created,
+                created.Id,
+                created.Name,
+                currentUserId != Guid.Empty ? currentUserId : null,
+                null); // Let ActivityLogService fetch the username from DB
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log activity: {ex.Message}");
+        }
         
         // Send welcome email
         try

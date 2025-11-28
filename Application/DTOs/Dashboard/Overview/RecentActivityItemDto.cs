@@ -14,5 +14,6 @@ public record RecentActivityItemDto(
     DateTime PerformedAt,
     string? Description,
     string Icon,
-    string Color
+    string Color,
+    string TimeAgo          // Localized time ago string
 );

@@ -1926,4 +1926,94 @@
     <value>أكمل إعداد المصادقة الثنائية لاستعادة الأمان الكامل لحسابك.</value>
   </data>
 
+  <!-- ===== ACTIVITY TRACKING ===== -->
+  <!-- Entity Types -->
+  <data name="Activity.EntityType.Company" xml:space="preserve">
+    <value>الشركة</value>
+  </data>
+  <data name="Activity.EntityType.Subscription" xml:space="preserve">
+    <value>الاشتراك</value>
+  </data>
+  <data name="Activity.EntityType.Admin" xml:space="preserve">
+    <value>المسؤول</value>
+  </data>
+  <data name="Activity.EntityType.Plan" xml:space="preserve">
+    <value>الخطة</value>
+  </data>
+  <data name="Activity.EntityType.Project" xml:space="preserve">
+    <value>المشروع</value>
+  </data>
+  <data name="Activity.EntityType.Module" xml:space="preserve">
+    <value>الوحدة</value>
+  </data>
+  
+  <!-- Action Types -->
+  <data name="Activity.Action.Created" xml:space="preserve">
+    <value>تم إنشاء {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Updated" xml:space="preserve">
+    <value>تم تحديث {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Deleted" xml:space="preserve">
+    <value>تم حذف {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Activated" xml:space="preserve">
+    <value>تم تفعيل {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Deactivated" xml:space="preserve">
+    <value>تم إلغاء تفعيل {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Suspended" xml:space="preserve">
+    <value>تم تعليق {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Resumed" xml:space="preserve">
+    <value>تم استئناف {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Renewed" xml:space="preserve">
+    <value>تم تجديد {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Upgraded" xml:space="preserve">
+    <value>تم ترقية {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Cancelled" xml:space="preserve">
+    <value>تم إلغاء {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Extended" xml:space="preserve">
+    <value>تم تمديد {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Paused" xml:space="preserve">
+    <value>تم إيقاف {entityType} "{entityName}" مؤقتاً</value>
+  </data>
+  <data name="Activity.Action.Unpaused" xml:space="preserve">
+    <value>تم استئناف {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.Reactivated" xml:space="preserve">
+    <value>تم إعادة تفعيل {entityType} "{entityName}"</value>
+  </data>
+  <data name="Activity.Action.TrialStopped" xml:space="preserve">
+    <value>تم إيقاف تجربة {entityType} "{entityName}"</value>
+  </data>
+  
+  <!-- Time Ago -->
+  <data name="Activity.Time.JustNow" xml:space="preserve">
+    <value>الآن</value>
+  </data>
+  <data name="Activity.Time.MinutesAgo" xml:space="preserve">
+    <value>منذ {0} دقيقة</value>
+  </data>
+  <data name="Activity.Time.HoursAgo" xml:space="preserve">
+    <value>منذ {0} ساعة</value>
+  </data>
+  <data name="Activity.Time.DaysAgo" xml:space="preserve">
+    <value>منذ {0} يوم</value>
+  </data>
+  <data name="Activity.Time.WeeksAgo" xml:space="preserve">
+    <value>منذ {0} أسبوع</value>
+  </data>
+  
+  <!-- System -->
+  <data name="Activity.System" xml:space="preserve">
+    <value>النظام</value>
+  </data>
+
 </root>

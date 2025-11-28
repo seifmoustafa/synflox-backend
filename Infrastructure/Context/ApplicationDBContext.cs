@@ -65,6 +65,10 @@ namespace Infrastructure.Context
         public DbSet<ClientTokenUsageLog> ClientTokenUsageLogs { get; set; }
         #endregion
 
+        #region Activity Tracking
+        public DbSet<Domain.Entities.Activity.ActivityLog> ActivityLogs { get; set; }
+        #endregion
+
         #region References
         //public DbSet<EntityBaseModelClass> Entity { get; set; }
         #endregion

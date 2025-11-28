@@ -295,6 +295,10 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IClientAccessTokenRepository, ClientAccessTokenRepository>();
         services.AddScoped<IClientTokenUsageLogRepository, ClientTokenUsageLogRepository>();
         
+        // Activity Tracking
+        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+        services.AddScoped<IActivityLogService, ActivityLogService>();
+        
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion
 
