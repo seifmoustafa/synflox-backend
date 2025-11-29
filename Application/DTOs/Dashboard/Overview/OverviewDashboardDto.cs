@@ -17,7 +17,7 @@ public record OverviewDashboardDto(
     
     // Mini Charts Data
     List<DistributionItemDto> SubscriptionStatusDistribution,
-    List<TimeSeriesDataPointDto> GrowthTrend,  // Last 30 days
+    List<GrowthTrendDataPointDto> GrowthTrend,  // Last 30 days with Companies & Subscriptions
     
     // Recent Activity Feed
     List<RecentActivityItemDto> RecentActivity,

@@ -18,6 +18,16 @@ public record TimeSeriesDataPointDto(
 );
 
 /// <summary>
+/// Growth trend data point with both companies and subscriptions
+/// </summary>
+public record GrowthTrendDataPointDto(
+    DateTime Date,
+    string Label,
+    int Companies,
+    int Subscriptions
+);
+
+/// <summary>
 /// Distribution item for pie/doughnut charts
 /// </summary>
 public record DistributionItemDto(

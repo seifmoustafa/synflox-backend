@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Application.DTOs.Subscriptions;
 using Application.Services;
+using Application.Services_Interfaces;
 using AutoMapper;
 using Domain.Entities.Subscriptions;
 using Domain.Entities.Common;
@@ -34,6 +35,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly ICurrentUserService _currentUserService;
     private readonly IClientTokenService _clientTokenService;
     private readonly IEmailService _emailService;
+    private readonly IActivityLogService _activityLogService;
     private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
@@ -48,6 +50,7 @@ public class SubscriptionService : ISubscriptionService
         ICurrentUserService currentUserService,
         IClientTokenService clientTokenService,
         IEmailService emailService,
+        IActivityLogService activityLogService,
         ILogger<SubscriptionService> logger)
     {
         _subscriptionRepo = subscriptionRepo;
@@ -61,6 +64,7 @@ public class SubscriptionService : ISubscriptionService
         _currentUserService = currentUserService;
         _clientTokenService = clientTokenService;
         _emailService = emailService;
+        _activityLogService = activityLogService;
         _logger = logger;
     }
 
@@ -171,6 +175,15 @@ public class SubscriptionService : ISubscriptionService
         // Create subscription
         await _subscriptionRepo.AddAsync(subscription);
         await _unitOfWork.SaveChangesAsync();
+
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Created,
+            subscription.Id,
+            $"{company.Name} - {plan.Name}",
+            _currentUserService.UserId,
+            null,
+            dto.StartWithTrial ? "Trial subscription created" : "Subscription created");
 
         // Create outbox event for email notification
         await CreateOutboxEventAsync(
@@ -319,6 +332,15 @@ public class SubscriptionService : ISubscriptionService
             reason: dto.Reason ?? "Subscription renewed");
         
         await _unitOfWork.SaveChangesAsync();
+
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Renewed,
+            subscription.Id,
+            $"{company.Name} - {plan.Name}",
+            _currentUserService.UserId,
+            null,
+            $"Subscription renewed until {subscription.ExpiryDateUtc:d}");
 
         // Send renewal email notification
         await _emailService.SendSubscriptionRenewedEmailAsync(
@@ -529,6 +551,15 @@ public class SubscriptionService : ISubscriptionService
         
         await _unitOfWork.SaveChangesAsync();
 
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Cancelled,
+            subscription.Id,
+            $"{subscription.Company.Name} - {subscription.Plan.Name}",
+            _currentUserService.UserId,
+            null,
+            reason ?? "Subscription cancelled");
+
         // Send email notification
         await _emailService.SendSubscriptionCancelledEmailAsync(
             subscription.Company.ContactEmail,
@@ -572,6 +603,15 @@ public class SubscriptionService : ISubscriptionService
             reason: reason ?? "Suspended by administrator");
         
         await _unitOfWork.SaveChangesAsync();
+
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Suspended,
+            subscription.Id,
+            $"{subscription.Company.Name} - {subscription.Plan.Name}",
+            _currentUserService.UserId,
+            null,
+            reason ?? "Subscription suspended");
 
         // Send email notification
         await _emailService.SendSubscriptionSuspendedEmailAsync(
@@ -617,6 +657,15 @@ public class SubscriptionService : ISubscriptionService
             reason: reason ?? "Resumed by administrator");
         
         await _unitOfWork.SaveChangesAsync();
+
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Resumed,
+            subscription.Id,
+            $"{subscription.Company.Name} - {subscription.Plan.Name}",
+            _currentUserService.UserId,
+            null,
+            reason ?? "Subscription resumed");
 
         // Send email notification with reason
         await _emailService.SendSubscriptionResumedEmailAsync(

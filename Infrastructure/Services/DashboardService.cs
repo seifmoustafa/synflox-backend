@@ -108,17 +108,29 @@ public class DashboardService : IDashboardService
             var totalAdmins = admins.Count;
             var activeAdmins = admins.Count(a => a.LastLoginAt.HasValue && a.LastLoginAt.Value >= last30Days);
 
-            // Growth calculations
+            // Growth calculations - compare current vs last month
+            // Companies that existed at end of last month
             var prevMonthCompanies = companies.Count(c => c.CreatedTimestamp < lastMonth);
-            var prevMonthSubscriptions = subscriptions.Count(s => s.CreatedTimestamp < lastMonth);
-            
+            // New companies this month
+            var newCompaniesThisMonth = totalCompanies - prevMonthCompanies;
             var companyGrowthRate = CalculateGrowthRate(prevMonthCompanies, totalCompanies);
+
+            // Subscriptions - compare active subscriptions now vs subscriptions created before last month
+            var prevMonthSubscriptions = subscriptions.Count(s => s.CreatedTimestamp < lastMonth);
             var subscriptionGrowthRate = CalculateGrowthRate(prevMonthSubscriptions, totalSubscriptions);
 
-            // Calculate MRR safely with decimal
+            // Calculate current MRR safely with decimal
             var mrr = subscriptions
                 .Where(s => s.IsActive && !s.IsExpired)
                 .Sum(s => s.Amount);
+
+            // Calculate previous month's MRR (subscriptions that were active before this month)
+            // For simplicity, use subscriptions created before last month that are still active
+            var prevMonthMrr = subscriptions
+                .Where(s => s.CreatedTimestamp < lastMonth && s.IsActive && !s.IsExpired)
+                .Sum(s => s.Amount);
+            
+            var mrrGrowthRate = CalculateGrowthRateDecimal(prevMonthMrr, mrr);
 
             // Build KPI cards with decimal values
             var companiesKpi = new KpiCardDto(
@@ -144,9 +156,9 @@ public class DashboardService : IDashboardService
             var revenueKpi = new KpiCardDto(
                 Title: "MRR",
                 Value: mrr, // Now using decimal, no overflow
-                PreviousValue: null,
-                ChangePercentage: null,
-                ChangeDirection: "unchanged",
+                PreviousValue: prevMonthMrr,
+                ChangePercentage: mrrGrowthRate,
+                ChangeDirection: mrrGrowthRate > 0 ? "up" : mrrGrowthRate < 0 ? "down" : "unchanged",
                 Icon: "DollarSign",
                 Color: "purple"
             );
@@ -193,12 +205,15 @@ public class DashboardService : IDashboardService
                     CalculatePercentage(suspendedSubscriptions, totalSubscriptions), "#f97316")
             };
 
-            var growthTrend = new List<TimeSeriesDataPointDto>();
+            var growthTrend = new List<GrowthTrendDataPointDto>();
             for (int i = 29; i >= 0; i--)
             {
                 var date = today.AddDays(-i);
+                // Cumulative count of companies created up to this date
                 var companiesOnDate = companies.Count(c => c.CreatedTimestamp.Date <= date);
-                growthTrend.Add(new TimeSeriesDataPointDto(date, date.ToString("MMM dd"), companiesOnDate));
+                // Cumulative count of subscriptions created up to this date (regardless of current status)
+                var subscriptionsOnDate = subscriptions.Count(s => s.CreatedTimestamp.Date <= date);
+                growthTrend.Add(new GrowthTrendDataPointDto(date, date.ToString("MMM dd"), companiesOnDate, subscriptionsOnDate));
             }
 
             // Fetch recent activities
@@ -393,7 +408,7 @@ public class DashboardService : IDashboardService
 
             var byPlan = GenerateSubscriptionByPlanData(subscriptions, totalSubscriptions, totalMonthlyRevenue);
             var expiryTimeline = GenerateExpiryTimeline(subscriptions, today);
-            var lifecycleMetrics = GenerateLifecycleMetrics(subscriptions, today);
+            var lifecycleMetrics = await GenerateLifecycleMetricsAsync(subscriptions, today);
             var growth = GenerateSubscriptionGrowth(subscriptions, today, activeSubscriptions);
 
             return new SubscriptionsDashboardDto(
@@ -527,14 +542,42 @@ public class DashboardService : IDashboardService
             );
 
             var topAdmins = GenerateTopAdmins(admins, activeThisMonth, now);
-            var breakdown = GenerateActivityBreakdown();
-            var timeline = GenerateActivityTimeline(today);
+            
+            // Get real activity logs
+            var recentActivityLogs = await _context.Set<Domain.Entities.Activity.ActivityLog>()
+                .OrderByDescending(a => a.Timestamp)
+                .Take(50)
+                .ToListAsync();
+
+            var recentActivity = recentActivityLogs.Select(a => new ActivityItemDto(
+                Id: a.Id,
+                ActionType: a.ActionType,
+                EntityType: a.EntityType,
+                EntityName: a.EntityName,
+                EntityId: a.EntityId,
+                Description: a.Description ?? $"{a.ActionType} {a.EntityType}: {a.EntityName}",
+                AdminId: a.PerformedBy ?? Guid.Empty,
+                AdminName: a.PerformedByName ?? "System",
+                AdminUsername: a.PerformedByName ?? "system",
+                AdminProfilePicture: null,
+                Timestamp: a.Timestamp,
+                TimeAgo: GetTimeAgo(a.Timestamp, now),
+                IpAddress: a.IpAddress,
+                UserAgent: null,
+                Changes: a.Metadata,
+                Icon: GetActivityIcon(a.ActionType),
+                Color: GetActivityColor(a.ActionType)
+            )).ToList();
+
+            // Generate breakdown from actual activity data
+            var breakdown = await GenerateActivityBreakdownFromLogsAsync(recentActivityLogs);
+            var timeline = await GenerateActivityTimelineFromLogsAsync(today);
 
             return new ActivityDashboardDto(
                 Stats: stats,
                 TopAdmins: topAdmins,
-                RecentActivity: new List<ActivityItemDto>(),
-                TotalActivityCount: stats.TotalActions,
+                RecentActivity: recentActivity,
+                TotalActivityCount: recentActivityLogs.Count,
                 Breakdown: breakdown,
                 ByEntityTypeChart: breakdown.ByEntityType.Select(e => new DistributionItemDto(e.EntityType, e.Count, e.Percentage, e.Color)).ToList(),
                 ByActionTypeChart: breakdown.ByActionType.Select(a => new DistributionItemDto(a.ActionType, a.Count, a.Percentage, a.Color)).ToList(),
@@ -656,6 +699,12 @@ public class DashboardService : IDashboardService
     {
         if (previous == 0) return current > 0 ? 100 : 0;
         return Math.Round(((decimal)(current - previous) / previous) * 100, 2);
+    }
+
+    private static decimal CalculateGrowthRateDecimal(decimal previous, decimal current)
+    {
+        if (previous == 0) return current > 0 ? 100 : 0;
+        return Math.Round((current - previous) / previous * 100, 2);
     }
 
     private List<CompanyGrowthPointDto> GenerateCompanyGrowthData<T>(List<T> companies, DateTime today)
@@ -813,30 +862,60 @@ public class DashboardService : IDashboardService
         );
     }
 
-    private LifecycleMetricsDto GenerateLifecycleMetrics(List<Subscription> subscriptions, DateTime today)
+    private async Task<LifecycleMetricsDto> GenerateLifecycleMetricsAsync(List<Subscription> subscriptions, DateTime today)
     {
         var thisMonth = new DateTime(today.Year, today.Month, 1);
         var lastMonth = thisMonth.AddMonths(-1);
+
+        // Get subscription history for this month
+        var historyThisMonth = await _context.Set<SubscriptionHistory>()
+            .Where(h => h.CreatedTimestamp >= thisMonth)
+            .ToListAsync();
+        
+        var historyLastMonth = await _context.Set<SubscriptionHistory>()
+            .Where(h => h.CreatedTimestamp >= lastMonth && h.CreatedTimestamp < thisMonth)
+            .ToListAsync();
 
         var newThisMonth = subscriptions.Count(s => s.CreatedTimestamp >= thisMonth);
         var newLastMonth = subscriptions.Count(s => s.CreatedTimestamp >= lastMonth && s.CreatedTimestamp < thisMonth);
         var avgDuration = subscriptions.Any() ? (int)subscriptions.Average(s => (s.ExpiryDateUtc - s.StartDateUtc).TotalDays) : 365;
 
+        // Count actions from history
+        var renewalsThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("renew"));
+        var upgradesThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("upgrade"));
+        var downgradesThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("downgrade"));
+        var cancellationsThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("cancel"));
+        var suspensionsThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("suspend"));
+        var reactivationsThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("reactivat") || h.Action.ToLower().Contains("resume"));
+        var extensionsThisMonth = historyThisMonth.Count(h => h.Action.ToLower().Contains("extend"));
+
+        var renewalsLastMonth = historyLastMonth.Count(h => h.Action.ToLower().Contains("renew"));
+        var cancellationsLastMonth = historyLastMonth.Count(h => h.Action.ToLower().Contains("cancel"));
+
+        // Calculate rates
+        var totalActive = subscriptions.Count(s => s.IsActive && !s.IsExpired);
+        var trialConversions = historyThisMonth.Count(h => h.Action.ToLower().Contains("trial") && h.Action.ToLower().Contains("stop"));
+        var trialCount = subscriptions.Count(s => s.IsTrial);
+        var trialConversionRate = trialCount > 0 ? (decimal)trialConversions / trialCount * 100 : 0;
+        var churnRate = totalActive > 0 ? (decimal)cancellationsThisMonth / totalActive * 100 : 0;
+        var retentionRate = 100 - churnRate;
+        var renewalRate = totalActive > 0 ? (decimal)renewalsThisMonth / totalActive * 100 : 0;
+
         return new LifecycleMetricsDto(
             NewSubscriptions: newThisMonth,
-            Renewals: 0,
-            Upgrades: 0,
-            Downgrades: 0,
-            Cancellations: 0,
-            Suspensions: subscriptions.Count(s => !s.IsActive && !s.IsExpired),
-            Reactivations: 0,
+            Renewals: renewalsThisMonth,
+            Upgrades: upgradesThisMonth,
+            Downgrades: downgradesThisMonth,
+            Cancellations: cancellationsThisMonth,
+            Suspensions: suspensionsThisMonth,
+            Reactivations: reactivationsThisMonth,
             PreviousNewSubscriptions: newLastMonth,
-            PreviousRenewals: 0,
-            PreviousCancellations: 0,
-            TrialConversionRate: 0,
-            ChurnRate: 0,
-            RetentionRate: 100,
-            RenewalRate: 0,
+            PreviousRenewals: renewalsLastMonth,
+            PreviousCancellations: cancellationsLastMonth,
+            TrialConversionRate: Math.Round(trialConversionRate, 1),
+            ChurnRate: Math.Round(churnRate, 1),
+            RetentionRate: Math.Round(retentionRate, 1),
+            RenewalRate: Math.Round(renewalRate, 1),
             AverageDurationDays: avgDuration,
             MedianDurationDays: 365
         );
@@ -972,61 +1051,173 @@ public class DashboardService : IDashboardService
         );
     }
 
-    private ActivityBreakdownDto GenerateActivityBreakdown()
+    private string GetTimeAgo(DateTime timestamp, DateTime now)
     {
+        var diff = now - timestamp;
+        if (diff.TotalMinutes < 1) return "Just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+        return timestamp.ToString("MMM dd");
+    }
+
+    private async Task<ActivityBreakdownDto> GenerateActivityBreakdownFromLogsAsync(List<Domain.Entities.Activity.ActivityLog> logs)
+    {
+        var total = logs.Count;
+        if (total == 0)
+        {
+            return new ActivityBreakdownDto(
+                ByEntityType: new List<ActivityByEntityTypeDto>(),
+                ByActionType: new List<ActivityByActionTypeDto>(),
+                MostActiveEntityType: "N/A",
+                MostCommonAction: "N/A"
+            );
+        }
+
+        var entityColors = new Dictionary<string, string>
+        {
+            { "Company", "#3b82f6" },
+            { "Subscription", "#22c55e" },
+            { "Admin", "#8b5cf6" },
+            { "Plan", "#f97316" },
+            { "Project", "#06b6d4" },
+            { "Module", "#ec4899" },
+            { "System", "#6b7280" }
+        };
+
+        var actionColors = new Dictionary<string, string>
+        {
+            { "Created", "#22c55e" },
+            { "Updated", "#3b82f6" },
+            { "Deleted", "#ef4444" },
+            { "Login", "#8b5cf6" },
+            { "Activated", "#10b981" },
+            { "Suspended", "#f97316" },
+            { "Renewed", "#06b6d4" }
+        };
+
+        var byEntityType = logs
+            .GroupBy(l => l.EntityType)
+            .Select(g => new ActivityByEntityTypeDto(
+                g.Key,
+                g.Count(),
+                Math.Round((decimal)g.Count() / total * 100, 1),
+                entityColors.GetValueOrDefault(g.Key, "#6b7280")
+            ))
+            .OrderByDescending(e => e.Count)
+            .ToList();
+
+        var byActionType = logs
+            .GroupBy(l => l.ActionType)
+            .Select(g => new ActivityByActionTypeDto(
+                g.Key,
+                g.Count(),
+                Math.Round((decimal)g.Count() / total * 100, 1),
+                actionColors.GetValueOrDefault(g.Key, "#6b7280")
+            ))
+            .OrderByDescending(a => a.Count)
+            .ToList();
+
         return new ActivityBreakdownDto(
-            ByEntityType: new List<ActivityByEntityTypeDto>
-            {
-                new("Company", 40, 40, "#3b82f6"),
-                new("Subscription", 35, 35, "#22c55e"),
-                new("Admin", 15, 15, "#8b5cf6"),
-                new("System", 10, 10, "#6b7280")
-            },
-            ByActionType: new List<ActivityByActionTypeDto>
-            {
-                new("Create", 30, 30, "#22c55e"),
-                new("Update", 40, 40, "#3b82f6"),
-                new("Delete", 10, 10, "#ef4444"),
-                new("Login", 20, 20, "#8b5cf6")
-            },
-            MostActiveEntityType: "Company",
-            MostCommonAction: "Update"
+            ByEntityType: byEntityType,
+            ByActionType: byActionType,
+            MostActiveEntityType: byEntityType.FirstOrDefault()?.EntityType ?? "N/A",
+            MostCommonAction: byActionType.FirstOrDefault()?.ActionType ?? "N/A"
         );
     }
 
-    private ActivityTimelineDto GenerateActivityTimeline(DateTime today)
+    private async Task<ActivityTimelineDto> GenerateActivityTimelineFromLogsAsync(DateTime today)
     {
+        var last30Days = today.AddDays(-30);
+        var logs = await _context.Set<Domain.Entities.Activity.ActivityLog>()
+            .Where(a => a.Timestamp >= last30Days)
+            .ToListAsync();
+
         var dailyData = new List<ActivityTimelinePointDto>();
         for (int i = 29; i >= 0; i--)
         {
             var date = today.AddDays(-i);
+            var logsOnDate = logs.Where(l => l.Timestamp.Date == date).ToList();
+            var logins = logsOnDate.Count(l => l.ActionType.ToLower().Contains("login"));
+            var actions = logsOnDate.Count - logins;
+            var uniqueAdmins = logsOnDate.Where(l => l.PerformedBy.HasValue).Select(l => l.PerformedBy!.Value).Distinct().Count();
+            
             dailyData.Add(new ActivityTimelinePointDto(
                 date, 
                 date.ToString("MMM dd"), 
-                5 + i % 10, 
-                20 + i % 30, 
-                3 + i % 5
+                logins, 
+                actions, 
+                uniqueAdmins
             ));
         }
 
         var hourlyDist = Enumerable.Range(0, 24)
-            .Select(h => new HourlyActivityDto(
-                h, 
-                $"{h}:00", 
-                10 + (h >= 9 && h <= 17 ? 30 : 0), 
-                (10 + (h >= 9 && h <= 17 ? 30 : 0)) / 4.0m
-            ))
+            .Select(h => 
+            {
+                var logsAtHour = logs.Count(l => l.Timestamp.Hour == h);
+                return new HourlyActivityDto(
+                    h, 
+                    $"{h}:00", 
+                    logsAtHour, 
+                    logsAtHour / 30.0m
+                );
+            })
             .ToList();
+
+        var peakHour = hourlyDist.OrderByDescending(h => h.ActivityCount).FirstOrDefault();
 
         return new ActivityTimelineDto(
             DailyData: dailyData,
             HourlyDistribution: hourlyDist,
-            PeakHour: 14,
-            PeakHourLabel: "2:00 PM",
-            PeakHourActivity: 40,
-            MostActiveDayOfWeek: "Wednesday"
+            PeakHour: peakHour?.Hour ?? 9,
+            PeakHourLabel: peakHour != null ? $"{peakHour.Hour}:00" : "9:00 AM",
+            PeakHourActivity: peakHour?.ActivityCount ?? 0,
+            MostActiveDayOfWeek: GetMostActiveDayOfWeek(dailyData)
         );
     }
+
+    private string GetMostActiveDayOfWeek(List<ActivityTimelinePointDto> dailyData)
+    {
+        if (!dailyData.Any()) return "Monday";
+        
+        var byDayOfWeek = dailyData
+            .GroupBy(d => d.Date.DayOfWeek)
+            .Select(g => new { Day = g.Key, Total = g.Sum(d => d.Actions + d.Logins) })
+            .OrderByDescending(x => x.Total)
+            .FirstOrDefault();
+
+        return byDayOfWeek?.Day.ToString() ?? "Monday";
+    }
+
+    private string GetActivityIcon(string actionType) => actionType.ToLower() switch
+    {
+        var a when a.Contains("create") => "Plus",
+        var a when a.Contains("update") => "Edit",
+        var a when a.Contains("delete") => "Trash2",
+        var a when a.Contains("login") => "LogIn",
+        var a when a.Contains("logout") => "LogOut",
+        var a when a.Contains("activate") || a.Contains("resume") => "Play",
+        var a when a.Contains("suspend") || a.Contains("pause") => "Pause",
+        var a when a.Contains("renew") => "RefreshCw",
+        var a when a.Contains("upgrade") => "TrendingUp",
+        var a when a.Contains("cancel") => "XCircle",
+        _ => "Activity"
+    };
+
+    private string GetActivityColor(string actionType) => actionType.ToLower() switch
+    {
+        var a when a.Contains("create") => "#22c55e",
+        var a when a.Contains("update") => "#3b82f6",
+        var a when a.Contains("delete") => "#ef4444",
+        var a when a.Contains("login") => "#8b5cf6",
+        var a when a.Contains("logout") => "#6b7280",
+        var a when a.Contains("activate") || a.Contains("resume") => "#10b981",
+        var a when a.Contains("suspend") || a.Contains("pause") => "#f97316",
+        var a when a.Contains("renew") => "#06b6d4",
+        var a when a.Contains("upgrade") => "#22d3ee",
+        var a when a.Contains("cancel") => "#ef4444",
+        _ => "#6b7280"
+    };
 
     private List<DistributionItemDto> GenerateAlertPriorityChart(AlertCountsDto counts)
     {
