@@ -508,6 +508,9 @@
   <data name="Subscription.OverlappingActive" xml:space="preserve">
     <value>An active subscription for this plan already exists for this company</value>
   </data>
+  <data name="Subscription.DuplicatePlanNotAllowed" xml:space="preserve">
+    <value>Company already has an active subscription with this plan</value>
+  </data>
   <data name="Subscription.InvalidUpgradeMode" xml:space="preserve">
     <value>Invalid upgrade mode specified</value>
   </data>
@@ -564,6 +567,15 @@
   </data>
   <data name="Company.NotFound" xml:space="preserve">
     <value>Company not found</value>
+  </data>
+  <data name="Company.InactiveCannotSubscribe" xml:space="preserve">
+    <value>Cannot create subscription for inactive company</value>
+  </data>
+  <data name="Subscription.CannotUpgradeInactive" xml:space="preserve">
+    <value>Cannot upgrade inactive or expired subscription</value>
+  </data>
+  <data name="Subscription.LifetimeAlreadyExists" xml:space="preserve">
+    <value>Company already has a lifetime subscription for this plan</value>
   </data>
   <data name="SuperAdmin.CannotDelete" xml:space="preserve">
     <value>Root superadmin cannot be deleted</value>

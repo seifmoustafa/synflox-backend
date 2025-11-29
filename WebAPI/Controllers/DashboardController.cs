@@ -37,6 +37,7 @@ public class DashboardController : ControllerBase
     /// Get overview dashboard with KPIs and quick stats
     /// </summary>
     [HttpGet("overview")]
+    [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
     public async Task<ActionResult<OverviewDashboardDto>> GetOverview()
     {
         _logger.LogInformation("Getting overview dashboard");
@@ -48,6 +49,7 @@ public class DashboardController : ControllerBase
     /// Get companies dashboard with company analytics
     /// </summary>
     [HttpGet("companies")]
+    [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
     public async Task<ActionResult<CompaniesDashboardDto>> GetCompaniesDashboard()
     {
         _logger.LogInformation("Getting companies dashboard");
@@ -59,6 +61,7 @@ public class DashboardController : ControllerBase
     /// Get subscriptions dashboard with subscription analytics
     /// </summary>
     [HttpGet("subscriptions")]
+    [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
     public async Task<ActionResult<SubscriptionsDashboardDto>> GetSubscriptionsDashboard()
     {
         _logger.LogInformation("Getting subscriptions dashboard");
@@ -72,6 +75,7 @@ public class DashboardController : ControllerBase
     /// </summary>
     [HttpGet("revenue")]
     [Authorize(Policy = "SuperAdminOnly")]
+    [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
     public async Task<ActionResult<RevenueDashboardDto>> GetRevenueDashboard()
     {
         _logger.LogInformation("Getting revenue dashboard");
@@ -83,6 +87,7 @@ public class DashboardController : ControllerBase
     /// Get activity dashboard with admin activity analytics
     /// </summary>
     [HttpGet("activity")]
+    [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
     public async Task<ActionResult<ActivityDashboardDto>> GetActivityDashboard()
     {
         _logger.LogInformation("Getting activity dashboard");
@@ -94,6 +99,7 @@ public class DashboardController : ControllerBase
     /// Get alerts dashboard with system alerts
     /// </summary>
     [HttpGet("alerts")]
+    [ResponseCache(Duration = 30, VaryByHeader = "Authorization")]
     public async Task<ActionResult<AlertsDashboardDto>> GetAlertsDashboard()
     {
         _logger.LogInformation("Getting alerts dashboard");

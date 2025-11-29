@@ -77,11 +77,37 @@ public class SubscriptionService : ISubscriptionService
         var company = await _companyRepo.GetByIdAsync(subscription.CompanyId, null);
         if (company == null)
             throw new NotFoundException(_localizer["Company.NotFound"]);
+        
+        // Validate company is active
+        if (!company.IsActive)
+            throw new BadRequestException(_localizer["Company.InactiveCannotSubscribe"]);
 
         // Validate plan exists and get details (using decrypted ID from mapping)
         var plan = await _planRepo.GetWithDetailsAsync(subscription.PlanId);
         if (plan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
+
+        // Check if company already has an active subscription with the same plan
+        var (existingSubscriptions, _) = await _subscriptionRepo.GetAllAsync(
+            s => s.CompanyId == subscription.CompanyId 
+                 && s.PlanId == subscription.PlanId 
+                 && s.IsActive 
+                 && !s.IsDeleted,
+            null);
+        if (existingSubscriptions.Any())
+            throw new BadRequestException(_localizer["Subscription.DuplicatePlanNotAllowed"]);
+        
+        // Stricter check for lifetime plans - cannot have ANY subscription (even expired) of same plan
+        if (plan.IsLifetimePlan)
+        {
+            var (anyExisting, _) = await _subscriptionRepo.GetAllAsync(
+                s => s.CompanyId == subscription.CompanyId 
+                     && s.PlanId == subscription.PlanId 
+                     && !s.IsDeleted,
+                null);
+            if (anyExisting.Any())
+                throw new BadRequestException(_localizer["Subscription.LifetimeAlreadyExists"]);
+        }
 
         // Validate trial request
         if (dto.StartWithTrial && !plan.AllowTrial)
@@ -273,6 +299,30 @@ public class SubscriptionService : ISubscriptionService
         
         return dtos;
     }
+    
+    public async Task<(IEnumerable<SubscriptionDto> data, PaginationMetadata pagination)> GetCompanySubscriptionsPaginatedAsync(Guid companyId, int page, int pageSize)
+    {
+        // Get paginated subscriptions
+        (IEnumerable<Subscription> subscriptions, PaginationMetadata meta) = await _subscriptionRepo.GetAllAsync(
+            s => s.CompanyId == companyId && !s.IsDeleted,
+            null,
+            page,
+            pageSize
+        );
+        
+        // Order by CreatedTimestamp descending (newest first)
+        var orderedSubscriptions = subscriptions.OrderByDescending(s => s.CreatedTimestamp).ToList();
+        
+        var dtos = _mapper.Map<IEnumerable<SubscriptionDto>>(orderedSubscriptions).ToList();
+        
+        // Set license key visibility for each subscription
+        for (int i = 0; i < dtos.Count; i++)
+        {
+            SetLicenseKeyIfSuperAdmin(dtos[i], orderedSubscriptions.ElementAt(i));
+        }
+        
+        return (dtos, meta);
+    }
 
     public async Task<SubscriptionStatusDto?> GetSubscriptionStatusAsync(Guid subscriptionId)
     {
@@ -375,6 +425,10 @@ public class SubscriptionService : ISubscriptionService
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
+        
+        // Validate subscription is active and not expired
+        if (!subscription.IsActive || subscription.IsExpired)
+            throw new BadRequestException(_localizer["Subscription.CannotUpgradeInactive"]);
 
         // Decrypt NewPlanId using AutoMapper (SYNFLOX ID ENCRYPTION RULE)
         var decryptedNewPlanId = _mapper.Map<Guid>(new UpgradeNewPlanIdRequest { NewPlanId = dto.NewPlanId });

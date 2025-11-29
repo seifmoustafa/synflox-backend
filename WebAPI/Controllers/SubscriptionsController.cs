@@ -126,6 +126,25 @@ public class SubscriptionsController : ControllerBase
         var subscriptions = await _subscriptionService.GetCompanySubscriptionsAsync(decryptedCompanyId);
         return Ok(new { data = subscriptions });
     }
+    
+    /// <summary>
+    /// Get paginated subscriptions for a company
+    /// </summary>
+    [HttpGet("company/{companyId}/paginated")]
+    public async Task<IActionResult> GetByCompanyPaginated(
+        Guid companyId, 
+        [FromQuery] int page = 1, 
+        [FromQuery] int pageSize = 10)
+    {
+        // Decrypt company ID from route parameter (SYNFLOX ID encryption rule compliance)
+        var companyIdRequest = new CompanyIdRequest { CompanyId = companyId };
+        var decryptedCompanyId = _mapper.Map<Guid>(companyIdRequest);
+        
+        var (subscriptions, pagination) = await _subscriptionService
+            .GetCompanySubscriptionsPaginatedAsync(decryptedCompanyId, page, pageSize);
+        
+        return Ok(new { data = subscriptions, pagination });
+    }
 
     /// <summary>
     /// Get detailed subscription status with computed status messages

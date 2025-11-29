@@ -10,6 +10,7 @@ using Domain.Entities.Licensing;
 using Domain.Entities.Subscriptions;
 using Domain.Interfaces;
 using Infrastructure.Context;
+using Application.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -24,17 +25,20 @@ public class DashboardService : IDashboardService
     private readonly ILogger<DashboardService> _logger;
     private readonly IActivityLogRepository _activityLogRepository;
     private readonly Application.Services.ILocalizationService _localizer;
+    private readonly IIdEncryptionService _idEncryption;
 
     public DashboardService(
         ApplicationDBContext context,
         ILogger<DashboardService> logger,
         IActivityLogRepository activityLogRepository,
-        Application.Services.ILocalizationService localizer)
+        Application.Services.ILocalizationService localizer,
+        IIdEncryptionService idEncryption)
     {
         _context = context;
         _logger = logger;
         _activityLogRepository = activityLogRepository;
         _localizer = localizer;
+        _idEncryption = idEncryption;
     }
 
     #region Overview Dashboard
@@ -1269,6 +1273,10 @@ public class DashboardService : IDashboardService
         var now = DateTime.Now;
         var daysRemaining = (sub.ExpiryDateUtc.Date - today).Days;
         
+        // Encrypt IDs for frontend URLs
+        var encryptedSubId = _idEncryption.Encrypt(sub.Id);
+        var encryptedCompanyId = sub.CompanyId != Guid.Empty ? _idEncryption.Encrypt(sub.CompanyId) : Guid.Empty;
+        
         return new AlertItemDto(
             Id: Guid.NewGuid(),
             Priority: priority,
@@ -1277,16 +1285,16 @@ public class DashboardService : IDashboardService
             Message: $"{sub.Company?.Name}: {message}",
             Description: $"Plan: {sub.Plan?.Name}, Value: {sub.Amount:C}",
             EntityType: "Subscription",
-            EntityId: sub.Id,
+            EntityId: encryptedSubId,
             EntityName: sub.Company?.Name,
             CreatedAt: now,
             DueDate: sub.ExpiryDateUtc,
             DaysRemaining: daysRemaining,
             TimeAgo: daysRemaining <= 0 ? "Today" : $"In {daysRemaining} days",
             PrimaryAction: "Renew",
-            PrimaryActionUrl: $"/subscriptions/{sub.Id}/renew",
+            PrimaryActionUrl: $"/subscriptions/{encryptedSubId}/renew",
             SecondaryAction: "View",
-            SecondaryActionUrl: $"/subscriptions/{sub.Id}",
+            SecondaryActionUrl: $"/subscriptions/{encryptedSubId}",
             Icon: "Calendar",
             Color: priority == AlertPriority.Critical ? "#ef4444" : priority == AlertPriority.High ? "#f97316" : "#eab308",
             IsRead: false,
@@ -1298,6 +1306,9 @@ public class DashboardService : IDashboardService
 
     private AlertItemDto CreateCompanyAlert(Company company, DateTime now)
     {
+        // Encrypt company ID for frontend URLs
+        var encryptedCompanyId = _idEncryption.Encrypt(company.Id);
+        
         return new AlertItemDto(
             Id: Guid.NewGuid(),
             Priority: AlertPriority.Low,
@@ -1306,16 +1317,16 @@ public class DashboardService : IDashboardService
             Message: $"{company.Name} has no subscription",
             Description: "Consider reaching out to create a subscription",
             EntityType: "Company",
-            EntityId: company.Id,
+            EntityId: encryptedCompanyId,
             EntityName: company.Name,
             CreatedAt: now,
             DueDate: null,
             DaysRemaining: null,
             TimeAgo: "Just now",
             PrimaryAction: "Create Subscription",
-            PrimaryActionUrl: $"/subscriptions/create?companyId={company.Id}",
+            PrimaryActionUrl: $"/subscriptions/create?companyId={encryptedCompanyId}",
             SecondaryAction: "View Company",
-            SecondaryActionUrl: $"/companies/{company.Id}",
+            SecondaryActionUrl: $"/companies/{encryptedCompanyId}",
             Icon: "Building2",
             Color: "#3b82f6",
             IsRead: false,

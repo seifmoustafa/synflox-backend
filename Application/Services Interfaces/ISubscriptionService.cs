@@ -36,6 +36,11 @@ public interface ISubscriptionService
     /// Gets all subscriptions for a company (active and historical)
     /// </summary>
     Task<IEnumerable<SubscriptionDto>> GetCompanySubscriptionsAsync(Guid companyId);
+    
+    /// <summary>
+    /// Gets paginated subscriptions for a company
+    /// </summary>
+    Task<(IEnumerable<SubscriptionDto> data, PaginationMetadata pagination)> GetCompanySubscriptionsPaginatedAsync(Guid companyId, int page, int pageSize);
 
     /// <summary>
     /// Gets detailed status information for a subscription

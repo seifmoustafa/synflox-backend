@@ -508,6 +508,9 @@
   <data name="Subscription.OverlappingActive" xml:space="preserve">
     <value>اشتراك نشط لهذه الخطة موجود بالفعل لهذه الشركة</value>
   </data>
+  <data name="Subscription.DuplicatePlanNotAllowed" xml:space="preserve">
+    <value>الشركة لديها بالفعل اشتراك نشط بهذه الخطة</value>
+  </data>
   <data name="Subscription.InvalidUpgradeMode" xml:space="preserve">
     <value>وضع الترقية المحدد غير صالح</value>
   </data>
@@ -564,6 +567,15 @@
   </data>
   <data name="Company.NotFound" xml:space="preserve">
     <value>الشركة غير موجودة</value>
+  </data>
+  <data name="Company.InactiveCannotSubscribe" xml:space="preserve">
+    <value>لا يمكن إنشاء اشتراك لشركة غير نشطة</value>
+  </data>
+  <data name="Subscription.CannotUpgradeInactive" xml:space="preserve">
+    <value>لا يمكن ترقية اشتراك غير نشط أو منتهي الصلاحية</value>
+  </data>
+  <data name="Subscription.LifetimeAlreadyExists" xml:space="preserve">
+    <value>الشركة لديها بالفعل اشتراك مدى الحياة لهذه الخطة</value>
   </data>
   <data name="SuperAdmin.CannotDelete" xml:space="preserve">
     <value>لا يمكن حذف المسؤول الأساسي</value>
