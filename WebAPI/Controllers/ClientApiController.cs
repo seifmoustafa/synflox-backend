@@ -1,6 +1,8 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
+using Application.DTOs.Entitlements;
 using Application.DTOs.Responses;
 using Application.Services;
 using Infrastructure.Services;
@@ -81,6 +83,62 @@ public class ClientApiController : ControllerBase
         {
             _logger.LogError(ex, "Error validating token");
             return StatusCode(500, ApiResponse<ClientTokenValidationDto>.Error("Internal server error"));
+        }
+    }
+
+    /// <summary>
+    /// Gets the full entitlement matrix for the authenticated subscription
+    /// This is the main endpoint for the thin-token architecture
+    /// Clients should cache this response and refresh when X-Entitlements-Version header changes
+    /// </summary>
+    /// <returns>Complete entitlement matrix</returns>
+    [HttpGet("entitlements")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<EntitlementMatrixDto>>> GetEntitlements(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var subscriptionId = _jwtService.GetSubscriptionId(HttpContext.User);
+            var tokenId = _jwtService.GetClientTokenId(HttpContext.User);
+
+            if (!subscriptionId.HasValue)
+            {
+                return BadRequest(ApiResponse<EntitlementMatrixDto>.Error("Invalid token claims"));
+            }
+
+            _logger.LogInformation("Getting entitlements for subscription {SubscriptionId}", subscriptionId);
+
+            var result = await _clientApiService.GetEntitlementsAsync(subscriptionId.Value, cancellationToken);
+
+            // Add entitlements version header for cache validation
+            Response.Headers.Append("X-Entitlements-Version", result.Version.ToString());
+            Response.Headers.Append("Cache-Control", "private, max-age=86400"); // 24 hours
+
+            // Record API usage
+            if (tokenId.HasValue)
+            {
+                await _clientTokenService.RecordTokenUsageAsync(
+                    tokenId.Value,
+                    "/api/client/entitlements",
+                    "GET",
+                    200,
+                    0,
+                    HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    HttpContext.Request.Headers.UserAgent.ToString()
+                );
+            }
+
+            return Ok(ApiResponse<EntitlementMatrixDto>.Success(result, "Entitlements retrieved successfully"));
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid request for entitlements");
+            return BadRequest(ApiResponse<EntitlementMatrixDto>.Error(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting entitlements");
+            return StatusCode(500, ApiResponse<EntitlementMatrixDto>.Error("Internal server error"));
         }
     }
 
@@ -472,6 +530,7 @@ public class ClientApiController : ControllerBase
             Endpoints = new[]
             {
                 new { Method = "POST", Path = "/api/client/auth/validate-token", Description = "Validate a client token", Auth = "None" },
+                new { Method = "GET", Path = "/api/client/entitlements", Description = "Get full entitlement matrix (MAIN ENDPOINT)", Auth = "Required" },
                 new { Method = "GET", Path = "/api/client/subscription/status", Description = "Get subscription status", Auth = "Required" },
                 new { Method = "POST", Path = "/api/client/license/validate", Description = "Validate license key", Auth = "Required" },
                 new { Method = "GET", Path = "/api/client/company/profile", Description = "Get company profile", Auth = "Required" },

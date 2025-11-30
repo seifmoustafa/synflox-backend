@@ -35,7 +35,9 @@ public class ClientJwtService
     }
 
     /// <summary>
-    /// Generates a JWT token for a client subscription
+    /// Generates a THIN JWT token for a client subscription
+    /// Token contains ONLY identity and version - NO entitlements
+    /// Entitlements are fetched separately via GET /api/client/entitlements
     /// </summary>
     public string GenerateToken(ClientAccessToken clientToken, Subscription subscription)
     {
@@ -46,7 +48,7 @@ public class ClientJwtService
             new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
             new(JwtRegisteredClaimNames.Exp, ((DateTimeOffset)clientToken.ExpiresAtUtc).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
             
-            // Custom client claims
+            // ========== IDENTITY CLAIMS (Thin Token) ==========
             new("client_token_id", clientToken.Id.ToString()),
             new("company_id", clientToken.CompanyId.ToString()),
             new("company_name", subscription.Company.Name),
@@ -54,34 +56,30 @@ public class ClientJwtService
             new("plan_id", subscription.PlanId.ToString()),
             new("plan_name", subscription.Plan.Name),
             new("token_version", clientToken.TokenVersion),
+            
+            // ========== ENTITLEMENTS VERSION (for cache invalidation) ==========
+            // Client compares this with cached entitlements version
+            // If mismatch, client should refetch GET /api/client/entitlements
+            new("entitlements_version", subscription.EntitlementsVersion.ToString()),
+            
+            // ========== SUBSCRIPTION STATUS ==========
             new("is_trial", subscription.IsTrial.ToString().ToLower()),
-            
-            // Permissions and endpoints
-            new("allowed_endpoints", clientToken.AllowedEndpoints ?? JsonSerializer.Serialize(_settings.DefaultAllowedEndpoints)),
-            
-            // Security claims
-            new("issued_at_utc", clientToken.IssuedAtUtc.ToString("O")),
-            new("expires_at_utc", clientToken.ExpiresAtUtc.ToString("O")),
-            new("rate_limit_per_hour", _settings.RateLimitPerHour.ToString()),
-            
-            // Subscription status
             new("subscription_active", subscription.IsActive.ToString().ToLower()),
             new("subscription_expired", subscription.IsExpired.ToString().ToLower()),
-            new("subscription_expiry", subscription.ExpiryDateUtc.ToString("O"))
+            new("subscription_expiry", subscription.ExpiryDateUtc.ToString("O")),
+            new("access_mode", subscription.AccessMode.ToString()),
+            
+            // ========== SECURITY CLAIMS ==========
+            new("allowed_endpoints", clientToken.AllowedEndpoints ?? JsonSerializer.Serialize(_settings.DefaultAllowedEndpoints)),
+            new("issued_at_utc", clientToken.IssuedAtUtc.ToString("O")),
+            new("expires_at_utc", clientToken.ExpiresAtUtc.ToString("O")),
+            new("rate_limit_per_hour", _settings.RateLimitPerHour.ToString())
+            
+            // ========== NO ENTITLEMENTS IN TOKEN ==========
+            // Entitlements (projects, modules, features) are NOT included
+            // Client fetches them via GET /api/client/entitlements
+            // This allows instant entitlement changes without token regeneration
         };
-
-        // Add plan features if available
-        if (subscription.Plan.CustomFeatures?.Any() == true)
-        {
-            claims.Add(new Claim("plan_features", JsonSerializer.Serialize(subscription.Plan.CustomFeatures)));
-        }
-
-        // Add plan modules if available
-        if (subscription.Plan.PlanModules?.Any() == true)
-        {
-            var modules = subscription.Plan.PlanModules.Select(pm => pm.Module.Name).ToList();
-            claims.Add(new Claim("plan_modules", JsonSerializer.Serialize(modules)));
-        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -176,6 +174,24 @@ public class ClientJwtService
     {
         var subscriptionIdClaim = principal.FindFirst("subscription_id")?.Value;
         return Guid.TryParse(subscriptionIdClaim, out var subscriptionId) ? subscriptionId : null;
+    }
+
+    /// <summary>
+    /// Extracts entitlements version from JWT claims
+    /// Used for cache invalidation - client compares this with cached entitlements version
+    /// </summary>
+    public int GetEntitlementsVersion(ClaimsPrincipal principal)
+    {
+        var versionClaim = principal.FindFirst("entitlements_version")?.Value;
+        return int.TryParse(versionClaim, out var version) ? version : 0;
+    }
+
+    /// <summary>
+    /// Extracts access mode from JWT claims
+    /// </summary>
+    public string? GetAccessMode(ClaimsPrincipal principal)
+    {
+        return principal.FindFirst("access_mode")?.Value;
     }
 
     /// <summary>

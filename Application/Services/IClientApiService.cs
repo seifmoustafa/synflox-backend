@@ -1,6 +1,8 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
+using Application.DTOs.Entitlements;
 using Application.DTOs.Licensing;
 
 namespace Application.Services;
@@ -11,6 +13,13 @@ namespace Application.Services;
 /// </summary>
 public interface IClientApiService
 {
+    /// <summary>
+    /// Gets the full entitlement matrix for a subscription
+    /// This is the main endpoint for clients to fetch their access rights
+    /// Should be cached by clients and refreshed when version changes
+    /// </summary>
+    Task<EntitlementMatrixDto> GetEntitlementsAsync(Guid subscriptionId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Gets subscription status for the authenticated client
     /// </summary>

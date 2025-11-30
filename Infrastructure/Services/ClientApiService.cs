@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
+using Application.DTOs.Entitlements;
 using Application.DTOs.Licensing;
 using Application.Services;
 using AutoMapper;
@@ -22,6 +24,7 @@ public class ClientApiService : IClientApiService
     private readonly IClientAccessTokenRepository _tokenRepo;
     private readonly IClientTokenUsageLogRepository _usageLogRepo;
     private readonly ILicenseService _licenseService;
+    private readonly IEntitlementService _entitlementService;
     private readonly IMapper _mapper;
     private readonly ILogger<ClientApiService> _logger;
 
@@ -31,6 +34,7 @@ public class ClientApiService : IClientApiService
         IClientAccessTokenRepository tokenRepo,
         IClientTokenUsageLogRepository usageLogRepo,
         ILicenseService licenseService,
+        IEntitlementService entitlementService,
         IMapper mapper,
         ILogger<ClientApiService> logger)
     {
@@ -39,8 +43,22 @@ public class ClientApiService : IClientApiService
         _tokenRepo = tokenRepo;
         _usageLogRepo = usageLogRepo;
         _licenseService = licenseService;
+        _entitlementService = entitlementService;
         _mapper = mapper;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Gets the full entitlement matrix for a subscription
+    /// This is the main endpoint for thin-token architecture
+    /// Clients cache this and refresh when version changes
+    /// </summary>
+    public async Task<EntitlementMatrixDto> GetEntitlementsAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Getting entitlements for subscription {SubscriptionId}", subscriptionId);
+        
+        // Use the cached entitlement matrix from EntitlementService
+        return await _entitlementService.GetCachedEntitlementMatrixAsync(subscriptionId, cancellationToken);
     }
 
     /// <summary>
