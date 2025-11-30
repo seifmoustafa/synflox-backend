@@ -69,7 +69,15 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
             .ForMember(d => d.IsLifetimePlan, opt => opt.MapFrom(s => s.IsLifetimePlan))
-            .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)));
+            .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)))
+            // Free Tier & Fallback
+            .ForMember(d => d.IsFreeTier, opt => opt.MapFrom(s => s.IsFreeTier))
+            .ForMember(d => d.FallbackAccessMode, opt => opt.MapFrom(s => s.FallbackAccessMode))
+            .ForMember(d => d.ExportGraceDays, opt => opt.MapFrom(s => s.ExportGraceDays))
+            .ForMember(d => d.DefaultFallbackPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.DefaultFallbackPlanId))
+            .ForMember(d => d.DefaultFallbackPlanName, opt => opt.MapFrom(s => s.DefaultFallbackPlan != null ? s.DefaultFallbackPlan.Name : null))
+            .ForMember(d => d.ShowLockedModulesInMenu, opt => opt.MapFrom(s => s.ShowLockedModulesInMenu))
+            .ForMember(d => d.LockedItemStyle, opt => opt.MapFrom(s => s.LockedItemStyle));
 
         CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
@@ -121,7 +129,15 @@ public class SubscriptionMappingProfile : Profile
                 s.Plan.PlanProjects.Select(pp => pp.Project)))
             .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
                 s.Plan.PlanModules.Select(pm => pm.Module)))
-            .ForMember(d => d.CustomFeatures, opt => opt.MapFrom(s => s.Plan.CustomFeatures));
+            .ForMember(d => d.CustomFeatures, opt => opt.MapFrom(s => s.Plan.CustomFeatures))
+            // Access Control (Enterprise Entitlement System)
+            .ForMember(d => d.AccessMode, opt => opt.MapFrom(s => s.AccessMode))
+            .ForMember(d => d.FallbackPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.FallbackPlanId))
+            .ForMember(d => d.FallbackPlanName, opt => opt.MapFrom(s => s.FallbackPlan != null ? s.FallbackPlan.Name : null))
+            .ForMember(d => d.ExportDeadlineUtc, opt => opt.MapFrom(s => s.ExportDeadlineUtc))
+            .ForMember(d => d.EntitlementsVersion, opt => opt.MapFrom(s => s.EntitlementsVersion))
+            .ForMember(d => d.AccessRestrictionMessage, opt => opt.MapFrom(s => s.AccessRestrictionMessage))
+            .ForMember(d => d.EntitlementCount, opt => opt.MapFrom(s => s.Entitlements.Count(e => e.IsActive && !e.IsDeleted)));
 
         CreateMap<Subscription, SubscriptionStatusDto>()
             .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))

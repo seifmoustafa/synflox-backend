@@ -13,4 +13,9 @@ public interface ISubscriptionPlanRepository : IBaseRepository<Guid, Subscriptio
     Task<SubscriptionPlan?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<SubscriptionPlan>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default);
     Task<decimal?> GetPriceAsync(Guid planId, Currency currency, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Get plan with projects and modules for entitlement copying
+    /// </summary>
+    Task<SubscriptionPlan?> GetWithProjectsAndModulesAsync(Guid id, CancellationToken cancellationToken = default);
 }

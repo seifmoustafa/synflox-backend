@@ -58,4 +58,19 @@ public class SubscriptionPlanRepository : BaseRepository<Guid, SubscriptionPlan>
 
         return planPrice?.Amount;
     }
+
+    public async Task<SubscriptionPlan?> GetWithProjectsAndModulesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<SubscriptionPlan>()
+            .Include(p => p.PlanProjects)
+                .ThenInclude(pp => pp.Project)
+                    .ThenInclude(proj => proj.ProjectModules)
+                        .ThenInclude(pm => pm.Module)
+            .Include(p => p.PlanModules)
+                .ThenInclude(pm => pm.Module)
+                    .ThenInclude(m => m.ProjectModules)
+            .Include(p => p.DefaultFallbackPlan)
+            .Where(p => !p.IsDeleted && p.Id == id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

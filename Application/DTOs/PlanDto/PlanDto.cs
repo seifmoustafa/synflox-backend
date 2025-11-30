@@ -33,6 +33,45 @@ public class PlanDto
     public int GracePeriodDays { get; set; }
     public List<string> CustomFeatures { get; set; } = new();
     public List<PlanPriceDto> Prices { get; set; } = new();
+    
+    #region Free Tier & Fallback (Enterprise Entitlement System)
+    
+    /// <summary>
+    /// Whether this is a free tier plan
+    /// </summary>
+    public bool IsFreeTier { get; set; }
+    
+    /// <summary>
+    /// Access mode for fallback when subscription expires
+    /// </summary>
+    public SubscriptionAccessMode FallbackAccessMode { get; set; }
+    
+    /// <summary>
+    /// Days allowed for data export after access is blocked
+    /// </summary>
+    public int ExportGraceDays { get; set; }
+    
+    /// <summary>
+    /// Default fallback plan ID
+    /// </summary>
+    public Guid? DefaultFallbackPlanId { get; set; }
+    
+    /// <summary>
+    /// Default fallback plan name
+    /// </summary>
+    public string? DefaultFallbackPlanName { get; set; }
+    
+    /// <summary>
+    /// Show locked modules in menu for marketing
+    /// </summary>
+    public bool ShowLockedModulesInMenu { get; set; }
+    
+    /// <summary>
+    /// Style for locked menu items
+    /// </summary>
+    public string LockedItemStyle { get; set; } = "greyed_with_lock";
+    
+    #endregion
 }
 
 public class PlanPriceDto

@@ -39,6 +39,58 @@ public class SubscriptionDto
     public int LicenseKeyVersion { get; set; }
     public bool HasLicenseKey => !string.IsNullOrEmpty(OfflineLicenseKey);
     
+    #region Access Control (Enterprise Entitlement System)
+    
+    /// <summary>
+    /// Current access mode
+    /// </summary>
+    public SubscriptionAccessMode AccessMode { get; set; }
+    
+    /// <summary>
+    /// Human-readable access mode
+    /// </summary>
+    public string AccessModeDisplay => AccessMode switch
+    {
+        SubscriptionAccessMode.Full => "Full Access",
+        SubscriptionAccessMode.GracePeriod => "Grace Period",
+        SubscriptionAccessMode.ReadOnly => "Read Only",
+        SubscriptionAccessMode.ExportOnly => "Export Only",
+        SubscriptionAccessMode.Blocked => "Blocked",
+        _ => "Unknown"
+    };
+    
+    /// <summary>
+    /// Fallback plan ID (if any)
+    /// </summary>
+    public Guid? FallbackPlanId { get; set; }
+    
+    /// <summary>
+    /// Fallback plan name
+    /// </summary>
+    public string? FallbackPlanName { get; set; }
+    
+    /// <summary>
+    /// Export deadline for ExportOnly mode
+    /// </summary>
+    public DateTime? ExportDeadlineUtc { get; set; }
+    
+    /// <summary>
+    /// Entitlements version for cache invalidation
+    /// </summary>
+    public int EntitlementsVersion { get; set; }
+    
+    /// <summary>
+    /// Custom restriction message
+    /// </summary>
+    public string? AccessRestrictionMessage { get; set; }
+    
+    /// <summary>
+    /// Number of entitlements
+    /// </summary>
+    public int EntitlementCount { get; set; }
+    
+    #endregion
+    
     // Computed Properties for Business Logic
     public string Status
     {
