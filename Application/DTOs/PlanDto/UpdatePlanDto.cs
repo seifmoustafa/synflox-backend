@@ -47,4 +47,40 @@ public class UpdatePlanDto
     public List<Guid>? ProjectIds { get; set; }
 
     public List<Guid>? ModuleIds { get; set; }
+    
+    #region Enterprise Entitlement System
+    
+    /// <summary>
+    /// Mark this as a free tier plan (limited access)
+    /// </summary>
+    public bool? IsFreeTier { get; set; }
+    
+    /// <summary>
+    /// Access mode when subscription falls back
+    /// </summary>
+    public SubscriptionAccessMode? FallbackAccessMode { get; set; }
+    
+    /// <summary>
+    /// Days allowed for data export after access is blocked (0-90)
+    /// </summary>
+    [Range(0, 90)]
+    public int? ExportGraceDays { get; set; }
+    
+    /// <summary>
+    /// Default fallback plan ID (optional)
+    /// </summary>
+    public Guid? DefaultFallbackPlanId { get; set; }
+    
+    /// <summary>
+    /// Show locked modules in menu (with lock icon)
+    /// </summary>
+    public bool? ShowLockedModulesInMenu { get; set; }
+    
+    /// <summary>
+    /// Style for locked items (greyed_with_lock, hidden, etc.)
+    /// </summary>
+    [StringLength(50)]
+    public string? LockedItemStyle { get; set; }
+    
+    #endregion
 }

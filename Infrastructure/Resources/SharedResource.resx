@@ -507,6 +507,17 @@
   <data name="Plan.HasActiveSubscriptions" xml:space="preserve">
     <value>Cannot delete plan with active subscriptions</value>
   </data>
+  
+  <!-- Free Tier & Fallback Plan Messages -->
+  <data name="Plan.FallbackNotFound" xml:space="preserve">
+    <value>Fallback plan not found</value>
+  </data>
+  <data name="Plan.FallbackMustBeFreeTier" xml:space="preserve">
+    <value>Fallback plan must be a free tier plan</value>
+  </data>
+  <data name="Plan.CannotFallbackToSelf" xml:space="preserve">
+    <value>A plan cannot fall back to itself</value>
+  </data>
   <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
     <value>Plan price not available for the requested currency</value>
   </data>

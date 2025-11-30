@@ -29,6 +29,17 @@ public class PlansController : ControllerBase
         var (plans, meta) = await _planService.GetAllAsync(page, pageSize, search);
         return Ok(new { data = plans, pagination = meta });
     }
+    
+    /// <summary>
+    /// Get all free tier plans (for fallback plan dropdown)
+    /// </summary>
+    [HttpGet("free-tier")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetFreeTierPlans()
+    {
+        var plans = await _planService.GetFreeTierPlansAsync();
+        return Ok(new { data = plans });
+    }
 
     [HttpGet("{id}")]
     [AllowAnonymous] // Allow public access to view plan details

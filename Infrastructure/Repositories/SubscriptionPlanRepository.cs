@@ -73,4 +73,13 @@ public class SubscriptionPlanRepository : BaseRepository<Guid, SubscriptionPlan>
             .Where(p => !p.IsDeleted && p.Id == id)
             .FirstOrDefaultAsync(cancellationToken);
     }
+    
+    public async Task<IEnumerable<SubscriptionPlan>> GetFreeTierPlansAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<SubscriptionPlan>()
+            .Include(p => p.PlanPrices)
+            .Where(p => !p.IsDeleted && p.IsFreeTier)
+            .OrderBy(p => p.Name)
+            .ToListAsync(cancellationToken);
+    }
 }

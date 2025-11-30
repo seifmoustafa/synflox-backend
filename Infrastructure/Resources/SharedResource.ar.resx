@@ -507,6 +507,17 @@
   <data name="Plan.HasActiveSubscriptions" xml:space="preserve">
     <value>لا يمكن حذف الخطة التي تحتوي على اشتراكات نشطة</value>
   </data>
+  
+  <!-- Free Tier & Fallback Plan Messages -->
+  <data name="Plan.FallbackNotFound" xml:space="preserve">
+    <value>الخطة الاحتياطية غير موجودة</value>
+  </data>
+  <data name="Plan.FallbackMustBeFreeTier" xml:space="preserve">
+    <value>يجب أن تكون الخطة الاحتياطية خطة مجانية</value>
+  </data>
+  <data name="Plan.CannotFallbackToSelf" xml:space="preserve">
+    <value>لا يمكن للخطة الرجوع إلى نفسها</value>
+  </data>
   <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
     <value>سعر الخطة غير متاح للعملة المطلوبة</value>
   </data>

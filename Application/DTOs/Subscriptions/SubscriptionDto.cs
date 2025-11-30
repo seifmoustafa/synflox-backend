@@ -33,6 +33,21 @@ public class SubscriptionDto
     public string? NextPlanName { get; set; }
     public DateTime? NextPlanStartDateUtc { get; set; }
     
+    /// <summary>
+    /// Parent subscription if this was created from an upgrade/renewal
+    /// </summary>
+    public Guid? ParentSubscriptionId { get; set; }
+    
+    /// <summary>
+    /// Parent subscription display name for UI
+    /// </summary>
+    public string? ParentSubscriptionDisplayName { get; set; }
+    
+    /// <summary>
+    /// Override for upgrade policy (null = use plan's policy)
+    /// </summary>
+    public UpgradePolicy? UpgradePolicyOverride { get; set; }
+    
     // Offline License Key Management
     public string? OfflineLicenseKey { get; set; }
     public DateTime? LicenseKeyGeneratedAt { get; set; }
@@ -88,6 +103,16 @@ public class SubscriptionDto
     /// Number of entitlements
     /// </summary>
     public int EntitlementCount { get; set; }
+    
+    /// <summary>
+    /// Grace period days from plan (days after expiry before access mode changes)
+    /// </summary>
+    public int GracePeriodDays { get; set; }
+    
+    /// <summary>
+    /// Export grace days from plan (days allowed for data export after blocked)
+    /// </summary>
+    public int ExportGraceDays { get; set; }
     
     #endregion
     

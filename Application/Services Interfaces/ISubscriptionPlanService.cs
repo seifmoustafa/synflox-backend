@@ -20,4 +20,9 @@ public interface ISubscriptionPlanService
     Task<(IEnumerable<PlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search);
     Task<PlanDto?> UpdateAsync(PlanIdRequest request, UpdatePlanDto dto);
     Task<bool> DeleteAsync(PlanIdRequest request);
+    
+    /// <summary>
+    /// Get all free tier plans (for fallback plan dropdown)
+    /// </summary>
+    Task<IEnumerable<PlanDto>> GetFreeTierPlansAsync();
 }

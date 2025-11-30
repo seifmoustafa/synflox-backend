@@ -5,6 +5,7 @@ namespace Domain.Enums;
 /// </summary>
 public enum Currency
 {
+    Free = 0, // Free plan (no price)
     USD = 1,  // US Dollar
     EUR = 2,  // Euro
     EGP = 3,  // Egyptian Pound

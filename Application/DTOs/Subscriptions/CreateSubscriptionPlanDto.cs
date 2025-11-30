@@ -24,10 +24,9 @@ public class CreateSubscriptionPlanDto
 
     /// <summary>
     /// Prices in multiple currencies
-    /// At least one price is required
+    /// Required for paid plans (validated in service based on IsFreeTier)
+    /// Free tier plans don't need prices - backend auto-sets Currency.Free with Amount=0
     /// </summary>
-    [Required]
-    [MinLength(1)]
     public List<PlanPriceDto> Prices { get; set; } = new();
 
     /// <summary>
@@ -63,4 +62,40 @@ public class CreateSubscriptionPlanDto
     /// Module IDs to include in this plan (standalone modules)
     /// </summary>
     public List<Guid> ModuleIds { get; set; } = new();
+    
+    #region Enterprise Entitlement System
+    
+    /// <summary>
+    /// Mark this as a free tier plan (limited access)
+    /// </summary>
+    public bool IsFreeTier { get; set; }
+    
+    /// <summary>
+    /// Access mode when subscription falls back (default: ReadOnly)
+    /// </summary>
+    public SubscriptionAccessMode FallbackAccessMode { get; set; } = SubscriptionAccessMode.ReadOnly;
+    
+    /// <summary>
+    /// Days allowed for data export after access is blocked (0-90, default: 30)
+    /// </summary>
+    [Range(0, 90)]
+    public int ExportGraceDays { get; set; } = 30;
+    
+    /// <summary>
+    /// Default fallback plan ID (optional)
+    /// </summary>
+    public Guid? DefaultFallbackPlanId { get; set; }
+    
+    /// <summary>
+    /// Show locked modules in menu (with lock icon)
+    /// </summary>
+    public bool ShowLockedModulesInMenu { get; set; } = true;
+    
+    /// <summary>
+    /// Style for locked items (greyed_with_lock, hidden, etc.)
+    /// </summary>
+    [StringLength(50)]
+    public string LockedItemStyle { get; set; } = "greyed_with_lock";
+    
+    #endregion
 }

@@ -49,6 +49,33 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<PlanDto> CreateAsync(CreateSubscriptionPlanDto dto)
     {
+        // ⭐ FREE TIER PLAN VALIDATION - Must be first (overrides everything)
+        if (dto.IsFreeTier)
+        {
+            // Free tier plans MUST be lifetime (never expire)
+            dto.DurationType = Domain.Enums.PlanDurationType.Lifetime;
+            // Free tier doesn't need trial
+            dto.AllowTrial = false;
+            dto.TrialDurationDays = null;
+            // Free tier doesn't renew (lifetime)
+            dto.AutoRenew = false;
+            // Free tier uses FullReplace
+            dto.UpgradePolicy = Domain.Enums.UpgradePolicy.FullReplace;
+            // Free tier has no grace period (doesn't expire)
+            dto.GracePeriodDays = 0;
+            // Free tier has no export grace (doesn't get blocked)
+            dto.ExportGraceDays = 0;
+            // Free tier IS the fallback - cannot have a fallback itself
+            dto.DefaultFallbackPlanId = null;
+            // Free tier has full access to its modules
+            dto.FallbackAccessMode = Domain.Enums.SubscriptionAccessMode.Full;
+            // Free tier has Free currency with 0 amount (auto-set, ignore any prices sent)
+            dto.Prices = new List<PlanPriceDto>
+            {
+                new PlanPriceDto { Currency = Domain.Enums.Currency.Free, Amount = 0 }
+            };
+        }
+        
         // ⭐ LIFETIME PLAN VALIDATION
         if (dto.DurationType == Domain.Enums.PlanDurationType.Lifetime)
         {
@@ -67,13 +94,28 @@ public class SubscriptionPlanService : ISubscriptionPlanService
             dto.GracePeriodDays = 0;
         }
         
-        // Validate
+        // ⭐ FALLBACK PLAN VALIDATION
+        if (dto.DefaultFallbackPlanId.HasValue)
+        {
+            var fallbackPlan = await _planRepo.GetByIdAsync(dto.DefaultFallbackPlanId.Value, null);
+            if (fallbackPlan == null)
+                throw new NotFoundException(_localizer["Plan.FallbackNotFound"]);
+            
+            if (!fallbackPlan.IsFreeTier)
+                throw new BadRequestException(_localizer["Plan.FallbackMustBeFreeTier"]);
+        }
+        
+        // ⭐ VALIDATE - All cases handled
+        
+        // Trial duration is required only if trial is enabled (and not free tier/lifetime)
         if (dto.AllowTrial && (!dto.TrialDurationDays.HasValue || dto.TrialDurationDays.Value <= 0))
             throw new BadRequestException(_localizer["Plan.TrialDurationRequired"]);
 
-        if (!dto.Prices.Any())
+        // Prices required only for PAID plans (Free Tier already has auto-set price)
+        if (!dto.IsFreeTier && !dto.Prices.Any())
             throw new BadRequestException(_localizer["Plan.AtLeastOnePriceRequired"]);
 
+        // Must include at least one project or module
         if (!dto.ProjectIds.Any() && !dto.ModuleIds.Any())
             throw new BadRequestException(_localizer["Plan.MustIncludeContent"]);
 
@@ -84,8 +126,21 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         var plan = _mapper.Map<SubscriptionPlan>(dto);
         plan.Id = Guid.NewGuid();
         
+        // ⭐ FORCE correct values for Free Tier (defense in depth)
+        if (plan.IsFreeTier)
+        {
+            plan.DurationType = Domain.Enums.PlanDurationType.Lifetime;
+            plan.AllowTrial = false;
+            plan.TrialDurationDays = null;
+            plan.AutoRenew = false;
+            plan.UpgradePolicy = Domain.Enums.UpgradePolicy.FullReplace;
+            plan.GracePeriodDays = 0;
+            plan.ExportGraceDays = 0;
+            plan.DefaultFallbackPlanId = null;
+            plan.FallbackAccessMode = Domain.Enums.SubscriptionAccessMode.Full;
+        }
         // ⭐ FORCE correct values for Lifetime (defense in depth)
-        if (plan.DurationType == Domain.Enums.PlanDurationType.Lifetime)
+        else if (plan.DurationType == Domain.Enums.PlanDurationType.Lifetime)
         {
             plan.AllowTrial = false;
             plan.AutoRenew = false;
@@ -190,6 +245,42 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         if (plan == null)
             throw new NotFoundException(_localizer["Plan.NotFound"]);
 
+        // ⭐ FREE TIER PLAN VALIDATION for UPDATE - Must be first
+        var isFreeTier = dto.IsFreeTier ?? plan.IsFreeTier;
+        if (isFreeTier)
+        {
+            // Free tier plans MUST be lifetime
+            dto.DurationType = Domain.Enums.PlanDurationType.Lifetime;
+            dto.AllowTrial = false;
+            dto.TrialDurationDays = null;
+            dto.AutoRenew = false;
+            dto.UpgradePolicy = Domain.Enums.UpgradePolicy.FullReplace;
+            dto.GracePeriodDays = 0;
+            dto.ExportGraceDays = 0;
+            dto.DefaultFallbackPlanId = null;
+            dto.FallbackAccessMode = Domain.Enums.SubscriptionAccessMode.Full;
+            // Free tier has Free currency with 0 amount (auto-set)
+            dto.Prices = new List<PlanPriceDto>
+            {
+                new PlanPriceDto { Currency = Domain.Enums.Currency.Free, Amount = 0 }
+            };
+        }
+
+        // ⭐ FALLBACK PLAN VALIDATION for UPDATE
+        if (dto.DefaultFallbackPlanId.HasValue)
+        {
+            // Cannot reference itself
+            if (dto.DefaultFallbackPlanId.Value == decryptedPlanId)
+                throw new BadRequestException(_localizer["Plan.CannotFallbackToSelf"]);
+            
+            var fallbackPlan = await _planRepo.GetByIdAsync(dto.DefaultFallbackPlanId.Value, null);
+            if (fallbackPlan == null)
+                throw new NotFoundException(_localizer["Plan.FallbackNotFound"]);
+            
+            if (!fallbackPlan.IsFreeTier)
+                throw new BadRequestException(_localizer["Plan.FallbackMustBeFreeTier"]);
+        }
+
         // ⭐ LIFETIME PLAN VALIDATION for UPDATE
         var targetDurationType = dto.DurationType ?? plan.DurationType;
         
@@ -222,8 +313,21 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
         _mapper.Map(dto, plan);
         
+        // ⭐ FORCE correct values for Free Tier after mapping (defense in depth)
+        if (plan.IsFreeTier)
+        {
+            plan.DurationType = Domain.Enums.PlanDurationType.Lifetime;
+            plan.AllowTrial = false;
+            plan.TrialDurationDays = null;
+            plan.AutoRenew = false;
+            plan.UpgradePolicy = Domain.Enums.UpgradePolicy.FullReplace;
+            plan.GracePeriodDays = 0;
+            plan.ExportGraceDays = 0;
+            plan.DefaultFallbackPlanId = null;
+            plan.FallbackAccessMode = Domain.Enums.SubscriptionAccessMode.Full;
+        }
         // ⭐ FORCE correct values for Lifetime after mapping (defense in depth)
-        if (plan.DurationType == Domain.Enums.PlanDurationType.Lifetime)
+        else if (plan.DurationType == Domain.Enums.PlanDurationType.Lifetime)
         {
             plan.AllowTrial = false;
             plan.AutoRenew = false;
@@ -310,5 +414,11 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         await _planRepo.DeleteAsync(decryptedPlanId);
         await _unitOfWork.SaveChangesAsync();
         return true;
+    }
+    
+    public async Task<IEnumerable<PlanDto>> GetFreeTierPlansAsync()
+    {
+        var freeTierPlans = await _planRepo.GetFreeTierPlansAsync();
+        return _mapper.Map<IEnumerable<PlanDto>>(freeTierPlans);
     }
 }

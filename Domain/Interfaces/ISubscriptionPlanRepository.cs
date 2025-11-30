@@ -18,4 +18,9 @@ public interface ISubscriptionPlanRepository : IBaseRepository<Guid, Subscriptio
     /// Get plan with projects and modules for entitlement copying
     /// </summary>
     Task<SubscriptionPlan?> GetWithProjectsAndModulesAsync(Guid id, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Get all free tier plans (for fallback plan selection)
+    /// </summary>
+    Task<IEnumerable<SubscriptionPlan>> GetFreeTierPlansAsync(CancellationToken cancellationToken = default);
 }
