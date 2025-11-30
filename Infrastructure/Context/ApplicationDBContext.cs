@@ -54,6 +54,7 @@ namespace Infrastructure.Context
         public DbSet<Domain.Entities.Subscriptions.PlanModule> PlanModules { get; set; }
         public DbSet<Domain.Entities.Subscriptions.OutboxEvent> OutboxEvents { get; set; }
         public DbSet<Domain.Entities.Subscriptions.SubscriptionHistory> SubscriptionHistories { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.SubscriptionEntitlement> SubscriptionEntitlements { get; set; }
         #endregion
 
         #region Navigation

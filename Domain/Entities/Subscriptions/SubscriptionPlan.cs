@@ -65,9 +65,58 @@ public class SubscriptionPlan : AuditEntity<Guid>
     /// </summary>
     public List<string> CustomFeatures { get; set; } = new();
 
+    #region Free Tier & Fallback Configuration (Enterprise Entitlement System)
+
+    /// <summary>
+    /// Is this a free tier plan? (Can be used as fallback for expired subscriptions)
+    /// Free tier plans typically provide read-only access
+    /// </summary>
+    public bool IsFreeTier { get; set; }
+
+    /// <summary>
+    /// Access mode when using this plan as fallback after expiry
+    /// Typically ReadOnly for view + export only access
+    /// </summary>
+    public SubscriptionAccessMode FallbackAccessMode { get; set; } = SubscriptionAccessMode.ReadOnly;
+
+    /// <summary>
+    /// Days to allow data export after subscription becomes blocked
+    /// Only applies when no fallback plan is set
+    /// After this period, access is completely blocked
+    /// </summary>
+    [Range(0, 90)]
+    public int ExportGraceDays { get; set; } = 30;
+
+    /// <summary>
+    /// Default fallback plan for subscribers of this plan
+    /// When their subscription expires, they automatically get this fallback plan
+    /// null = no automatic fallback (will be blocked or export-only)
+    /// </summary>
+    public Guid? DefaultFallbackPlanId { get; set; }
+
+    /// <summary>
+    /// Whether to show locked modules in menu for marketing purposes
+    /// When true, client applications should display modules not in the plan as locked
+    /// </summary>
+    public bool ShowLockedModulesInMenu { get; set; } = true;
+
+    /// <summary>
+    /// Style for displaying locked items in client UI
+    /// Options: "greyed_with_lock", "hidden", "upgrade_badge", "separate_section"
+    /// </summary>
+    [StringLength(50)]
+    public string LockedItemStyle { get; set; } = "greyed_with_lock";
+
+    #endregion
+
     // Navigation properties
     public ICollection<PlanPrice> PlanPrices { get; set; } = new List<PlanPrice>();
     public ICollection<PlanProject> PlanProjects { get; set; } = new List<PlanProject>();
     public ICollection<PlanModule> PlanModules { get; set; } = new List<PlanModule>();
     public ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    /// <summary>
+    /// The default fallback plan for this plan's subscribers
+    /// </summary>
+    public SubscriptionPlan? DefaultFallbackPlan { get; set; }
 }

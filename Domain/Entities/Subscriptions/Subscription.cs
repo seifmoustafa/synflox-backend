@@ -119,9 +119,52 @@ public class Subscription : AuditEntity<Guid>
     /// </summary>
     public int LicenseKeyVersion { get; set; } = 1;
 
+    #region Access Control (Enterprise Entitlement System)
+
+    /// <summary>
+    /// Current access mode for this subscription
+    /// Determines global access level (Full, GracePeriod, ReadOnly, ExportOnly, Blocked)
+    /// Updated by background job based on subscription state
+    /// </summary>
+    public SubscriptionAccessMode AccessMode { get; set; } = SubscriptionAccessMode.Full;
+
+    /// <summary>
+    /// Fallback plan for expired subscriptions (null = blocked after expiry)
+    /// When set, subscription downgrades to this plan's access level instead of blocking
+    /// </summary>
+    public Guid? FallbackPlanId { get; set; }
+
+    /// <summary>
+    /// When export-only mode ends (after which access is Blocked)
+    /// Set when subscription transitions to ExportOnly mode
+    /// </summary>
+    public DateTime? ExportDeadlineUtc { get; set; }
+
+    /// <summary>
+    /// Version number for entitlements, incremented on any entitlement change
+    /// Used by client applications to detect when to refresh cached entitlements
+    /// </summary>
+    public int EntitlementsVersion { get; set; } = 1;
+
+    /// <summary>
+    /// Custom message to show when access is restricted
+    /// Displayed to end users when they try to access blocked features
+    /// </summary>
+    [StringLength(500)]
+    public string? AccessRestrictionMessage { get; set; }
+
+    #endregion
+
     // Navigation properties
     public Company Company { get; set; } = null!;
     public SubscriptionPlan Plan { get; set; } = null!;
     public SubscriptionPlan? NextPlan { get; set; }
     public Subscription? ParentSubscription { get; set; }
+    public SubscriptionPlan? FallbackPlan { get; set; }
+    
+    /// <summary>
+    /// Entitlements granted to this subscription
+    /// Defines what projects/modules/features are accessible
+    /// </summary>
+    public ICollection<SubscriptionEntitlement> Entitlements { get; set; } = new List<SubscriptionEntitlement>();
 }

@@ -290,6 +290,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<ISubscriptionHistoryRepository, SubscriptionHistoryRepository>();
         services.AddScoped<IOutboxEventRepository, OutboxEventRepository>();
+        services.AddScoped<ISubscriptionEntitlementRepository, SubscriptionEntitlementRepository>();
         
         // Client Token Repositories (Phase 2)
         services.AddScoped<IClientAccessTokenRepository, ClientAccessTokenRepository>();

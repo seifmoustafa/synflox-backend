@@ -38,5 +38,43 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         // Index for trial-enabled plans
         builder.HasIndex(p => new { p.AllowTrial, p.IsDeleted })
             .HasDatabaseName("IX_SubscriptionPlans_Trial");
+
+        #region Free Tier & Fallback Configuration
+
+        builder.Property(p => p.IsFreeTier)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(p => p.FallbackAccessMode)
+            .IsRequired()
+            .HasDefaultValue(Domain.Enums.SubscriptionAccessMode.ReadOnly);
+
+        builder.Property(p => p.ExportGraceDays)
+            .IsRequired()
+            .HasDefaultValue(30);
+
+        builder.Property(p => p.ShowLockedModulesInMenu)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        builder.Property(p => p.LockedItemStyle)
+            .HasMaxLength(50)
+            .HasDefaultValue("greyed_with_lock");
+
+        // Self-referencing relationship for default fallback plan
+        builder.HasOne(p => p.DefaultFallbackPlan)
+            .WithMany()
+            .HasForeignKey(p => p.DefaultFallbackPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Ignore computed property
+        builder.Ignore(p => p.IsLifetimePlan);
+
+        // Index for free tier plans
+        builder.HasIndex(p => new { p.IsFreeTier, p.IsDeleted })
+            .HasFilter("[IsFreeTier] = 1 AND [IsDeleted] = 0")
+            .HasDatabaseName("IX_SubscriptionPlans_FreeTier");
+
+        #endregion
     }
 }

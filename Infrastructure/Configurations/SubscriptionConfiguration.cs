@@ -51,6 +51,26 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
             .HasForeignKey(s => s.ParentSubscriptionId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(s => s.FallbackPlan)
+            .WithMany()
+            .HasForeignKey(s => s.FallbackPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Access Control properties
+        builder.Property(s => s.AccessMode)
+            .IsRequired()
+            .HasDefaultValue(Domain.Enums.SubscriptionAccessMode.Full);
+
+        builder.Property(s => s.EntitlementsVersion)
+            .IsRequired()
+            .HasDefaultValue(1);
+
+        builder.Property(s => s.AccessRestrictionMessage)
+            .HasMaxLength(500);
+
+        // Ignore computed properties
+        builder.Ignore(s => s.IsLifetime);
+
         // Critical index for preventing overlapping active subscriptions
         builder.HasIndex(s => new { s.CompanyId, s.PlanId, s.IsActive, s.IsDeleted })
             .HasFilter("[IsActive] = 1 AND [IsDeleted] = 0")
@@ -72,5 +92,14 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         builder.HasIndex(s => new { s.NextPlanId, s.NextPlanStartDateUtc, s.IsDeleted })
             .HasFilter("[NextPlanId] IS NOT NULL")
             .HasDatabaseName("IX_Subscriptions_NextPlan");
+
+        // Index for access mode transitions (background job)
+        builder.HasIndex(s => new { s.AccessMode, s.ExpiryDateUtc, s.IsActive, s.IsDeleted })
+            .HasDatabaseName("IX_Subscriptions_AccessMode_Expiry");
+
+        // Index for fallback plan lookup
+        builder.HasIndex(s => new { s.FallbackPlanId, s.IsDeleted })
+            .HasFilter("[FallbackPlanId] IS NOT NULL")
+            .HasDatabaseName("IX_Subscriptions_FallbackPlan");
     }
 }
