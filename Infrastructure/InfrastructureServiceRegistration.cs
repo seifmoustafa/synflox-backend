@@ -268,6 +268,9 @@ public static class InfrastructureServiceRegistration
         // Subscription Engine Background Jobs (Phase 1)
         services.AddHostedService<SubscriptionStatusBackgroundJob>();
         services.AddHostedService<OutboxProcessorBackgroundJob>();
+        
+        // Entitlement System Background Job (Phase 7)
+        services.AddHostedService<AccessModeTransitionJob>();
         #endregion
 
         #region Repositories Registration

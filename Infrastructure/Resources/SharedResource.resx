@@ -239,6 +239,20 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>Subscription not found</value>
   </data>
+  
+  <!-- Access Mode Transition Messages -->
+  <data name="AccessMode.GracePeriod" xml:space="preserve">
+    <value>Your subscription has expired. You are in a grace period with limited access.</value>
+  </data>
+  <data name="AccessMode.ExportOnly" xml:space="preserve">
+    <value>Your subscription has ended. You can only export your data during this period.</value>
+  </data>
+  <data name="AccessMode.ReadOnly" xml:space="preserve">
+    <value>Your subscription has ended. You have read-only access to your data.</value>
+  </data>
+  <data name="AccessMode.Blocked" xml:space="preserve">
+    <value>Your subscription has ended. Please renew to regain access.</value>
+  </data>
 
   <!-- Email Localization Keys -->
 

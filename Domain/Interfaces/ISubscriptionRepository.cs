@@ -17,4 +17,9 @@ public interface ISubscriptionRepository : IBaseRepository<Guid, Subscription>
     Task<bool> HasOverlappingActiveSubscriptionAsync(Guid companyId, Guid planId, DateTime startDate, DateTime expiryDate, Guid? excludeSubscriptionId = null, CancellationToken cancellationToken = default);
     Task<Subscription?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> HasActiveSubscriptionsForPlanAsync(Guid planId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets all subscriptions with their plans for access mode transition processing
+    /// </summary>
+    Task<IEnumerable<Subscription>> GetAllWithPlansAsync(CancellationToken cancellationToken = default);
 }

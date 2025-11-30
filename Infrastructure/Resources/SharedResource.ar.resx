@@ -239,6 +239,20 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>الاشتراك غير موجود</value>
   </data>
+  
+  <!-- Access Mode Transition Messages -->
+  <data name="AccessMode.GracePeriod" xml:space="preserve">
+    <value>انتهت صلاحية اشتراكك. أنت في فترة سماح مع وصول محدود.</value>
+  </data>
+  <data name="AccessMode.ExportOnly" xml:space="preserve">
+    <value>انتهى اشتراكك. يمكنك فقط تصدير بياناتك خلال هذه الفترة.</value>
+  </data>
+  <data name="AccessMode.ReadOnly" xml:space="preserve">
+    <value>انتهى اشتراكك. لديك وصول للقراءة فقط لبياناتك.</value>
+  </data>
+  <data name="AccessMode.Blocked" xml:space="preserve">
+    <value>انتهى اشتراكك. يرجى التجديد لاستعادة الوصول.</value>
+  </data>
 
   <!-- Email Localization Keys - Arabic -->
 

@@ -140,4 +140,14 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
                 && s.ExpiryDateUtc > now)
             .AnyAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<Subscription>> GetAllWithPlansAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<Subscription>()
+            .Include(s => s.Plan)
+            .Include(s => s.Company)
+            .Include(s => s.FallbackPlan)
+            .Where(s => !s.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
 }
