@@ -57,13 +57,13 @@ public record SubscriptionEntitlementDto
     /// <summary>
     /// Is this entitlement currently valid?
     /// </summary>
-    public bool IsValid => IsActive && (!ExpiresAt.HasValue || ExpiresAt.Value > DateTime.Now);
+    public bool IsValid => IsActive && (!ExpiresAt.HasValue || ExpiresAt.Value > DateTime.UtcNow);
     
     /// <summary>
     /// Days until expiry (null if no expiry)
     /// </summary>
     public int? DaysUntilExpiry => ExpiresAt.HasValue 
-        ? Math.Max(0, (int)(ExpiresAt.Value - DateTime.Now).TotalDays) 
+        ? Math.Max(0, (int)(ExpiresAt.Value - DateTime.UtcNow).TotalDays) 
         : null;
     
     /// <summary>

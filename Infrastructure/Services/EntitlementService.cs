@@ -168,7 +168,7 @@ public class EntitlementService : IEntitlementService
         if (request.IsActive.HasValue)
             entitlement.IsActive = request.IsActive.Value;
 
-        entitlement.UpdatedTimestamp = DateTime.Now;
+        entitlement.UpdatedTimestamp = DateTime.UtcNow;
 
         await _entitlementRepo.UpdateAsync(entitlement);
         await IncrementVersionAsync(entitlement.SubscriptionId, cancellationToken);
@@ -198,7 +198,7 @@ public class EntitlementService : IEntitlementService
             entitlement.IsDeleted = true;
             entitlement.IsActive = false;
             entitlement.Notes = $"{entitlement.Notes}\n[Revoked: {request.Reason}]".Trim();
-            entitlement.DeletedTimestamp = DateTime.Now;
+            entitlement.DeletedTimestamp = DateTime.UtcNow;
             await _entitlementRepo.UpdateAsync(entitlement);
         }
 
@@ -394,7 +394,7 @@ public class EntitlementService : IEntitlementService
                 continue;
 
             entitlement.IsActive = false;
-            entitlement.UpdatedTimestamp = DateTime.Now;
+            entitlement.UpdatedTimestamp = DateTime.UtcNow;
             await _entitlementRepo.UpdateAsync(entitlement);
         }
 
@@ -450,7 +450,7 @@ public class EntitlementService : IEntitlementService
                 entitlement.IsActive = false;
                 entitlement.IsDeleted = true;
                 entitlement.Notes = $"{entitlement.Notes}\n[Bulk Revoked: {request.Reason}]".Trim();
-                entitlement.DeletedTimestamp = DateTime.Now;
+                entitlement.DeletedTimestamp = DateTime.UtcNow;
                 await _entitlementRepo.UpdateAsync(entitlement);
                 subscriptionIds.Add(entitlement.SubscriptionId);
             }
@@ -743,7 +743,7 @@ public class EntitlementService : IEntitlementService
             return 0;
 
         subscription.EntitlementsVersion++;
-        subscription.UpdatedTimestamp = DateTime.Now;
+        subscription.UpdatedTimestamp = DateTime.UtcNow;
         await _subscriptionRepo.UpdateAsync(subscription);
 
         // Invalidate cache
@@ -781,13 +781,13 @@ public class EntitlementService : IEntitlementService
         if (subscription.Plan != null)
         {
             var graceEnd = subscription.ExpiryDateUtc.AddDays(subscription.Plan.GracePeriodDays);
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             if (now > subscription.ExpiryDateUtc && now <= graceEnd)
                 return SubscriptionAccessMode.GracePeriod;
         }
 
         // Check export deadline
-        if (subscription.ExportDeadlineUtc.HasValue && DateTime.Now <= subscription.ExportDeadlineUtc.Value)
+        if (subscription.ExportDeadlineUtc.HasValue && DateTime.UtcNow <= subscription.ExportDeadlineUtc.Value)
             return SubscriptionAccessMode.ExportOnly;
 
         // Has fallback plan = ReadOnly
@@ -809,7 +809,7 @@ public class EntitlementService : IEntitlementService
 
         subscription.AccessMode = newMode;
         subscription.AccessRestrictionMessage = restrictionMessage;
-        subscription.UpdatedTimestamp = DateTime.Now;
+        subscription.UpdatedTimestamp = DateTime.UtcNow;
 
         await _subscriptionRepo.UpdateAsync(subscription);
         await IncrementVersionAsync(subscriptionId, cancellationToken);
@@ -836,7 +836,7 @@ public class EntitlementService : IEntitlementService
             return null;
 
         var mode = await GetEffectiveAccessModeAsync(subscriptionId, cancellationToken);
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         return mode switch
         {

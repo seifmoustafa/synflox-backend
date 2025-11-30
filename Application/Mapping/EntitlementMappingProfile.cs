@@ -63,7 +63,7 @@ public class EntitlementMappingProfile : Profile
             .ForMember(d => d.Id, opt => opt.MapFrom(_ => Guid.NewGuid()))
             .ForMember(d => d.IsActive, opt => opt.MapFrom(_ => true))
             .ForMember(d => d.IsDeleted, opt => opt.MapFrom(_ => false))
-            .ForMember(d => d.CreatedTimestamp, opt => opt.MapFrom(_ => DateTime.Now)) // Server time
+            .ForMember(d => d.CreatedTimestamp, opt => opt.MapFrom(_ => DateTime.UtcNow)) // UTC time
             .ForMember(d => d.UpdatedTimestamp, opt => opt.Ignore())
             .ForMember(d => d.DeletedTimestamp, opt => opt.Ignore())
             .ForMember(d => d.CreatedBy, opt => opt.Ignore())
@@ -91,7 +91,7 @@ public class EntitlementMappingProfile : Profile
             .ForMember(d => d.StandaloneModules, opt => opt.Ignore()) // Set by service
             .ForMember(d => d.GlobalUsageLimits, opt => opt.Ignore())
             .ForMember(d => d.AvailableUpgrades, opt => opt.Ignore())
-            .ForMember(d => d.GeneratedAtUtc, opt => opt.MapFrom(_ => DateTime.Now))
+            .ForMember(d => d.GeneratedAtUtc, opt => opt.MapFrom(_ => DateTime.UtcNow))
             .ForMember(d => d.CacheTtlSeconds, opt => opt.MapFrom(_ => 86400))
             .ForMember(d => d.MenuConfig, opt => opt.MapFrom(s => s.Plan));
 

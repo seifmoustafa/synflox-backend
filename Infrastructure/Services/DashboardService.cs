@@ -47,7 +47,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var today = now.Date;
             var lastMonth = today.AddMonths(-1);
             var last30Days = today.AddDays(-30);
@@ -264,7 +264,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var today = now.Date;
             var thisMonth = new DateTime(today.Year, today.Month, 1);
             var thisWeek = today.AddDays(-(int)today.DayOfWeek);
@@ -373,7 +373,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var today = now.Date;
 
             var subscriptions = await _context.Subscriptions
@@ -444,7 +444,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var today = now.Date;
 
             var subscriptions = await _context.Subscriptions
@@ -513,7 +513,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var today = now.Date;
             var thisWeek = today.AddDays(-(int)today.DayOfWeek);
             var thisMonth = new DateTime(today.Year, today.Month, 1);
@@ -604,7 +604,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var today = now.Date;
 
             var subscriptions = await _context.Subscriptions
@@ -1270,7 +1270,7 @@ public class DashboardService : IDashboardService
 
     private AlertItemDto CreateAlertItem(Subscription sub, AlertPriority priority, string message, DateTime today)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var daysRemaining = (sub.ExpiryDateUtc.Date - today).Days;
         
         // Encrypt IDs for frontend URLs
@@ -1342,7 +1342,7 @@ public class DashboardService : IDashboardService
 
     private string GetLocalizedTimeAgo(DateTime timestamp)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var diff = now - timestamp;
 
         if (diff.TotalMinutes < 1) return _localizer["Activity.Time.JustNow"];

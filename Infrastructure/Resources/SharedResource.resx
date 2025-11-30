@@ -233,6 +233,9 @@
   <data name="License.CannotGenerateForInactiveSubscription" xml:space="preserve">
     <value>Cannot generate license key for inactive subscription</value>
   </data>
+  <data name="License.StaleEntitlements" xml:space="preserve">
+    <value>License key has outdated entitlements. Please regenerate the license key.</value>
+  </data>
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>Subscription not found</value>
   </data>

@@ -1896,7 +1896,7 @@ public class EmailService : IEmailService
         
         var logoUrl = GetLogoUrl();
         var logoStyle = GetLogoStyle();
-        var currentYear = DateTime.Now.Year;
+        var currentYear = DateTime.UtcNow.Year;
         
         // Build custom announcement section if provided
         var announcementSection = !string.IsNullOrEmpty(customHeader) 

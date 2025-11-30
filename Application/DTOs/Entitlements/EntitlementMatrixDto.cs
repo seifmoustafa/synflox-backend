@@ -76,7 +76,7 @@ public record EntitlementMatrixDto
     /// <summary>
     /// Timestamp when this matrix was generated
     /// </summary>
-    public DateTime GeneratedAtUtc { get; set; } = DateTime.Now;
+    public DateTime GeneratedAtUtc { get; set; } = DateTime.UtcNow;
     
     /// <summary>
     /// Cache TTL in seconds (client should refresh after this)

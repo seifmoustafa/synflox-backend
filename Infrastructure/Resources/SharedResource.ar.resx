@@ -233,6 +233,9 @@
   <data name="License.CannotGenerateForInactiveSubscription" xml:space="preserve">
     <value>لا يمكن إنشاء مفتاح ترخيص لاشتراك غير نشط</value>
   </data>
+  <data name="License.StaleEntitlements" xml:space="preserve">
+    <value>مفتاح الترخيص يحتوي على صلاحيات قديمة. يرجى إعادة إنشاء مفتاح الترخيص.</value>
+  </data>
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>الاشتراك غير موجود</value>
   </data>

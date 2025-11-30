@@ -57,7 +57,7 @@ namespace Infrastructure.Services
                 Description = description,
                 PerformedBy = performedBy,
                 PerformedByName = performedByName ?? _localizer["Activity.System"],
-                Timestamp = DateTime.Now, // Use server local time
+                Timestamp = DateTime.UtcNow, // UTC time
                 Metadata = metadata,
                 IpAddress = ipAddress
             };
@@ -172,7 +172,7 @@ namespace Infrastructure.Services
 
         private string GetLocalizedTimeAgo(DateTime timestamp)
         {
-            var now = DateTime.Now; // Use server local time
+            var now = DateTime.UtcNow; // UTC time
             var diff = now - timestamp;
 
             if (diff.TotalMinutes < 1) return _localizer["Activity.Time.JustNow"];

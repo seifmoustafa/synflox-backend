@@ -9,6 +9,7 @@ using Application.DTOs.Licensing;
 using Application.Services;
 using AutoMapper;
 using Domain.Entities.Subscriptions;
+using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
 using Infrastructure.Settings;
@@ -19,6 +20,14 @@ namespace Infrastructure.Services;
 /// <summary>
 /// Service for managing offline license keys tied to subscriptions
 /// Handles key generation, validation, and offline verification
+/// 
+/// For offline systems, the license key contains the FULL entitlement matrix
+/// (unlike online systems which use thin tokens + fetch entitlements)
+/// 
+/// IMPORTANT: License keys store RAW (unencrypted) IDs because:
+/// 1. The entire payload is AES encrypted + HMAC signed
+/// 2. We don't need double encryption
+/// 3. Encryption key rotation shouldn't invalidate existing licenses
 /// </summary>
 public class LicenseService : ILicenseService
 {
@@ -26,6 +35,7 @@ public class LicenseService : ILicenseService
     private readonly ICompanyRepository _companyRepo;
     private readonly ISubscriptionPlanRepository _planRepo;
     private readonly IModuleRepository _moduleRepo;
+    private readonly ISubscriptionEntitlementRepository _entitlementRepo;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -37,6 +47,7 @@ public class LicenseService : ILicenseService
         ICompanyRepository companyRepo,
         ISubscriptionPlanRepository planRepo,
         IModuleRepository moduleRepo,
+        ISubscriptionEntitlementRepository entitlementRepo,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
@@ -47,6 +58,7 @@ public class LicenseService : ILicenseService
         _companyRepo = companyRepo;
         _planRepo = planRepo;
         _moduleRepo = moduleRepo;
+        _entitlementRepo = entitlementRepo;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -67,20 +79,43 @@ public class LicenseService : ILicenseService
             throw new BadRequestException(_localizer["License.CannotGenerateForInactiveSubscription"]);
         }
 
-        // Create license data payload
+        // Get entitlements directly from repository (RAW IDs - not encrypted!)
+        var entitlements = await _entitlementRepo.GetBySubscriptionWithDetailsAsync(subscriptionId);
+        
+        // Build entitlement matrix with RAW (unencrypted) IDs for license key
+        var (projects, standaloneModules) = BuildLicenseEntitlements(entitlements);
+
+        // Create license data payload with FULL entitlements (for offline systems)
         var licenseData = new OfflineLicenseData
         {
+            // Identity (RAW IDs - entire payload is encrypted)
             CompanyId = subscription.CompanyId,
             CompanyName = subscription.Company.Name,
             PlanId = subscription.PlanId,
             PlanName = subscription.Plan.Name,
             SubscriptionId = subscription.Id,
+            
+            // Dates
             ExpiryDateUtc = subscription.ExpiryDateUtc,
             IssuedAtUtc = DateTime.UtcNow,
+            GraceEndDateUtc = CalculateGraceEndDate(subscription),
+            ExportDeadlineUtc = subscription.ExportDeadlineUtc,
+            
+            // Status
             IsTrial = subscription.IsTrial,
+            AccessMode = subscription.AccessMode,
+            
+            // Versioning
+            Version = _licenseSettings.Version,
+            EntitlementsVersion = subscription.EntitlementsVersion,
+            
+            // Legacy (backward compatibility)
             Features = subscription.Plan.CustomFeatures ?? new List<string>(),
             Modules = subscription.Plan.PlanModules?.Select(m => m.Module.Name).ToList() ?? new List<string>(),
-            Version = _licenseSettings.Version
+            
+            // Enterprise Entitlements (RAW IDs for offline)
+            Projects = projects,
+            StandaloneModules = standaloneModules
         };
 
         // Generate encrypted license key
@@ -116,43 +151,126 @@ public class LicenseService : ILicenseService
                 };
             }
 
-            // Check expiry
-            if (licenseData.ExpiryDateUtc <= DateTime.UtcNow)
+            // Check expiry (but allow grace period access)
+            var now = DateTime.UtcNow;
+            var isExpired = licenseData.ExpiryDateUtc <= now;
+            var inGracePeriod = isExpired && licenseData.GraceEndDateUtc.HasValue && licenseData.GraceEndDateUtc > now;
+            var inExportOnly = isExpired && !inGracePeriod && licenseData.ExportDeadlineUtc.HasValue && licenseData.ExportDeadlineUtc > now;
+            
+            // Determine effective access mode
+            var effectiveAccessMode = licenseData.AccessMode;
+            if (isExpired && !inGracePeriod && !inExportOnly)
+            {
+                effectiveAccessMode = SubscriptionAccessMode.Blocked;
+            }
+            else if (inExportOnly)
+            {
+                effectiveAccessMode = SubscriptionAccessMode.ExportOnly;
+            }
+            else if (inGracePeriod)
+            {
+                effectiveAccessMode = SubscriptionAccessMode.GracePeriod;
+            }
+
+            // Check if completely blocked
+            if (effectiveAccessMode == SubscriptionAccessMode.Blocked)
             {
                 return new LicenseKeyValidationResponse
                 {
                     IsValid = false,
                     Message = _localizer["License.Expired"],
-                    ExpiryDate = licenseData.ExpiryDateUtc
+                    ExpiryDate = licenseData.ExpiryDateUtc,
+                    AccessMode = effectiveAccessMode
                 };
             }
 
-            // Check if subscription is still active in database
-            var subscription = await _subscriptionRepo.GetByIdAsync(licenseData.SubscriptionId, null);
-            if (subscription == null || !subscription.IsActive)
+            // Optional: Check if subscription is still active in database (for online validation)
+            // For pure offline systems, skip this check
+            if (request.ValidateOnline)
             {
-                return new LicenseKeyValidationResponse
+                var subscription = await _subscriptionRepo.GetByIdAsync(licenseData.SubscriptionId, null);
+                if (subscription == null || !subscription.IsActive)
                 {
-                    IsValid = false,
-                    Message = _localizer["License.SubscriptionInactive"]
-                };
+                    return new LicenseKeyValidationResponse
+                    {
+                        IsValid = false,
+                        Message = _localizer["License.SubscriptionInactive"]
+                    };
+                }
+                
+                // Check if entitlements version has changed (license is stale)
+                if (subscription.EntitlementsVersion > licenseData.EntitlementsVersion)
+                {
+                    return new LicenseKeyValidationResponse
+                    {
+                        IsValid = false,
+                        Message = _localizer["License.StaleEntitlements"],
+                        EntitlementsVersion = subscription.EntitlementsVersion
+                    };
+                }
             }
 
             // Calculate days until expiry
-            var daysUntilExpiry = (int)(licenseData.ExpiryDateUtc - DateTime.UtcNow).TotalDays;
+            var daysUntilExpiry = isExpired ? 0 : (int)(licenseData.ExpiryDateUtc - now).TotalDays;
 
+            // Return FULL entitlement matrix for offline systems
             return new LicenseKeyValidationResponse
             {
                 IsValid = true,
                 Message = _localizer["License.Valid"],
-                ExpiryDate = licenseData.ExpiryDateUtc,
+                
+                // Identity
+                CompanyId = licenseData.CompanyId,
                 CompanyName = licenseData.CompanyName,
                 PlanName = licenseData.PlanName,
+                
+                // Dates
+                ExpiryDate = licenseData.ExpiryDateUtc,
+                GraceEndDate = licenseData.GraceEndDateUtc,
+                ExportDeadline = licenseData.ExportDeadlineUtc,
+                DaysUntilExpiry = daysUntilExpiry,
+                
+                // Status
+                IsTrial = licenseData.IsTrial,
+                AccessMode = effectiveAccessMode,
+                
+                // Versioning
+                KeyVersion = licenseData.Version,
+                EntitlementsVersion = licenseData.EntitlementsVersion,
+                
+                // Legacy
                 Features = licenseData.Features,
                 Modules = licenseData.Modules,
-                IsTrial = licenseData.IsTrial,
-                DaysUntilExpiry = daysUntilExpiry > 0 ? daysUntilExpiry : 0,
-                KeyVersion = licenseData.Version
+                
+                // Enterprise Entitlements (FULL matrix)
+                Projects = licenseData.Projects.Select(p => new LicenseProjectEntitlementDto
+                {
+                    ProjectId = p.ProjectId,
+                    ProjectName = p.ProjectName,
+                    ProjectCode = p.ProjectCode,
+                    AccessLevel = p.AccessLevel, // enum to enum - direct assignment
+                    HasFullAccess = p.HasFullAccess,
+                    AllowedOperations = p.AllowedOperations,
+                    Modules = p.Modules.Select(m => new LicenseModuleEntitlementDto
+                    {
+                        ModuleId = m.ModuleId,
+                        ModuleName = m.ModuleName,
+                        ModuleCode = m.ModuleCode,
+                        AccessLevel = m.AccessLevel, // enum to enum - direct assignment
+                        AllowedOperations = m.AllowedOperations,
+                        AllowedFeatures = m.AllowedFeatures
+                    }).ToList()
+                }).ToList(),
+                
+                StandaloneModules = licenseData.StandaloneModules.Select(m => new LicenseModuleEntitlementDto
+                {
+                    ModuleId = m.ModuleId,
+                    ModuleName = m.ModuleName,
+                    ModuleCode = m.ModuleCode,
+                    AccessLevel = m.AccessLevel, // enum to enum - direct assignment
+                    AllowedOperations = m.AllowedOperations,
+                    AllowedFeatures = m.AllowedFeatures
+                }).ToList()
             };
         }
         catch (Exception)
@@ -314,23 +432,175 @@ public class LicenseService : ILicenseService
         return "Active";
     }
 
+    /// <summary>
+    /// Calculate grace period end date based on plan settings
+    /// </summary>
+    private static DateTime? CalculateGraceEndDate(Subscription subscription)
+    {
+        // Grace period is calculated from expiry date + plan's grace days
+        if (subscription.Plan?.GracePeriodDays > 0)
+        {
+            return subscription.ExpiryDateUtc.AddDays(subscription.Plan.GracePeriodDays);
+        }
+        
+        // Default: No grace period
+        return null;
+    }
+
+    /// <summary>
+    /// Build license entitlements with RAW (unencrypted) IDs
+    /// This bypasses AutoMapper to ensure IDs are not encrypted
+    /// </summary>
+    private static (List<LicenseProjectEntitlement> Projects, List<LicenseModuleEntitlement> StandaloneModules) 
+        BuildLicenseEntitlements(IEnumerable<Domain.Entities.Subscriptions.SubscriptionEntitlement> entitlements)
+    {
+        var entitlementList = entitlements.Where(e => e.IsActive && !e.IsDeleted).ToList();
+        
+        // Project-level entitlements (ProjectId set, ModuleId null = full project access)
+        var projectEntitlements = entitlementList
+            .Where(e => e.ProjectId.HasValue && e.ModuleId == null)
+            .ToList();
+        
+        // Module-level entitlements within projects
+        var moduleEntitlements = entitlementList
+            .Where(e => e.ProjectId.HasValue && e.ModuleId.HasValue)
+            .ToList();
+        
+        // Standalone modules (no project)
+        var standaloneEntitlements = entitlementList
+            .Where(e => e.ProjectId == null && e.ModuleId.HasValue)
+            .ToList();
+
+        // Build project list with RAW IDs
+        var projects = projectEntitlements.Select(pe => new LicenseProjectEntitlement
+        {
+            ProjectId = pe.ProjectId!.Value, // RAW ID
+            ProjectName = pe.Project?.Name ?? string.Empty,
+            ProjectCode = pe.Project?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
+            AccessLevel = pe.AccessLevel,
+            HasFullAccess = pe.GrantType == EntitlementGrantType.FullProject,
+            AllowedOperations = BuildOperationsList(pe),
+            Modules = moduleEntitlements
+                .Where(m => m.ProjectId == pe.ProjectId)
+                .Select(m => new LicenseModuleEntitlement
+                {
+                    ModuleId = m.ModuleId!.Value, // RAW ID
+                    ModuleName = m.Module?.Name ?? string.Empty,
+                    ModuleCode = m.Module?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
+                    AccessLevel = m.AccessLevel,
+                    AllowedOperations = BuildOperationsList(m),
+                    AllowedFeatures = ParseFeatures(m.Features)
+                }).ToList()
+        }).ToList();
+
+        // Build standalone modules with RAW IDs
+        var standaloneModules = standaloneEntitlements.Select(m => new LicenseModuleEntitlement
+        {
+            ModuleId = m.ModuleId!.Value, // RAW ID
+            ModuleName = m.Module?.Name ?? string.Empty,
+            ModuleCode = m.Module?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
+            AccessLevel = m.AccessLevel,
+            AllowedOperations = BuildOperationsList(m),
+            AllowedFeatures = ParseFeatures(m.Features)
+        }).ToList();
+
+        return (projects, standaloneModules);
+    }
+
+    /// <summary>
+    /// Build operations list from boolean flags
+    /// </summary>
+    private static List<string> BuildOperationsList(Domain.Entities.Subscriptions.SubscriptionEntitlement entitlement)
+    {
+        var operations = new List<string>();
+        if (entitlement.CanCreate) operations.Add("Create");
+        if (entitlement.CanRead) operations.Add("Read");
+        if (entitlement.CanUpdate) operations.Add("Update");
+        if (entitlement.CanDelete) operations.Add("Delete");
+        if (entitlement.CanExport) operations.Add("Export");
+        return operations;
+    }
+
+    /// <summary>
+    /// Parse comma-separated features string to list
+    /// </summary>
+    private static List<string> ParseFeatures(string? features)
+    {
+        if (string.IsNullOrWhiteSpace(features))
+            return new List<string>();
+        
+        return features.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+    }
+
     #endregion
 }
 
 /// <summary>
 /// Internal class for license key data structure
+/// Contains FULL entitlement matrix for offline systems
 /// </summary>
 internal class OfflineLicenseData
 {
+    // ========== IDENTITY ==========
     public Guid CompanyId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public Guid PlanId { get; set; }
     public string PlanName { get; set; } = string.Empty;
     public Guid SubscriptionId { get; set; }
+    
+    // ========== DATES ==========
     public DateTime ExpiryDateUtc { get; set; }
     public DateTime IssuedAtUtc { get; set; }
+    public DateTime? GraceEndDateUtc { get; set; }
+    public DateTime? ExportDeadlineUtc { get; set; }
+    
+    // ========== STATUS ==========
     public bool IsTrial { get; set; }
+    public SubscriptionAccessMode AccessMode { get; set; } = SubscriptionAccessMode.Full;
+    
+    // ========== VERSIONING ==========
+    public int Version { get; set; }
+    public int EntitlementsVersion { get; set; }
+    
+    // ========== LEGACY (for backward compatibility) ==========
     public List<string> Features { get; set; } = new();
     public List<string> Modules { get; set; } = new();
-    public int Version { get; set; }
+    
+    // ========== ENTERPRISE ENTITLEMENTS ==========
+    /// <summary>
+    /// Full project-level entitlements with modules
+    /// </summary>
+    public List<LicenseProjectEntitlement> Projects { get; set; } = new();
+    
+    /// <summary>
+    /// Standalone module entitlements (not part of a project)
+    /// </summary>
+    public List<LicenseModuleEntitlement> StandaloneModules { get; set; } = new();
+}
+
+/// <summary>
+/// Project entitlement in license key
+/// </summary>
+internal class LicenseProjectEntitlement
+{
+    public Guid ProjectId { get; set; }
+    public string ProjectName { get; set; } = string.Empty;
+    public string ProjectCode { get; set; } = string.Empty;
+    public EntitlementAccessLevel AccessLevel { get; set; } = EntitlementAccessLevel.Full;
+    public bool HasFullAccess { get; set; }
+    public List<string> AllowedOperations { get; set; } = new();
+    public List<LicenseModuleEntitlement> Modules { get; set; } = new();
+}
+
+/// <summary>
+/// Module entitlement in license key
+/// </summary>
+internal class LicenseModuleEntitlement
+{
+    public Guid ModuleId { get; set; }
+    public string ModuleName { get; set; } = string.Empty;
+    public string ModuleCode { get; set; } = string.Empty;
+    public EntitlementAccessLevel AccessLevel { get; set; } = EntitlementAccessLevel.Full;
+    public List<string> AllowedOperations { get; set; } = new();
+    public List<string> AllowedFeatures { get; set; } = new();
 }
