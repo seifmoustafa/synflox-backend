@@ -140,6 +140,82 @@ public class EntitlementMappingProfile : Profile
         // Decrypt SubscriptionId from GrantStandaloneModuleRequest
         CreateMap<GrantStandaloneModuleRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
+            
+        // ========== Phase 8 Controller Request DTOs ==========
+        
+        // Single ID Decryption Requests
+        CreateMap<GetSubscriptionEntitlementsRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<GetEntitlementByIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<GetEntitlementMatrixRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<GetAccessModeRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<GetEntitlementsVersionRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<IncrementVersionRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<DowngradeToFallbackRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        CreateMap<UpdateAccessModeRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+            
+        // Bulk Operation Requests - Decrypt to tuple of (SubscriptionId, PlanId)
+        CreateMap<CopyPlanEntitlementsRequest, (Guid SubscriptionId, Guid PlanId)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.PlanId })
+            ));
+            
+        CreateMap<AddUpgradeEntitlementsRequest, (Guid SubscriptionId, Guid PlanId)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.NewPlanId })
+            ));
+            
+        CreateMap<ReplaceEntitlementsRequest, (Guid SubscriptionId, Guid PlanId)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.NewPlanId })
+            ));
+            
+        // ReplaceEntitlementsRequest with KeepCustomGrants
+        CreateMap<ReplaceEntitlementsRequest, (Guid SubscriptionId, Guid PlanId, bool KeepCustomGrants)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.NewPlanId }),
+                src.KeepCustomGrants
+            ));
+            
+        // UpdateAccessModeRequest with all values
+        CreateMap<UpdateAccessModeRequest, (Guid SubscriptionId, SubscriptionAccessMode AccessMode, string? RestrictionMessage)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                src.NewAccessMode,
+                src.RestrictionMessage
+            ));
+            
+        // Access Check Requests - Decrypt to tuple
+        CreateMap<CheckProjectAccessRequest, (Guid SubscriptionId, Guid ProjectId)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.ProjectId })
+            ));
+            
+        CreateMap<CheckModuleAccessRequest, (Guid SubscriptionId, Guid? ProjectId, Guid ModuleId)>()
+            .ConvertUsing((src, _, ctx) => (
+                ctx.Mapper.Map<Guid>(new GetSubscriptionEntitlementsRequest { SubscriptionId = src.SubscriptionId }),
+                src.ProjectId.HasValue ? ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.ProjectId.Value }) : (Guid?)null,
+                ctx.Mapper.Map<Guid>(new GetEntitlementByIdRequest { EntitlementId = src.ModuleId })
+            ));
     }
 
     #region Helper Methods

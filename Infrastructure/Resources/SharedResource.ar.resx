@@ -253,6 +253,12 @@
   <data name="AccessMode.Blocked" xml:space="preserve">
     <value>انتهى اشتراكك. يرجى التجديد لاستعادة الوصول.</value>
   </data>
+  <data name="Entitlement.NotFound" xml:space="preserve">
+    <value>الصلاحية غير موجودة</value>
+  </data>
+  <data name="Error.InternalServer" xml:space="preserve">
+    <value>حدث خطأ داخلي في الخادم</value>
+  </data>
 
   <!-- Email Localization Keys - Arabic -->
 
