@@ -123,6 +123,12 @@ public class SubscriptionPlan : AuditEntity<Guid>
     /// </summary>
     public int DisplayOrder { get; set; } = 0;
 
+    /// <summary>
+    /// Entitlement version - incremented when plan entitlements change
+    /// Clients use this to know when to refresh their cached entitlements
+    /// </summary>
+    public int EntitlementVersion { get; set; } = 1;
+
     #endregion
 
     // Navigation properties

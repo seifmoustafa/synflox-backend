@@ -113,21 +113,36 @@ public class SubscriptionService : ISubscriptionService
         if (dto.StartWithTrial && !plan.AllowTrial)
             throw new PlanTrialNotAllowedException(_localizer["Plan.TrialNotAllowed"]);
 
-        // Determine currency: use provided or auto-select from plan's available prices
-        var selectedCurrency = dto.Currency;
-        if (!selectedCurrency.HasValue)
+        // Handle free tier plans - no currency or price needed
+        Currency? selectedCurrency = null;
+        decimal price = 0;
+        
+        if (plan.IsFreeTier)
         {
-            // Auto-select first available currency from plan prices
+            // Free tier: no payment required, use default currency or first available
             var firstPrice = plan.PlanPrices.FirstOrDefault();
-            if (firstPrice == null)
-                throw new BadRequestException(_localizer["Plan.NoPricesAvailable"]);
-            selectedCurrency = firstPrice.Currency;
+            selectedCurrency = dto.Currency ?? firstPrice?.Currency ?? Currency.USD;
+            price = 0; // Free plan always has 0 price
         }
+        else
+        {
+            // Paid plan: validate currency and price
+            selectedCurrency = dto.Currency;
+            if (!selectedCurrency.HasValue)
+            {
+                // Auto-select first available currency from plan prices
+                var firstPrice = plan.PlanPrices.FirstOrDefault();
+                if (firstPrice == null)
+                    throw new BadRequestException(_localizer["Plan.NoPricesAvailable"]);
+                selectedCurrency = firstPrice.Currency;
+            }
 
-        // Get price for selected currency
-        var price = await _planRepo.GetPriceAsync(subscription.PlanId, selectedCurrency.Value);
-        if (!price.HasValue)
-            throw new BadRequestException(_localizer["Plan.PriceNotAvailableForCurrency"]);
+            // Get price for selected currency
+            var priceResult = await _planRepo.GetPriceAsync(subscription.PlanId, selectedCurrency.Value);
+            if (!priceResult.HasValue)
+                throw new BadRequestException(_localizer["Plan.PriceNotAvailableForCurrency"]);
+            price = priceResult.Value;
+        }
 
         // Validate lifetime plan rules
         if (plan.IsLifetimePlan)
@@ -150,10 +165,11 @@ public class SubscriptionService : ISubscriptionService
         // Lifetime plans cannot auto-renew
         subscription.AutoRenew = plan.IsLifetimePlan ? false : (dto.AutoRenew ?? plan.AutoRenew);
         
-        subscription.Currency = selectedCurrency.Value;
-        subscription.Amount = price.Value;
+        subscription.Currency = selectedCurrency!.Value;
+        subscription.Amount = price;
         subscription.StatusReason = dto.StartWithTrial ? "Trial started" : 
-                                    plan.IsLifetimePlan ? "Lifetime subscription activated" : 
+                                    plan.IsLifetimePlan ? "Lifetime subscription activated" :
+                                    plan.IsFreeTier ? "Free tier subscription activated" : 
                                     "Subscription activated";
 
         // Calculate expiry based on plan duration type

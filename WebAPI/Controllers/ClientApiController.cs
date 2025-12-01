@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
-using Application.DTOs.Entitlements;
+// Application.DTOs.Entitlements REMOVED - v2.0: Will be replaced with PlanEntitlement DTOs
 using Application.DTOs.Responses;
 using Application.Services;
 using Infrastructure.Services;
@@ -94,7 +94,7 @@ public class ClientApiController : ControllerBase
     /// <returns>Complete entitlement matrix</returns>
     [HttpGet("entitlements")]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResponse<EntitlementMatrixDto>>> GetEntitlements(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<object>>> GetEntitlements(CancellationToken cancellationToken)
     {
         try
         {
@@ -103,7 +103,7 @@ public class ClientApiController : ControllerBase
 
             if (!subscriptionId.HasValue)
             {
-                return BadRequest(ApiResponse<EntitlementMatrixDto>.Error("Invalid token claims"));
+                return BadRequest(ApiResponse<object>.Error("Invalid token claims"));
             }
 
             _logger.LogInformation("Getting entitlements for subscription {SubscriptionId}", subscriptionId);
@@ -111,7 +111,10 @@ public class ClientApiController : ControllerBase
             var result = await _clientApiService.GetEntitlementsAsync(subscriptionId.Value, cancellationToken);
 
             // Add entitlements version header for cache validation
-            Response.Headers.Append("X-Entitlements-Version", result.Version.ToString());
+            // Get version from result using reflection (since it's dynamic object)
+            var versionProperty = result.GetType().GetProperty("Version");
+            var version = versionProperty?.GetValue(result)?.ToString() ?? "1";
+            Response.Headers.Append("X-Entitlements-Version", version);
             Response.Headers.Append("Cache-Control", "private, max-age=86400"); // 24 hours
 
             // Record API usage
@@ -128,17 +131,17 @@ public class ClientApiController : ControllerBase
                 );
             }
 
-            return Ok(ApiResponse<EntitlementMatrixDto>.Success(result, "Entitlements retrieved successfully"));
+            return Ok(ApiResponse<object>.Success(result, "Entitlements retrieved successfully"));
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Invalid request for entitlements");
-            return BadRequest(ApiResponse<EntitlementMatrixDto>.Error(ex.Message));
+            return BadRequest(ApiResponse<object>.Error(ex.Message));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting entitlements");
-            return StatusCode(500, ApiResponse<EntitlementMatrixDto>.Error("Internal server error"));
+            return StatusCode(500, ApiResponse<object>.Error("Internal server error"));
         }
     }
 

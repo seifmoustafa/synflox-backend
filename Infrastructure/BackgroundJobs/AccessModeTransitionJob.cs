@@ -68,7 +68,7 @@ public class AccessModeTransitionJob : BackgroundService
 
         using var scope = _serviceProvider.CreateScope();
         var subscriptionRepo = scope.ServiceProvider.GetRequiredService<ISubscriptionRepository>();
-        var entitlementService = scope.ServiceProvider.GetRequiredService<IEntitlementService>();
+        var planRepo = scope.ServiceProvider.GetRequiredService<ISubscriptionPlanRepository>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var outboxRepo = scope.ServiceProvider.GetRequiredService<IOutboxEventRepository>();
 
@@ -109,7 +109,7 @@ public class AccessModeTransitionJob : BackgroundService
                 await ProcessTransitionAsync(
                     transition,
                     subscriptionRepo,
-                    entitlementService,
+                    planRepo,
                     outboxRepo,
                     unitOfWork,
                     now,
@@ -168,7 +168,7 @@ public class AccessModeTransitionJob : BackgroundService
     private async Task ProcessTransitionAsync(
         AccessModeTransition transition,
         ISubscriptionRepository subscriptionRepo,
-        IEntitlementService entitlementService,
+        ISubscriptionPlanRepository planRepo,
         IOutboxEventRepository outboxRepo,
         IUnitOfWork unitOfWork,
         DateTime now,
@@ -190,8 +190,12 @@ public class AccessModeTransitionJob : BackgroundService
 
         await subscriptionRepo.UpdateAsync(subscription);
 
-        // Increment entitlements version to invalidate client caches
-        await entitlementService.IncrementVersionAsync(subscription.Id, cancellationToken);
+        // Increment plan entitlements version to invalidate client caches
+        if (subscription.Plan != null)
+        {
+            subscription.Plan.EntitlementVersion++;
+            await planRepo.UpdateAsync(subscription.Plan);
+        }
 
         // Create outbox event for notifications
         await outboxRepo.AddAsync(new OutboxEvent

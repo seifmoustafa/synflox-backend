@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
-using Application.DTOs.Entitlements;
+// TODO: Restore when PlanEntitlement DTOs are created
+// using Application.DTOs.Entitlements;
 using Application.DTOs.Licensing;
 using Application.Services;
 using AutoMapper;
+using Domain.Entities.Subscriptions;
 using Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +26,7 @@ public class ClientApiService : IClientApiService
     private readonly IClientAccessTokenRepository _tokenRepo;
     private readonly IClientTokenUsageLogRepository _usageLogRepo;
     private readonly ILicenseService _licenseService;
-    private readonly IEntitlementService _entitlementService;
+    private readonly ISubscriptionPlanRepository _planRepo;
     private readonly IMapper _mapper;
     private readonly ILogger<ClientApiService> _logger;
 
@@ -34,7 +36,7 @@ public class ClientApiService : IClientApiService
         IClientAccessTokenRepository tokenRepo,
         IClientTokenUsageLogRepository usageLogRepo,
         ILicenseService licenseService,
-        IEntitlementService entitlementService,
+        ISubscriptionPlanRepository planRepo,
         IMapper mapper,
         ILogger<ClientApiService> logger)
     {
@@ -43,7 +45,7 @@ public class ClientApiService : IClientApiService
         _tokenRepo = tokenRepo;
         _usageLogRepo = usageLogRepo;
         _licenseService = licenseService;
-        _entitlementService = entitlementService;
+        _planRepo = planRepo;
         _mapper = mapper;
         _logger = logger;
     }
@@ -52,13 +54,47 @@ public class ClientApiService : IClientApiService
     /// Gets the full entitlement matrix for a subscription
     /// This is the main endpoint for thin-token architecture
     /// Clients cache this and refresh when version changes
+    /// TODO: Implement with PlanEntitlement in Phase 2
     /// </summary>
-    public async Task<EntitlementMatrixDto> GetEntitlementsAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
+    public async Task<object> GetEntitlementsAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting entitlements for subscription {SubscriptionId}", subscriptionId);
         
-        // Use the cached entitlement matrix from EntitlementService
-        return await _entitlementService.GetCachedEntitlementMatrixAsync(subscriptionId, cancellationToken);
+        // Get subscription with plan details
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(subscriptionId);
+        if (subscription == null)
+            throw new ArgumentException("Subscription not found");
+            
+        var plan = subscription.Plan;
+        
+        // TODO: Return plan.Entitlements when PlanEntitlement entity is created
+        // Calculate if in grace period (expired but within grace period days)
+        var isInGracePeriod = subscription.IsExpired && 
+            DateTime.UtcNow <= subscription.ExpiryDateUtc.AddDays(plan.GracePeriodDays);
+        
+        // For now, return basic plan info
+        return new
+        {
+            Version = plan.EntitlementVersion,
+            PlanId = plan.Id,
+            PlanName = plan.Name,
+            AccessMode = subscription.AccessMode.ToString(),
+            DaysRemaining = subscription.IsExpired ? 0 : (int)(subscription.ExpiryDateUtc - DateTime.UtcNow).TotalDays,
+            IsInGracePeriod = isInGracePeriod,
+            // Entitlements will come from plan.Entitlements after Phase 2
+            Projects = new List<object>(),
+            Modules = (plan.PlanModules ?? new List<PlanModule>()).Select(pm => new {
+                ModuleId = pm.ModuleId,
+                ModuleName = pm.Module?.Name ?? "Unknown",
+                AccessLevel = "Full",
+                CanCreate = true,
+                CanRead = true,
+                CanUpdate = true,
+                CanDelete = true,
+                CanExport = true,
+                DisplayInMenu = true
+            }).ToList()
+        };
     }
 
     /// <summary>

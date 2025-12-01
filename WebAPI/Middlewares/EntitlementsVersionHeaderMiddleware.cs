@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Application.Services;
+using Domain.Interfaces;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -9,8 +9,7 @@ namespace WebAPI.Middlewares;
 /// <summary>
 /// Middleware that adds X-Entitlements-Version header to all client API responses
 /// Clients use this header to detect when their cached entitlements are stale
-/// 
-/// Best Practice: Get version BEFORE response, add header synchronously in OnStarting
+/// Version now comes from Plan.EntitlementVersion (plan-level entitlements)
 /// </summary>
 public class EntitlementsVersionHeaderMiddleware
 {
@@ -25,7 +24,7 @@ public class EntitlementsVersionHeaderMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context, ClientJwtService jwtService, IEntitlementService entitlementService)
+    public async Task InvokeAsync(HttpContext context, ClientJwtService jwtService, ISubscriptionRepository subscriptionRepo)
     {
         // Only apply to client API endpoints
         if (!context.Request.Path.StartsWithSegments("/api/client"))
@@ -44,11 +43,12 @@ public class EntitlementsVersionHeaderMiddleware
             return;
         }
 
-        // Get version BEFORE response starts (efficient - single DB call)
+        // Get version from Plan.EntitlementVersion
         int? version = null;
         try
         {
-            version = await entitlementService.GetEntitlementsVersionAsync(subscriptionId.Value);
+            var subscription = await subscriptionRepo.GetWithDetailsAsync(subscriptionId.Value);
+            version = subscription?.Plan?.EntitlementVersion;
         }
         catch
         {

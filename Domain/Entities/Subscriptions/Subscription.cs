@@ -160,9 +160,6 @@ public class Subscription : AuditEntity<Guid>
     /// </summary>
     public Subscription? ParentSubscription { get; set; }
     
-    /// <summary>
-    /// Entitlements granted to this subscription
-    /// Defines what projects/modules/features are accessible
-    /// </summary>
-    public ICollection<SubscriptionEntitlement> Entitlements { get; set; } = new List<SubscriptionEntitlement>();
+    // SubscriptionEntitlements REMOVED - v2.0: Entitlements are now at Plan level (PlanEntitlement)
+    // Access is determined by subscription.Plan.Entitlements
 }

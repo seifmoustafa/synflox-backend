@@ -35,7 +35,7 @@ public class LicenseService : ILicenseService
     private readonly ICompanyRepository _companyRepo;
     private readonly ISubscriptionPlanRepository _planRepo;
     private readonly IModuleRepository _moduleRepo;
-    private readonly ISubscriptionEntitlementRepository _entitlementRepo;
+    // _entitlementRepo REMOVED - v2.0: Entitlements are now at Plan level
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -47,7 +47,7 @@ public class LicenseService : ILicenseService
         ICompanyRepository companyRepo,
         ISubscriptionPlanRepository planRepo,
         IModuleRepository moduleRepo,
-        ISubscriptionEntitlementRepository entitlementRepo,
+        // entitlementRepo REMOVED - v2.0: Entitlements are now at Plan level
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
@@ -58,7 +58,7 @@ public class LicenseService : ILicenseService
         _companyRepo = companyRepo;
         _planRepo = planRepo;
         _moduleRepo = moduleRepo;
-        _entitlementRepo = entitlementRepo;
+        // _entitlementRepo REMOVED
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -79,11 +79,9 @@ public class LicenseService : ILicenseService
             throw new BadRequestException(_localizer["License.CannotGenerateForInactiveSubscription"]);
         }
 
-        // Get entitlements directly from repository (RAW IDs - not encrypted!)
-        var entitlements = await _entitlementRepo.GetBySubscriptionWithDetailsAsync(subscriptionId);
-        
-        // Build entitlement matrix with RAW (unencrypted) IDs for license key
-        var (projects, standaloneModules) = BuildLicenseEntitlements(entitlements);
+        // Build entitlement matrix from plan's projects and modules (v2.0: Plan-level entitlements)
+        var plan = subscription.Plan;
+        var (projects, standaloneModules) = BuildLicenseEntitlementsFromPlan(plan);
 
         // Create license data payload with FULL entitlements (for offline systems)
         var licenseData = new OfflineLicenseData
@@ -107,7 +105,7 @@ public class LicenseService : ILicenseService
             
             // Versioning
             Version = _licenseSettings.Version,
-            EntitlementsVersion = subscription.EntitlementsVersion,
+            EntitlementsVersion = plan.EntitlementVersion,
             
             // Legacy (backward compatibility)
             Features = subscription.Plan.CustomFeatures ?? new List<string>(),
@@ -199,13 +197,13 @@ public class LicenseService : ILicenseService
                 }
                 
                 // Check if entitlements version has changed (license is stale)
-                if (subscription.EntitlementsVersion > licenseData.EntitlementsVersion)
+                if ((subscription.Plan?.EntitlementVersion ?? 1) > licenseData.EntitlementsVersion)
                 {
                     return new LicenseKeyValidationResponse
                     {
                         IsValid = false,
                         Message = _localizer["License.StaleEntitlements"],
-                        EntitlementsVersion = subscription.EntitlementsVersion
+                        EntitlementsVersion = subscription.Plan?.EntitlementVersion ?? 1
                     };
                 }
             }
@@ -448,77 +446,50 @@ public class LicenseService : ILicenseService
     }
 
     /// <summary>
-    /// Build license entitlements with RAW (unencrypted) IDs
-    /// This bypasses AutoMapper to ensure IDs are not encrypted
+    /// Build license entitlements from Plan's projects and modules (v2.0: Plan-level entitlements)
+    /// This uses plan.PlanProjects and plan.PlanModules to determine access
     /// </summary>
     private static (List<LicenseProjectEntitlement> Projects, List<LicenseModuleEntitlement> StandaloneModules) 
-        BuildLicenseEntitlements(IEnumerable<Domain.Entities.Subscriptions.SubscriptionEntitlement> entitlements)
+        BuildLicenseEntitlementsFromPlan(SubscriptionPlan plan)
     {
-        var entitlementList = entitlements.Where(e => e.IsActive && !e.IsDeleted).ToList();
-        
-        // Project-level entitlements (ProjectId set, ModuleId null = full project access)
-        var projectEntitlements = entitlementList
-            .Where(e => e.ProjectId.HasValue && e.ModuleId == null)
-            .ToList();
-        
-        // Module-level entitlements within projects
-        var moduleEntitlements = entitlementList
-            .Where(e => e.ProjectId.HasValue && e.ModuleId.HasValue)
-            .ToList();
-        
-        // Standalone modules (no project)
-        var standaloneEntitlements = entitlementList
-            .Where(e => e.ProjectId == null && e.ModuleId.HasValue)
-            .ToList();
+        // Build project list from plan's projects
+        var projects = (plan.PlanProjects ?? new List<PlanProject>())
+            .Where(pp => pp.Project != null)
+            .Select(pp => new LicenseProjectEntitlement
+            {
+                ProjectId = pp.ProjectId,
+                ProjectName = pp.Project?.Name ?? string.Empty,
+                ProjectCode = pp.Project?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
+                AccessLevel = EntitlementAccessLevel.Full, // TODO: Get from PlanEntitlement when created
+                HasFullAccess = true,
+                AllowedOperations = new List<string> { "Create", "Read", "Update", "Delete", "Export" },
+                Modules = (pp.Project?.ProjectModules ?? new List<ProjectModule>())
+                    .Where(pm => pm.Module != null)
+                    .Select(pm => new LicenseModuleEntitlement
+                    {
+                        ModuleId = pm.ModuleId,
+                        ModuleName = pm.Module?.Name ?? string.Empty,
+                        ModuleCode = pm.Module?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
+                        AccessLevel = EntitlementAccessLevel.Full,
+                        AllowedOperations = new List<string> { "Create", "Read", "Update", "Delete", "Export" },
+                        AllowedFeatures = new List<string>()
+                    }).ToList()
+            }).ToList();
 
-        // Build project list with RAW IDs
-        var projects = projectEntitlements.Select(pe => new LicenseProjectEntitlement
-        {
-            ProjectId = pe.ProjectId!.Value, // RAW ID
-            ProjectName = pe.Project?.Name ?? string.Empty,
-            ProjectCode = pe.Project?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
-            AccessLevel = pe.AccessLevel,
-            HasFullAccess = pe.GrantType == EntitlementGrantType.FullProject,
-            AllowedOperations = BuildOperationsList(pe),
-            Modules = moduleEntitlements
-                .Where(m => m.ProjectId == pe.ProjectId)
-                .Select(m => new LicenseModuleEntitlement
-                {
-                    ModuleId = m.ModuleId!.Value, // RAW ID
-                    ModuleName = m.Module?.Name ?? string.Empty,
-                    ModuleCode = m.Module?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
-                    AccessLevel = m.AccessLevel,
-                    AllowedOperations = BuildOperationsList(m),
-                    AllowedFeatures = ParseFeatures(m.Features)
-                }).ToList()
-        }).ToList();
-
-        // Build standalone modules with RAW IDs
-        var standaloneModules = standaloneEntitlements.Select(m => new LicenseModuleEntitlement
-        {
-            ModuleId = m.ModuleId!.Value, // RAW ID
-            ModuleName = m.Module?.Name ?? string.Empty,
-            ModuleCode = m.Module?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
-            AccessLevel = m.AccessLevel,
-            AllowedOperations = BuildOperationsList(m),
-            AllowedFeatures = ParseFeatures(m.Features)
-        }).ToList();
+        // Build standalone modules from plan's direct modules (not part of a project)
+        var standaloneModules = (plan.PlanModules ?? new List<PlanModule>())
+            .Where(pm => pm.Module != null)
+            .Select(pm => new LicenseModuleEntitlement
+            {
+                ModuleId = pm.ModuleId,
+                ModuleName = pm.Module?.Name ?? string.Empty,
+                ModuleCode = pm.Module?.Name?.Replace(" ", "").ToUpperInvariant() ?? string.Empty,
+                AccessLevel = EntitlementAccessLevel.Full, // TODO: Get from PlanEntitlement when created
+                AllowedOperations = new List<string> { "Create", "Read", "Update", "Delete", "Export" },
+                AllowedFeatures = new List<string>()
+            }).ToList();
 
         return (projects, standaloneModules);
-    }
-
-    /// <summary>
-    /// Build operations list from boolean flags
-    /// </summary>
-    private static List<string> BuildOperationsList(Domain.Entities.Subscriptions.SubscriptionEntitlement entitlement)
-    {
-        var operations = new List<string>();
-        if (entitlement.CanCreate) operations.Add("Create");
-        if (entitlement.CanRead) operations.Add("Read");
-        if (entitlement.CanUpdate) operations.Add("Update");
-        if (entitlement.CanDelete) operations.Add("Delete");
-        if (entitlement.CanExport) operations.Add("Export");
-        return operations;
     }
 
     /// <summary>

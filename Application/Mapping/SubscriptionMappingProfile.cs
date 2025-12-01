@@ -157,9 +157,10 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.DefaultFallbackPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.Plan.DefaultFallbackPlanId))
             .ForMember(d => d.DefaultFallbackPlanName, opt => opt.MapFrom(s => s.Plan.DefaultFallbackPlan != null ? s.Plan.DefaultFallbackPlan.Name : null))
             .ForMember(d => d.ExportDeadlineUtc, opt => opt.MapFrom(s => s.ExportDeadlineUtc))
-            .ForMember(d => d.EntitlementsVersion, opt => opt.MapFrom(s => s.EntitlementsVersion))
+            .ForMember(d => d.EntitlementsVersion, opt => opt.MapFrom(s => s.Plan.EntitlementVersion))
             .ForMember(d => d.AccessRestrictionMessage, opt => opt.MapFrom(s => s.AccessRestrictionMessage))
-            .ForMember(d => d.EntitlementCount, opt => opt.MapFrom(s => s.Entitlements.Count(e => e.IsActive && !e.IsDeleted)))
+            // EntitlementCount now comes from Plan.Entitlements (Phase 2: PlanEntitlement)
+            .ForMember(d => d.EntitlementCount, opt => opt.MapFrom(s => 0))
             // Plan-level settings (for frontend display)
             .ForMember(d => d.GracePeriodDays, opt => opt.MapFrom(s => s.Plan.GracePeriodDays))
             .ForMember(d => d.ExportGraceDays, opt => opt.MapFrom(s => s.Plan.ExportGraceDays));
