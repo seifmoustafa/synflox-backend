@@ -29,9 +29,20 @@ public class SubscriptionDto
     public Currency Currency { get; set; }
     public decimal Amount { get; set; }
     public string? StatusReason { get; set; }
-    public Guid? NextPlanId { get; set; }
-    public string? NextPlanName { get; set; }
-    public DateTime? NextPlanStartDateUtc { get; set; }
+    /// <summary>
+    /// Scheduled next subscription ID (for deferred upgrades)
+    /// </summary>
+    public Guid? NextSubscriptionId { get; set; }
+    
+    /// <summary>
+    /// Next subscription plan name for display
+    /// </summary>
+    public string? NextSubscriptionPlanName { get; set; }
+    
+    /// <summary>
+    /// When the next subscription should activate
+    /// </summary>
+    public DateTime? NextSubscriptionActivationDateUtc { get; set; }
     
     /// <summary>
     /// Parent subscription if this was created from an upgrade/renewal
@@ -42,11 +53,6 @@ public class SubscriptionDto
     /// Parent subscription display name for UI
     /// </summary>
     public string? ParentSubscriptionDisplayName { get; set; }
-    
-    /// <summary>
-    /// Override for upgrade policy (null = use plan's policy)
-    /// </summary>
-    public UpgradePolicy? UpgradePolicyOverride { get; set; }
     
     // Offline License Key Management
     public string? OfflineLicenseKey { get; set; }
@@ -75,14 +81,14 @@ public class SubscriptionDto
     };
     
     /// <summary>
-    /// Fallback plan ID (if any)
+    /// Default fallback plan ID (from plan - read only)
     /// </summary>
-    public Guid? FallbackPlanId { get; set; }
+    public Guid? DefaultFallbackPlanId { get; set; }
     
     /// <summary>
-    /// Fallback plan name
+    /// Default fallback plan name (from plan - read only)
     /// </summary>
-    public string? FallbackPlanName { get; set; }
+    public string? DefaultFallbackPlanName { get; set; }
     
     /// <summary>
     /// Export deadline for ExportOnly mode

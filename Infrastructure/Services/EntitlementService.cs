@@ -412,7 +412,7 @@ public class EntitlementService : IEntitlementService
         if (subscription == null)
             throw new ArgumentException(_localizer["Subscription.NotFound"]);
 
-        var fallbackPlanId = subscription.FallbackPlanId ?? subscription.Plan?.DefaultFallbackPlanId;
+        var fallbackPlanId = subscription.Plan?.DefaultFallbackPlanId;
         if (!fallbackPlanId.HasValue)
         {
             _logger.LogWarning("No fallback plan configured for subscription {SubscriptionId}", subscriptionId);
@@ -790,8 +790,8 @@ public class EntitlementService : IEntitlementService
         if (subscription.ExportDeadlineUtc.HasValue && DateTime.UtcNow <= subscription.ExportDeadlineUtc.Value)
             return SubscriptionAccessMode.ExportOnly;
 
-        // Has fallback plan = ReadOnly
-        if (subscription.FallbackPlanId.HasValue)
+        // Has fallback plan = ReadOnly (check plan's default fallback)
+        if (subscription.Plan?.DefaultFallbackPlanId.HasValue == true)
             return SubscriptionAccessMode.ReadOnly;
 
         return SubscriptionAccessMode.Blocked;

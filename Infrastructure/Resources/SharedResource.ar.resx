@@ -521,6 +521,17 @@
   <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
     <value>سعر الخطة غير متاح للعملة المطلوبة</value>
   </data>
+  
+  <!-- Plan Hierarchy Messages -->
+  <data name="Plan.ParentNotFound" xml:space="preserve">
+    <value>الخطة الأم غير موجودة</value>
+  </data>
+  <data name="Plan.ProjectAlreadyInherited" xml:space="preserve">
+    <value>واحد أو أكثر من المشاريع موروث بالفعل من الخطة الأم</value>
+  </data>
+  <data name="Plan.ModuleAlreadyInherited" xml:space="preserve">
+    <value>واحدة أو أكثر من الوحدات موروثة بالفعل من الخطة الأم</value>
+  </data>
 
   <!-- Project Messages -->
   <data name="Project.NotFound" xml:space="preserve">

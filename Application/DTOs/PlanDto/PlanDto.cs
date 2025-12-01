@@ -34,6 +34,16 @@ public class PlanDto
     public List<string> CustomFeatures { get; set; } = new();
     public List<PlanPriceDto> Prices { get; set; } = new();
     
+    /// <summary>
+    /// Number of projects directly included in this plan
+    /// </summary>
+    public int ProjectCount { get; set; }
+    
+    /// <summary>
+    /// Number of modules directly included in this plan
+    /// </summary>
+    public int ModuleCount { get; set; }
+    
     #region Free Tier & Fallback (Enterprise Entitlement System)
     
     /// <summary>
@@ -70,6 +80,40 @@ public class PlanDto
     /// Style for locked menu items
     /// </summary>
     public string LockedItemStyle { get; set; } = "greyed_with_lock";
+    
+    #endregion
+    
+    #region Plan Hierarchy (Inheritance)
+    
+    /// <summary>
+    /// Parent plan ID for feature inheritance
+    /// </summary>
+    public Guid? ParentPlanId { get; set; }
+    
+    /// <summary>
+    /// Parent plan name for display
+    /// </summary>
+    public string? ParentPlanName { get; set; }
+    
+    /// <summary>
+    /// Display order for plan hierarchy (lower = shown first)
+    /// </summary>
+    public int DisplayOrder { get; set; }
+    
+    /// <summary>
+    /// Number of child plans that inherit from this plan
+    /// </summary>
+    public int ChildPlanCount { get; set; }
+    
+    /// <summary>
+    /// Total inherited projects count (from parent chain)
+    /// </summary>
+    public int InheritedProjectsCount { get; set; }
+    
+    /// <summary>
+    /// Total inherited modules count (from parent chain)
+    /// </summary>
+    public int InheritedModulesCount { get; set; }
     
     #endregion
 }

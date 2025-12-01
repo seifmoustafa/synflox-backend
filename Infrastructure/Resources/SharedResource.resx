@@ -521,6 +521,17 @@
   <data name="Plan.PriceNotAvailableForCurrency" xml:space="preserve">
     <value>Plan price not available for the requested currency</value>
   </data>
+  
+  <!-- Plan Hierarchy Messages -->
+  <data name="Plan.ParentNotFound" xml:space="preserve">
+    <value>Parent plan not found</value>
+  </data>
+  <data name="Plan.ProjectAlreadyInherited" xml:space="preserve">
+    <value>One or more projects are already inherited from the parent plan</value>
+  </data>
+  <data name="Plan.ModuleAlreadyInherited" xml:space="preserve">
+    <value>One or more modules are already inherited from the parent plan</value>
+  </data>
 
   <!-- Project Messages -->
   <data name="Project.NotFound" xml:space="preserve">

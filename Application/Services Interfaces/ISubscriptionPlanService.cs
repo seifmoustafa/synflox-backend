@@ -25,4 +25,9 @@ public interface ISubscriptionPlanService
     /// Get all free tier plans (for fallback plan dropdown)
     /// </summary>
     Task<IEnumerable<PlanDto>> GetFreeTierPlansAsync();
+    
+    /// <summary>
+    /// Get all plans that can be set as parent (excludes plan itself and descendants to prevent circular refs)
+    /// </summary>
+    Task<IEnumerable<PlanDto>> GetAvailableParentPlansAsync(Guid? excludePlanId = null);
 }

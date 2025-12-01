@@ -115,9 +115,39 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         if (!dto.IsFreeTier && !dto.Prices.Any())
             throw new BadRequestException(_localizer["Plan.AtLeastOnePriceRequired"]);
 
-        // Must include at least one project or module
-        if (!dto.ProjectIds.Any() && !dto.ModuleIds.Any())
+        // Must include at least one project or module (unless inheriting from parent)
+        if (!dto.ProjectIds.Any() && !dto.ModuleIds.Any() && !dto.ParentPlanId.HasValue)
             throw new BadRequestException(_localizer["Plan.MustIncludeContent"]);
+
+        // ⭐ PLAN HIERARCHY VALIDATION
+        HashSet<Guid> inheritedProjectIds = new();
+        HashSet<Guid> inheritedModuleIds = new();
+        
+        if (dto.ParentPlanId.HasValue)
+        {
+            var parentPlan = await _planRepo.GetWithDetailsAsync(dto.ParentPlanId.Value);
+            if (parentPlan == null)
+                throw new NotFoundException(_localizer["Plan.ParentNotFound"]);
+            
+            // Collect all inherited projects and modules from parent chain
+            await CollectInheritedFeaturesAsync(parentPlan, inheritedProjectIds, inheritedModuleIds);
+            
+            // Validate no duplicate projects
+            var decryptedProjectIds = dto.ProjectIds.Any() 
+                ? _mapper.Map<IEnumerable<Guid>>(new ProjectIdsRequest { ProjectIds = dto.ProjectIds }).ToList()
+                : new List<Guid>();
+            var duplicateProjects = decryptedProjectIds.Where(id => inheritedProjectIds.Contains(id)).ToList();
+            if (duplicateProjects.Any())
+                throw new BadRequestException(_localizer["Plan.ProjectAlreadyInherited"]);
+            
+            // Validate no duplicate modules
+            var decryptedModuleIds = dto.ModuleIds.Any()
+                ? _mapper.Map<IEnumerable<Guid>>(new ModuleIdsRequest { ModuleIds = dto.ModuleIds }).ToList()
+                : new List<Guid>();
+            var duplicateModules = decryptedModuleIds.Where(id => inheritedModuleIds.Contains(id)).ToList();
+            if (duplicateModules.Any())
+                throw new BadRequestException(_localizer["Plan.ModuleAlreadyInherited"]);
+        }
 
         var existing = await _planRepo.GetByNameAsync(dto.Name);
         if (existing != null)
@@ -225,7 +255,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     public async Task<(IEnumerable<PlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search)
     {
         var (plans, meta) = await _planRepo.GetAllAsync(
-            new[] { "PlanPrices" },
+            new[] { "PlanPrices", "PlanProjects", "PlanModules", "ParentPlan", "DefaultFallbackPlan" },
             page,
             pageSize,
             search,
@@ -421,4 +451,76 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         var freeTierPlans = await _planRepo.GetFreeTierPlansAsync();
         return _mapper.Map<IEnumerable<PlanDto>>(freeTierPlans);
     }
+    
+    #region Plan Hierarchy Helpers
+    
+    /// <summary>
+    /// Recursively collect all inherited project and module IDs from the parent chain
+    /// </summary>
+    private async Task CollectInheritedFeaturesAsync(
+        SubscriptionPlan plan, 
+        HashSet<Guid> projectIds, 
+        HashSet<Guid> moduleIds)
+    {
+        // Add this plan's projects
+        foreach (var pp in plan.PlanProjects)
+        {
+            projectIds.Add(pp.ProjectId);
+        }
+        
+        // Add this plan's modules
+        foreach (var pm in plan.PlanModules)
+        {
+            moduleIds.Add(pm.ModuleId);
+        }
+        
+        // Recursively collect from parent
+        if (plan.ParentPlanId.HasValue)
+        {
+            var parentPlan = await _planRepo.GetWithDetailsAsync(plan.ParentPlanId.Value);
+            if (parentPlan != null)
+            {
+                await CollectInheritedFeaturesAsync(parentPlan, projectIds, moduleIds);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Get all plans that can be set as parent (no circular reference)
+    /// </summary>
+    public async Task<IEnumerable<PlanDto>> GetAvailableParentPlansAsync(Guid? excludePlanId = null)
+    {
+        var allPlans = await _planRepo.GetAllAsync();
+        
+        if (!excludePlanId.HasValue)
+        {
+            return _mapper.Map<IEnumerable<PlanDto>>(allPlans);
+        }
+        
+        // Exclude the plan itself and all its descendants
+        var descendantIds = new HashSet<Guid>();
+        await CollectDescendantIdsAsync(excludePlanId.Value, descendantIds, allPlans.ToList());
+        descendantIds.Add(excludePlanId.Value); // Also exclude self
+        
+        var availablePlans = allPlans.Where(p => !descendantIds.Contains(p.Id));
+        return _mapper.Map<IEnumerable<PlanDto>>(availablePlans);
+    }
+    
+    /// <summary>
+    /// Recursively collect all descendant plan IDs
+    /// </summary>
+    private async Task CollectDescendantIdsAsync(
+        Guid planId, 
+        HashSet<Guid> descendantIds, 
+        List<SubscriptionPlan> allPlans)
+    {
+        var children = allPlans.Where(p => p.ParentPlanId == planId).ToList();
+        foreach (var child in children)
+        {
+            descendantIds.Add(child.Id);
+            await CollectDescendantIdsAsync(child.Id, descendantIds, allPlans);
+        }
+    }
+    
+    #endregion
 }

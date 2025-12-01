@@ -167,23 +167,6 @@ public class SubscriptionService : ISubscriptionService
             subscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, plan.DurationType);
         }
 
-        // Handle scheduled next plan (deferred upgrade) - NextPlanId already decrypted by AutoMapper
-        if (subscription.NextPlanId.HasValue)
-        {
-            // Lifetime plans cannot schedule upgrades
-            if (plan.IsLifetimePlan)
-                throw new BadRequestException(_localizer["Plan.LifetimeCannotScheduleUpgrade"]);
-
-            var nextPlan = await _planRepo.GetByIdAsync(subscription.NextPlanId.Value, null);
-            if (nextPlan == null)
-                throw new NotFoundException(_localizer["Plan.NotFound"]);
-
-            subscription.NextPlanStartDateUtc = dto.NextPlanStartDateUtc ?? subscription.ExpiryDateUtc.AddSeconds(1);
-
-            if (subscription.NextPlanStartDateUtc < subscription.ExpiryDateUtc)
-                throw new InvalidNextPlanScheduleException(_localizer["Subscription.NextPlanBeforeExpiry"]);
-        }
-
         // Check for overlapping active subscriptions (same company + plan)
         // Skip overlap check for lifetime plans (they can coexist with time-based plans)
         if (!plan.IsLifetimePlan)
@@ -365,12 +348,6 @@ public class SubscriptionService : ISubscriptionService
         subscription.IsExpired = false;
         subscription.StatusReason = dto.Reason ?? "Renewed";
 
-        if (dto.NextPlanId.HasValue)
-        {
-            subscription.NextPlanId = dto.NextPlanId;
-            subscription.NextPlanStartDateUtc = dto.NextPlanStartDateUtc ?? subscription.ExpiryDateUtc.AddSeconds(1);
-        }
-
         await _subscriptionRepo.UpdateAsync(subscription);
         
         // Record history - all changes tracked here
@@ -440,9 +417,9 @@ public class SubscriptionService : ISubscriptionService
         var company = subscription.Company;
         var oldPlan = subscription.Plan;
 
-        // Determine effective upgrade mode
+        // Determine effective upgrade mode (use plan's policy if not specified)
         var mode = dto.Mode == "DefaultFromPolicy"
-            ? (subscription.UpgradePolicyOverride ?? oldPlan.UpgradePolicy).ToString()
+            ? oldPlan.UpgradePolicy.ToString()
             : dto.Mode;
 
         // Get new plan price
@@ -509,10 +486,31 @@ public class SubscriptionService : ISubscriptionService
                 break;
 
             case "Deferred":
-                // Schedule upgrade for when current subscription expires
-                subscription.NextPlanId = decryptedNewPlanId;
-                subscription.NextPlanStartDateUtc = subscription.ExpiryDateUtc.AddSeconds(1);
-                subscription.StatusReason = $"Upgrade to {newPlan.Name} scheduled";
+                // Create a new subscription for the scheduled upgrade
+                var scheduledSubscription = new Subscription
+                {
+                    Id = Guid.NewGuid(),
+                    CompanyId = subscription.CompanyId,
+                    PlanId = decryptedNewPlanId,
+                    StartDateUtc = subscription.ExpiryDateUtc.AddSeconds(1),
+                    ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(subscription.ExpiryDateUtc.AddSeconds(1), newPlan.DurationType),
+                    IsActive = false, // Not active until scheduled date
+                    IsTrial = false,
+                    IsExpired = false,
+                    AutoRenew = dto.NewAutoRenew ?? newPlan.AutoRenew,
+                    Currency = subscription.Currency,
+                    Amount = newPrice.Value,
+                    ParentSubscriptionId = subscription.Id,
+                    StatusReason = "Scheduled upgrade - pending activation",
+                    AccessMode = SubscriptionAccessMode.None // Not active yet
+                };
+                
+                await _subscriptionRepo.AddAsync(scheduledSubscription);
+                
+                // Link current subscription to the scheduled one
+                subscription.NextSubscriptionId = scheduledSubscription.Id;
+                subscription.NextSubscriptionActivationDateUtc = scheduledSubscription.StartDateUtc;
+                subscription.StatusReason = $"Upgrade to {newPlan.Name} scheduled for {scheduledSubscription.StartDateUtc:d}";
                 break;
 
             default:

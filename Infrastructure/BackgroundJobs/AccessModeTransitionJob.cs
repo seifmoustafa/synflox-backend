@@ -157,8 +157,8 @@ public class AccessModeTransitionJob : BackgroundService
         if (subscription.ExportDeadlineUtc.HasValue && now <= subscription.ExportDeadlineUtc.Value)
             return SubscriptionAccessMode.ExportOnly;
 
-        // Check fallback plan (ReadOnly)
-        if (subscription.FallbackPlanId.HasValue)
+        // Check fallback plan from the plan (ReadOnly)
+        if (subscription.Plan?.DefaultFallbackPlanId.HasValue == true)
             return SubscriptionAccessMode.ReadOnly;
 
         // No fallback, no export deadline = Blocked

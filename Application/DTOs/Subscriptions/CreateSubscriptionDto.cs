@@ -26,11 +26,4 @@ public class CreateSubscriptionDto
     /// Override default AutoRenew from plan
     /// </summary>
     public bool? AutoRenew { get; set; }
-
-    /// <summary>
-    /// Optionally schedule a next plan (deferred upgrade)
-    /// </summary>
-    public Guid? NextPlanId { get; set; }
-
-    public DateTime? NextPlanStartDateUtc { get; set; }
 }

@@ -20,7 +20,7 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
     {
         return await _context.Set<Subscription>()
             .Include(s => s.Plan)
-            .Include(s => s.NextPlan)
+            .Include(s => s.NextSubscription)
             .Where(s => !s.IsDeleted && s.CompanyId == companyId && s.IsActive && !s.IsExpired)
             .OrderByDescending(s => s.StartDateUtc)
             .FirstOrDefaultAsync(cancellationToken);
@@ -37,7 +37,7 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
     {
         return await _context.Set<Subscription>()
             .Include(s => s.Plan)
-            .Include(s => s.NextPlan)
+            .Include(s => s.NextSubscription)
             .Where(s => !s.IsDeleted && s.CompanyId == companyId)
             .OrderByDescending(s => s.StartDateUtc)
             .ToListAsync(cancellationToken);
@@ -59,13 +59,13 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
     {
         return await _context.Set<Subscription>()
             .Include(s => s.Plan)
-            .Include(s => s.NextPlan)
+            .Include(s => s.NextSubscription)
             .Include(s => s.Company)
             .Where(s => !s.IsDeleted 
                 && !s.IsActive 
-                && s.NextPlanId != null 
-                && s.NextPlanStartDateUtc != null 
-                && s.NextPlanStartDateUtc <= utcNow)
+                && s.NextSubscriptionId != null 
+                && s.NextSubscriptionActivationDateUtc != null 
+                && s.NextSubscriptionActivationDateUtc <= utcNow)
             .ToListAsync(cancellationToken);
     }
 
@@ -78,7 +78,7 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
                 && s.IsActive 
                 && !s.IsExpired 
                 && s.AutoRenew 
-                && s.NextPlanId == null 
+                && s.NextSubscriptionId == null 
                 && s.ExpiryDateUtc <= utcNow.AddDays(1)) // 1 day before expiry
             .ToListAsync(cancellationToken);
     }
@@ -123,7 +123,7 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
             .Include(s => s.Plan)
                 .ThenInclude(p => p.PlanModules)
                     .ThenInclude(pm => pm.Module)
-            .Include(s => s.NextPlan)
+            .Include(s => s.NextSubscription)
             .Include(s => s.ParentSubscription)
             .Where(s => !s.IsDeleted && s.Id == id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -145,8 +145,8 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
     {
         return await _context.Set<Subscription>()
             .Include(s => s.Plan)
+                .ThenInclude(p => p.DefaultFallbackPlan) // Get fallback from plan
             .Include(s => s.Company)
-            .Include(s => s.FallbackPlan)
             .Where(s => !s.IsDeleted)
             .ToListAsync(cancellationToken);
     }

@@ -121,9 +121,9 @@ public class ClientApiService : IClientApiService
             LicenseKeyVersion = subscription.LicenseKeyVersion,
             UsageStatistics = usageStats,
             AutoRenew = subscription.AutoRenew,
-            NextPlanId = subscription.NextPlanId,
-            NextPlanName = subscription.NextPlan?.Name,
-            NextPlanStartDateUtc = subscription.NextPlanStartDateUtc
+            NextSubscriptionId = subscription.NextSubscriptionId,
+            NextSubscriptionPlanName = subscription.NextSubscription?.Plan?.Name,
+            NextSubscriptionActivationDateUtc = subscription.NextSubscriptionActivationDateUtc
         };
     }
 
@@ -487,7 +487,7 @@ public class ClientApiService : IClientApiService
             EndReason = s.StatusReason,
             DurationDays = (int)(s.ExpiryDateUtc - s.StartDateUtc).TotalDays,
             AutoRenewed = s.AutoRenew,
-            UpgradedToPlan = s.NextPlan?.Name
+            UpgradedToPlan = s.NextSubscription?.Plan?.Name
         }).OrderByDescending(h => h.StartDate).ToList();
 
         // Build summary
@@ -497,7 +497,7 @@ public class ClientApiService : IClientApiService
             CompletedSubscriptions = relevantSubscriptions.Count(s => s.IsExpired),
             ActiveSubscriptions = relevantSubscriptions.Count(s => s.IsActive && !s.IsExpired),
             TrialSubscriptions = relevantSubscriptions.Count(s => s.IsTrial),
-            UpgradedSubscriptions = relevantSubscriptions.Count(s => s.NextPlanId.HasValue),
+            UpgradedSubscriptions = relevantSubscriptions.Count(s => s.NextSubscriptionId.HasValue),
             TotalDaysSubscribed = relevantSubscriptions.Sum(s => (int)(s.ExpiryDateUtc - s.StartDateUtc).TotalDays),
             FirstSubscriptionDate = relevantSubscriptions.Any() ? relevantSubscriptions.Min(s => s.StartDateUtc) : DateTime.MinValue,
             MostUsedPlan = relevantSubscriptions.GroupBy(s => s.Plan.Name).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? "None",

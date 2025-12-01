@@ -17,11 +17,4 @@ public class RenewSubscriptionDto
     /// Optional: Reason for renewal (stored in history)
     /// </summary>
     public string? Reason { get; set; }
-
-    /// <summary>
-    /// Optional: Schedule a different plan for next renewal
-    /// </summary>
-    public Guid? NextPlanId { get; set; }
-
-    public DateTime? NextPlanStartDateUtc { get; set; }
 }

@@ -64,19 +64,16 @@ public class Subscription : AuditEntity<Guid>
     public bool AutoRenew { get; set; }
 
     /// <summary>
-    /// Optional override for upgrade policy (null = use plan's policy)
+    /// Scheduled next subscription for deferred upgrades.
+    /// When upgrading, a new subscription is created in "Scheduled" state and linked here.
+    /// The background job activates it on the scheduled date.
     /// </summary>
-    public UpgradePolicy? UpgradePolicyOverride { get; set; }
+    public Guid? NextSubscriptionId { get; set; }
 
     /// <summary>
-    /// Scheduled next plan for deferred upgrades
+    /// When the next subscription should activate (UTC)
     /// </summary>
-    public Guid? NextPlanId { get; set; }
-
-    /// <summary>
-    /// When the next plan should activate (UTC)
-    /// </summary>
-    public DateTime? NextPlanStartDateUtc { get; set; }
+    public DateTime? NextSubscriptionActivationDateUtc { get; set; }
 
     /// <summary>
     /// Parent subscription if this was created from an upgrade
@@ -129,12 +126,6 @@ public class Subscription : AuditEntity<Guid>
     public SubscriptionAccessMode AccessMode { get; set; } = SubscriptionAccessMode.Full;
 
     /// <summary>
-    /// Fallback plan for expired subscriptions (null = blocked after expiry)
-    /// When set, subscription downgrades to this plan's access level instead of blocking
-    /// </summary>
-    public Guid? FallbackPlanId { get; set; }
-
-    /// <summary>
     /// When export-only mode ends (after which access is Blocked)
     /// Set when subscription transitions to ExportOnly mode
     /// </summary>
@@ -158,9 +149,16 @@ public class Subscription : AuditEntity<Guid>
     // Navigation properties
     public Company Company { get; set; } = null!;
     public SubscriptionPlan Plan { get; set; } = null!;
-    public SubscriptionPlan? NextPlan { get; set; }
+    
+    /// <summary>
+    /// The scheduled next subscription (for deferred upgrades)
+    /// </summary>
+    public Subscription? NextSubscription { get; set; }
+    
+    /// <summary>
+    /// Parent subscription if this was created from an upgrade/renewal
+    /// </summary>
     public Subscription? ParentSubscription { get; set; }
-    public SubscriptionPlan? FallbackPlan { get; set; }
     
     /// <summary>
     /// Entitlements granted to this subscription

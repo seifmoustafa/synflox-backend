@@ -83,4 +83,18 @@ public class UpdatePlanDto
     public string? LockedItemStyle { get; set; }
     
     #endregion
+    
+    #region Plan Hierarchy
+    
+    /// <summary>
+    /// Parent plan ID for feature inheritance
+    /// </summary>
+    public Guid? ParentPlanId { get; set; }
+    
+    /// <summary>
+    /// Display order for plan hierarchy
+    /// </summary>
+    public int? DisplayOrder { get; set; }
+    
+    #endregion
 }

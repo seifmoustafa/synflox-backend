@@ -109,6 +109,22 @@ public class SubscriptionPlan : AuditEntity<Guid>
 
     #endregion
 
+    #region Plan Hierarchy (Inheritance)
+
+    /// <summary>
+    /// Parent plan for feature inheritance.
+    /// Child plans automatically inherit all projects, modules, and custom features from parent.
+    /// Example: Pro (child) inherits from Free (parent), Ultra inherits from Pro.
+    /// </summary>
+    public Guid? ParentPlanId { get; set; }
+
+    /// <summary>
+    /// Display order for plan hierarchy (lower = shown first)
+    /// </summary>
+    public int DisplayOrder { get; set; } = 0;
+
+    #endregion
+
     // Navigation properties
     public ICollection<PlanPrice> PlanPrices { get; set; } = new List<PlanPrice>();
     public ICollection<PlanProject> PlanProjects { get; set; } = new List<PlanProject>();
@@ -119,4 +135,14 @@ public class SubscriptionPlan : AuditEntity<Guid>
     /// The default fallback plan for this plan's subscribers
     /// </summary>
     public SubscriptionPlan? DefaultFallbackPlan { get; set; }
+    
+    /// <summary>
+    /// Parent plan for inheritance
+    /// </summary>
+    public SubscriptionPlan? ParentPlan { get; set; }
+    
+    /// <summary>
+    /// Child plans that inherit from this plan
+    /// </summary>
+    public ICollection<SubscriptionPlan> ChildPlans { get; set; } = new List<SubscriptionPlan>();
 }

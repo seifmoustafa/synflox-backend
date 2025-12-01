@@ -136,55 +136,44 @@ public class SubscriptionStatusBackgroundJob : BackgroundService
         var subsForActivation = await subscriptionRepo.GetSubscriptionsDueForActivationAsync(now);
         var count = 0;
 
-        foreach (var oldSubscription in subsForActivation)
+        foreach (var currentSubscription in subsForActivation)
         {
-            var nextPlan = await planRepo.GetWithDetailsAsync(oldSubscription.NextPlanId!.Value);
-            if (nextPlan == null) continue;
+            // With new architecture, NextSubscriptionId points to an already-created subscription
+            // We just need to activate it
+            if (!currentSubscription.NextSubscriptionId.HasValue) continue;
+            
+            var nextSubscription = await subscriptionRepo.GetWithDetailsAsync(currentSubscription.NextSubscriptionId.Value);
+            if (nextSubscription == null) continue;
+            
+            // Activate the scheduled subscription
+            nextSubscription.IsActive = true;
+            nextSubscription.StartDateUtc = now;
+            nextSubscription.ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, nextSubscription.Plan.DurationType);
+            nextSubscription.AccessMode = SubscriptionAccessMode.Full;
+            nextSubscription.StatusReason = $"Deferred upgrade activated from {currentSubscription.Plan.Name}";
+            await subscriptionRepo.UpdateAsync(nextSubscription);
 
-            // Check for duplicate (idempotency)
-            var existing = await subscriptionRepo.FindAsync(s => s.ParentSubscriptionId == oldSubscription.Id);
-            if (existing.Any()) continue;
-
-            // Create new subscription using PlanDurationHelper
-            var newSubscription = new Subscription
-            {
-                Id = Guid.NewGuid(),
-                CompanyId = oldSubscription.CompanyId,
-                PlanId = oldSubscription.NextPlanId.Value,
-                StartDateUtc = now,
-                ExpiryDateUtc = PlanDurationHelper.CalculateExpiryDate(now, nextPlan.DurationType),
-                IsActive = true,
-                IsExpired = false,
-                IsTrial = false,
-                AutoRenew = nextPlan.IsLifetimePlan ? false : nextPlan.AutoRenew, // Lifetime cannot auto-renew
-                Currency = oldSubscription.Currency,
-                Amount = (await planRepo.GetPriceAsync(nextPlan.Id, oldSubscription.Currency)) ?? 0,
-                ParentSubscriptionId = oldSubscription.Id,
-                StatusReason = $"Deferred upgrade activated from {oldSubscription.Plan.Name}"
-            };
-
-            await subscriptionRepo.AddAsync(newSubscription);
-
-            // Clear next plan fields
-            oldSubscription.NextPlanId = null;
-            oldSubscription.NextPlanStartDateUtc = null;
-            oldSubscription.StatusReason = $"Upgraded to {nextPlan.Name} (Deferred)";
-            await subscriptionRepo.UpdateAsync(oldSubscription);
+            // Deactivate the current subscription
+            currentSubscription.IsActive = false;
+            currentSubscription.NextSubscriptionId = null;
+            currentSubscription.NextSubscriptionActivationDateUtc = null;
+            currentSubscription.StatusReason = $"Upgraded to {nextSubscription.Plan.Name} (Deferred)";
+            await subscriptionRepo.UpdateAsync(currentSubscription);
 
             // Create outbox event
             await outboxRepo.AddAsync(new OutboxEvent
             {
                 Id = Guid.NewGuid(),
                 EventType = SubscriptionEventType.DeferredActivated,
-                CompanyId = newSubscription.CompanyId,
-                SubscriptionId = newSubscription.Id,
+                CompanyId = nextSubscription.CompanyId,
+                SubscriptionId = nextSubscription.Id,
                 Payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    CompanyName = oldSubscription.Company.Name,
-                    CompanyEmail = oldSubscription.Company.ContactEmail,
-                    OldPlanName = oldSubscription.Plan.Name,
-                    NewPlanName = nextPlan.Name,
-                    NewExpiryDate = newSubscription.ExpiryDateUtc
+                    CompanyName = currentSubscription.Company.Name,
+                    CompanyEmail = currentSubscription.Company.ContactEmail,
+                    OldPlanName = currentSubscription.Plan.Name,
+                    NewPlanName = nextSubscription.Plan.Name,
+                    NewExpiryDate = nextSubscription.ExpiryDateUtc
                 }),
                 CreatedAtUtc = now,
                 IsProcessed = false,

@@ -98,4 +98,20 @@ public class CreateSubscriptionPlanDto
     public string LockedItemStyle { get; set; } = "greyed_with_lock";
     
     #endregion
+    
+    #region Plan Hierarchy
+    
+    /// <summary>
+    /// Parent plan ID for feature inheritance.
+    /// Child plans automatically inherit all projects and modules from parent.
+    /// Example: Pro (child) inherits from Free (parent).
+    /// </summary>
+    public Guid? ParentPlanId { get; set; }
+    
+    /// <summary>
+    /// Display order for plan hierarchy (lower = shown first)
+    /// </summary>
+    public int DisplayOrder { get; set; } = 0;
+    
+    #endregion
 }

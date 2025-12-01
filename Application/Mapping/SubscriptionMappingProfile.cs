@@ -77,7 +77,17 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.DefaultFallbackPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.DefaultFallbackPlanId))
             .ForMember(d => d.DefaultFallbackPlanName, opt => opt.MapFrom(s => s.DefaultFallbackPlan != null ? s.DefaultFallbackPlan.Name : null))
             .ForMember(d => d.ShowLockedModulesInMenu, opt => opt.MapFrom(s => s.ShowLockedModulesInMenu))
-            .ForMember(d => d.LockedItemStyle, opt => opt.MapFrom(s => s.LockedItemStyle));
+            .ForMember(d => d.LockedItemStyle, opt => opt.MapFrom(s => s.LockedItemStyle))
+            // Project & Module counts
+            .ForMember(d => d.ProjectCount, opt => opt.MapFrom(s => s.PlanProjects.Count))
+            .ForMember(d => d.ModuleCount, opt => opt.MapFrom(s => s.PlanModules.Count))
+            // Plan Hierarchy
+            .ForMember(d => d.ParentPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.ParentPlanId))
+            .ForMember(d => d.ParentPlanName, opt => opt.MapFrom(s => s.ParentPlan != null ? s.ParentPlan.Name : null))
+            .ForMember(d => d.DisplayOrder, opt => opt.MapFrom(s => s.DisplayOrder))
+            .ForMember(d => d.ChildPlanCount, opt => opt.MapFrom(s => s.ChildPlans.Count))
+            .ForMember(d => d.InheritedProjectsCount, opt => opt.Ignore()) // Calculated in service
+            .ForMember(d => d.InheritedModulesCount, opt => opt.Ignore()); // Calculated in service
 
         CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
@@ -124,13 +134,14 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
             .ForMember(d => d.PlanDescription, opt => opt.MapFrom(s => s.Plan.Description))
             .ForMember(d => d.IsLifetime, opt => opt.MapFrom(s => s.IsLifetime))
-            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextPlanId))
-            .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
+            // Next subscription for deferred upgrades
+            .ForMember(d => d.NextSubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextSubscriptionId))
+            .ForMember(d => d.NextSubscriptionPlanName, opt => opt.MapFrom(s => s.NextSubscription != null ? s.NextSubscription.Plan.Name : null))
+            .ForMember(d => d.NextSubscriptionActivationDateUtc, opt => opt.MapFrom(s => s.NextSubscriptionActivationDateUtc))
             // Parent subscription for upgrade/renewal chain
             .ForMember(d => d.ParentSubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.ParentSubscriptionId))
             .ForMember(d => d.ParentSubscriptionDisplayName, opt => opt.MapFrom(s => 
                 s.ParentSubscription != null ? $"{s.ParentSubscription.Plan.Name} ({s.ParentSubscription.StartDateUtc:yyyy-MM-dd})" : null))
-            .ForMember(d => d.UpgradePolicyOverride, opt => opt.MapFrom(s => s.UpgradePolicyOverride))
             .ForMember(d => d.OfflineLicenseKey, opt => opt.Ignore()) // Set manually based on user role
             .ForMember(d => d.LicenseKeyGeneratedAt, opt => opt.MapFrom(s => s.LicenseKeyGeneratedAt))
             .ForMember(d => d.LicenseKeyVersion, opt => opt.MapFrom(s => s.LicenseKeyVersion))
@@ -142,8 +153,9 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.CustomFeatures, opt => opt.MapFrom(s => s.Plan.CustomFeatures))
             // Access Control (Enterprise Entitlement System)
             .ForMember(d => d.AccessMode, opt => opt.MapFrom(s => s.AccessMode))
-            .ForMember(d => d.FallbackPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.FallbackPlanId))
-            .ForMember(d => d.FallbackPlanName, opt => opt.MapFrom(s => s.FallbackPlan != null ? s.FallbackPlan.Name : null))
+            // Default fallback from plan (read-only)
+            .ForMember(d => d.DefaultFallbackPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.Plan.DefaultFallbackPlanId))
+            .ForMember(d => d.DefaultFallbackPlanName, opt => opt.MapFrom(s => s.Plan.DefaultFallbackPlan != null ? s.Plan.DefaultFallbackPlan.Name : null))
             .ForMember(d => d.ExportDeadlineUtc, opt => opt.MapFrom(s => s.ExportDeadlineUtc))
             .ForMember(d => d.EntitlementsVersion, opt => opt.MapFrom(s => s.EntitlementsVersion))
             .ForMember(d => d.AccessRestrictionMessage, opt => opt.MapFrom(s => s.AccessRestrictionMessage))
@@ -159,18 +171,19 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
             .ForMember(d => d.GracePeriodDays, opt => opt.MapFrom(s => s.Plan.GracePeriodDays))
             .ForMember(d => d.GraceEndDateUtc, opt => opt.MapFrom(s => s.ExpiryDateUtc.AddDays(s.Plan.GracePeriodDays)))
-            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextPlanId))
-            .ForMember(d => d.NextPlanName, opt => opt.MapFrom(s => s.NextPlan != null ? s.NextPlan.Name : null))
+            .ForMember(d => d.NextSubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextSubscriptionId))
+            .ForMember(d => d.NextSubscriptionPlanName, opt => opt.MapFrom(s => s.NextSubscription != null ? s.NextSubscription.Plan.Name : null))
             .ForMember(d => d.StatusMessage, opt => opt.Ignore()); // Set by service with localization
 
         CreateMap<CreateSubscriptionDto, Subscription>()
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.CompanyId))
             .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.PlanId))
-            .ForMember(d => d.NextPlanId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.NextPlanId))
             .ForMember(d => d.Company, opt => opt.Ignore())
             .ForMember(d => d.Plan, opt => opt.Ignore())
-            .ForMember(d => d.NextPlan, opt => opt.Ignore())
+            .ForMember(d => d.NextSubscription, opt => opt.Ignore())
+            .ForMember(d => d.NextSubscriptionId, opt => opt.Ignore())
+            .ForMember(d => d.NextSubscriptionActivationDateUtc, opt => opt.Ignore())
             .ForMember(d => d.ParentSubscription, opt => opt.Ignore())
             .ForMember(d => d.StartDateUtc, opt => opt.Ignore()) // Set by service
             .ForMember(d => d.ExpiryDateUtc, opt => opt.Ignore()) // Set by service
@@ -178,8 +191,7 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.IsTrial, opt => opt.Ignore()) // Set by service
             .ForMember(d => d.IsExpired, opt => opt.Ignore()) // Set by service
             .ForMember(d => d.ParentSubscriptionId, opt => opt.Ignore())
-            .ForMember(d => d.StatusReason, opt => opt.Ignore())
-            .ForMember(d => d.UpgradePolicyOverride, opt => opt.Ignore());
+            .ForMember(d => d.StatusReason, opt => opt.Ignore());
 
         // ========== Upgrade Subscription DTO - Decrypt NewPlanId ==========
         CreateMap<UpgradeNewPlanIdRequest, Guid>()

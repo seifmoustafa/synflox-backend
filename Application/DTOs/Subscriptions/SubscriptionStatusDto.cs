@@ -24,10 +24,10 @@ public class SubscriptionStatusDto
     public int GracePeriodDays { get; set; }
     public DateTime GraceEndDateUtc { get; set; }
     
-    // Next plan (for deferred upgrades)
-    public Guid? NextPlanId { get; set; }
-    public string? NextPlanName { get; set; }
-    public DateTime? NextPlanStartDateUtc { get; set; }
+    // Next subscription (for deferred upgrades)
+    public Guid? NextSubscriptionId { get; set; }
+    public string? NextSubscriptionPlanName { get; set; }
+    public DateTime? NextSubscriptionActivationDateUtc { get; set; }
     
     // Status reason
     public string? StatusReason { get; set; }

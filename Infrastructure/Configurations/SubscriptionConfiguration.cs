@@ -41,19 +41,14 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
             .HasForeignKey(s => s.PlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(s => s.NextPlan)
+        builder.HasOne(s => s.NextSubscription)
             .WithMany()
-            .HasForeignKey(s => s.NextPlanId)
+            .HasForeignKey(s => s.NextSubscriptionId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(s => s.ParentSubscription)
             .WithMany()
             .HasForeignKey(s => s.ParentSubscriptionId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(s => s.FallbackPlan)
-            .WithMany()
-            .HasForeignKey(s => s.FallbackPlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Access Control properties
@@ -88,18 +83,13 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         builder.HasIndex(s => new { s.AutoRenew, s.IsActive, s.ExpiryDateUtc, s.IsDeleted })
             .HasDatabaseName("IX_Subscriptions_AutoRenew");
 
-        // Index for deferred activation
-        builder.HasIndex(s => new { s.NextPlanId, s.NextPlanStartDateUtc, s.IsDeleted })
-            .HasFilter("[NextPlanId] IS NOT NULL")
-            .HasDatabaseName("IX_Subscriptions_NextPlan");
+        // Index for deferred activation (scheduled next subscription)
+        builder.HasIndex(s => new { s.NextSubscriptionId, s.NextSubscriptionActivationDateUtc, s.IsDeleted })
+            .HasFilter("[NextSubscriptionId] IS NOT NULL")
+            .HasDatabaseName("IX_Subscriptions_NextSubscription");
 
         // Index for access mode transitions (background job)
         builder.HasIndex(s => new { s.AccessMode, s.ExpiryDateUtc, s.IsActive, s.IsDeleted })
             .HasDatabaseName("IX_Subscriptions_AccessMode_Expiry");
-
-        // Index for fallback plan lookup
-        builder.HasIndex(s => new { s.FallbackPlanId, s.IsDeleted })
-            .HasFilter("[FallbackPlanId] IS NOT NULL")
-            .HasDatabaseName("IX_Subscriptions_FallbackPlan");
     }
 }

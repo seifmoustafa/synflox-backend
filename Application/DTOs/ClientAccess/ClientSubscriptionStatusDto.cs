@@ -55,12 +55,12 @@ public class ClientSubscriptionStatusDto
     public Dictionary<string, int> UsageStatistics { get; set; } = new();
 
     /// <summary>
-    /// Next renewal information
+    /// Next scheduled subscription (for deferred upgrades)
     /// </summary>
     public bool AutoRenew { get; set; }
-    public Guid? NextPlanId { get; set; }
-    public string? NextPlanName { get; set; }
-    public DateTime? NextPlanStartDateUtc { get; set; }
+    public Guid? NextSubscriptionId { get; set; }
+    public string? NextSubscriptionPlanName { get; set; }
+    public DateTime? NextSubscriptionActivationDateUtc { get; set; }
 
     /// <summary>
     /// Computed status message

@@ -67,6 +67,24 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
             .HasForeignKey(p => p.DefaultFallbackPlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        #endregion
+
+        #region Plan Hierarchy (Inheritance)
+
+        // Self-referencing relationship for parent plan (inheritance)
+        builder.HasOne(p => p.ParentPlan)
+            .WithMany(p => p.ChildPlans)
+            .HasForeignKey(p => p.ParentPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(p => p.DisplayOrder)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        // Index for plan hierarchy
+        builder.HasIndex(p => new { p.ParentPlanId, p.DisplayOrder, p.IsDeleted })
+            .HasDatabaseName("IX_SubscriptionPlans_Hierarchy");
+
         // Ignore computed property
         builder.Ignore(p => p.IsLifetimePlan);
 
