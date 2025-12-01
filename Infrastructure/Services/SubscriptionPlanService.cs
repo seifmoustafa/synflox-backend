@@ -25,6 +25,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     private readonly IProjectRepository _projectRepo;
     private readonly IModuleRepository _moduleRepo;
     private readonly ISubscriptionRepository _subscriptionRepo;
+    private readonly IPlanEntitlementRepository _entitlementRepo;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -34,6 +35,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         IProjectRepository projectRepo,
         IModuleRepository moduleRepo,
         ISubscriptionRepository subscriptionRepo,
+        IPlanEntitlementRepository entitlementRepo,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork)
@@ -42,6 +44,7 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         _projectRepo = projectRepo;
         _moduleRepo = moduleRepo;
         _subscriptionRepo = subscriptionRepo;
+        _entitlementRepo = entitlementRepo;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -228,6 +231,10 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         }
 
         await _planRepo.AddAsync(plan);
+        
+        // ⭐ AUTO-CREATE ENTITLEMENTS with Full Access for all included projects/modules
+        await CreateEntitlementsForPlanAsync(plan);
+        
         await _unitOfWork.SaveChangesAsync();
 
         var result = await _planRepo.GetWithDetailsAsync(plan.Id);
@@ -421,6 +428,13 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         }
 
         await _planRepo.UpdateAsync(plan);
+        
+        // ⭐ SYNC ENTITLEMENTS - update entitlements to match current projects/modules
+        if (dto.ProjectIds != null || dto.ModuleIds != null)
+        {
+            await SyncEntitlementsForPlanAsync(plan);
+        }
+        
         await _unitOfWork.SaveChangesAsync();
 
         var result = await _planRepo.GetWithDetailsAsync(decryptedPlanId);
@@ -441,6 +455,9 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         if (hasActiveSubscriptions)
             throw new InvalidOperationException(_localizer["Plan.HasActiveSubscriptions"]);
 
+        // ⭐ SOFT DELETE ENTITLEMENTS when plan is deleted
+        await _entitlementRepo.DeleteAllByPlanIdAsync(decryptedPlanId);
+        
         await _planRepo.DeleteAsync(decryptedPlanId);
         await _unitOfWork.SaveChangesAsync();
         return true;
@@ -519,6 +536,167 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         {
             descendantIds.Add(child.Id);
             await CollectDescendantIdsAsync(child.Id, descendantIds, allPlans);
+        }
+    }
+    
+    #endregion
+    
+    #region Entitlement Auto-Sync Helpers
+    
+    /// <summary>
+    /// Create entitlements with Full Access for all projects/modules in the plan
+    /// Called when a new plan is created
+    /// </summary>
+    private async Task CreateEntitlementsForPlanAsync(SubscriptionPlan plan)
+    {
+        var now = DateTime.UtcNow;
+        
+        // Create entitlements for all projects
+        foreach (var planProject in plan.PlanProjects)
+        {
+            var entitlement = new PlanEntitlement
+            {
+                Id = Guid.NewGuid(),
+                PlanId = plan.Id,
+                ProjectId = planProject.ProjectId,
+                ModuleId = null,
+                AccessLevel = Domain.Enums.EntitlementAccessLevel.Full,
+                CanCreate = true,
+                CanRead = true,
+                CanUpdate = true,
+                CanDelete = true,
+                CanExport = true,
+                DisplayInMenu = true,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedTimestamp = now
+            };
+            await _entitlementRepo.AddAsync(entitlement);
+        }
+        
+        // Create entitlements for all modules
+        foreach (var planModule in plan.PlanModules)
+        {
+            var entitlement = new PlanEntitlement
+            {
+                Id = Guid.NewGuid(),
+                PlanId = plan.Id,
+                ProjectId = null,
+                ModuleId = planModule.ModuleId,
+                AccessLevel = Domain.Enums.EntitlementAccessLevel.Full,
+                CanCreate = true,
+                CanRead = true,
+                CanUpdate = true,
+                CanDelete = true,
+                CanExport = true,
+                DisplayInMenu = true,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedTimestamp = now
+            };
+            await _entitlementRepo.AddAsync(entitlement);
+        }
+        
+        // Increment entitlement version
+        plan.EntitlementVersion++;
+    }
+    
+    /// <summary>
+    /// Sync entitlements to match current projects/modules in the plan
+    /// - Removes entitlements for projects/modules no longer in the plan
+    /// - Adds entitlements for new projects/modules with Full Access
+    /// - Preserves existing entitlements and their customizations
+    /// </summary>
+    private async Task SyncEntitlementsForPlanAsync(SubscriptionPlan plan)
+    {
+        var now = DateTime.UtcNow;
+        var existingEntitlements = (await _entitlementRepo.GetByPlanIdAsync(plan.Id)).ToList();
+        
+        // Get current project/module IDs in the plan
+        var currentProjectIds = plan.PlanProjects.Select(pp => pp.ProjectId).ToHashSet();
+        var currentModuleIds = plan.PlanModules.Select(pm => pm.ModuleId).ToHashSet();
+        
+        // Find entitlements to remove (project/module no longer in plan)
+        var entitlementsToRemove = existingEntitlements
+            .Where(e => 
+                (e.ProjectId.HasValue && !currentProjectIds.Contains(e.ProjectId.Value)) ||
+                (e.ModuleId.HasValue && !currentModuleIds.Contains(e.ModuleId.Value)))
+            .ToList();
+        
+        // Soft delete removed entitlements
+        foreach (var entitlement in entitlementsToRemove)
+        {
+            entitlement.IsDeleted = true;
+            entitlement.IsActive = false;
+            entitlement.DeletedTimestamp = now;
+            entitlement.UpdatedTimestamp = now;
+            await _entitlementRepo.UpdateAsync(entitlement);
+        }
+        
+        // Find new projects that need entitlements
+        var existingProjectIds = existingEntitlements
+            .Where(e => e.ProjectId.HasValue)
+            .Select(e => e.ProjectId!.Value)
+            .ToHashSet();
+        
+        var newProjectIds = currentProjectIds.Except(existingProjectIds);
+        
+        foreach (var projectId in newProjectIds)
+        {
+            var entitlement = new PlanEntitlement
+            {
+                Id = Guid.NewGuid(),
+                PlanId = plan.Id,
+                ProjectId = projectId,
+                ModuleId = null,
+                AccessLevel = Domain.Enums.EntitlementAccessLevel.Full,
+                CanCreate = true,
+                CanRead = true,
+                CanUpdate = true,
+                CanDelete = true,
+                CanExport = true,
+                DisplayInMenu = true,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedTimestamp = now
+            };
+            await _entitlementRepo.AddAsync(entitlement);
+        }
+        
+        // Find new modules that need entitlements
+        var existingModuleIds = existingEntitlements
+            .Where(e => e.ModuleId.HasValue)
+            .Select(e => e.ModuleId!.Value)
+            .ToHashSet();
+        
+        var newModuleIds = currentModuleIds.Except(existingModuleIds);
+        
+        foreach (var moduleId in newModuleIds)
+        {
+            var entitlement = new PlanEntitlement
+            {
+                Id = Guid.NewGuid(),
+                PlanId = plan.Id,
+                ProjectId = null,
+                ModuleId = moduleId,
+                AccessLevel = Domain.Enums.EntitlementAccessLevel.Full,
+                CanCreate = true,
+                CanRead = true,
+                CanUpdate = true,
+                CanDelete = true,
+                CanExport = true,
+                DisplayInMenu = true,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedTimestamp = now
+            };
+            await _entitlementRepo.AddAsync(entitlement);
+        }
+        
+        // Increment entitlement version if any changes were made
+        if (entitlementsToRemove.Any() || newProjectIds.Any() || newModuleIds.Any())
+        {
+            plan.EntitlementVersion++;
         }
     }
     

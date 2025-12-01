@@ -160,7 +160,7 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.EntitlementsVersion, opt => opt.MapFrom(s => s.Plan.EntitlementVersion))
             .ForMember(d => d.AccessRestrictionMessage, opt => opt.MapFrom(s => s.AccessRestrictionMessage))
             // EntitlementCount now comes from Plan.Entitlements (Phase 2: PlanEntitlement)
-            .ForMember(d => d.EntitlementCount, opt => opt.MapFrom(s => 0))
+            .ForMember(d => d.EntitlementCount, opt => opt.MapFrom(s => s.Plan.Entitlements != null ? s.Plan.Entitlements.Count(e => !e.IsDeleted) : 0))
             // Plan-level settings (for frontend display)
             .ForMember(d => d.GracePeriodDays, opt => opt.MapFrom(s => s.Plan.GracePeriodDays))
             .ForMember(d => d.ExportGraceDays, opt => opt.MapFrom(s => s.Plan.ExportGraceDays));
