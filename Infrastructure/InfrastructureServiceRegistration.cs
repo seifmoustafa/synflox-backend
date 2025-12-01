@@ -218,7 +218,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<ILicenseService, LicenseService>();
-        // TODO: Add IPlanEntitlementService when created (Phase 2)
+        services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -294,7 +294,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<ISubscriptionHistoryRepository, SubscriptionHistoryRepository>();
         services.AddScoped<IOutboxEventRepository, OutboxEventRepository>();
-        // ISubscriptionEntitlementRepository REMOVED - v2.0: Entitlements are now at Plan level
+        services.AddScoped<IPlanEntitlementRepository, PlanEntitlementRepository>();
         
         // Client Token Repositories (Phase 2)
         services.AddScoped<IClientAccessTokenRepository, ClientAccessTokenRepository>();

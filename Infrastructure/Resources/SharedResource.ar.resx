@@ -2073,4 +2073,27 @@
     <value>النظام</value>
   </data>
 
+  <!-- Plan Entitlements -->
+  <data name="PlanEntitlement.MustHaveTarget" xml:space="preserve">
+    <value>يجب أن يحتوي الاستحقاق على مشروع أو وحدة مستهدفة</value>
+  </data>
+  <data name="PlanEntitlement.OnlyOneTarget" xml:space="preserve">
+    <value>يمكن للاستحقاق أن يحتوي على هدف واحد فقط (مشروع أو وحدة، وليس كلاهما)</value>
+  </data>
+  <data name="PlanEntitlement.AlreadyExists" xml:space="preserve">
+    <value>يوجد استحقاق لهذا الهدف بالفعل في هذه الخطة</value>
+  </data>
+  <data name="PlanEntitlement.NotFound" xml:space="preserve">
+    <value>استحقاق الخطة غير موجود</value>
+  </data>
+  <data name="PlanEntitlement.Created" xml:space="preserve">
+    <value>تم إنشاء استحقاق الخطة بنجاح</value>
+  </data>
+  <data name="PlanEntitlement.Updated" xml:space="preserve">
+    <value>تم تحديث استحقاق الخطة بنجاح</value>
+  </data>
+  <data name="PlanEntitlement.Deleted" xml:space="preserve">
+    <value>تم حذف استحقاق الخطة بنجاح</value>
+  </data>
+
 </root>

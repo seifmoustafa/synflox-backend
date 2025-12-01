@@ -138,6 +138,11 @@ public class SubscriptionPlan : AuditEntity<Guid>
     public ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     
     /// <summary>
+    /// Plan-level entitlements that define access for all subscribers
+    /// </summary>
+    public ICollection<PlanEntitlement> Entitlements { get; set; } = new List<PlanEntitlement>();
+    
+    /// <summary>
     /// The default fallback plan for this plan's subscribers
     /// </summary>
     public SubscriptionPlan? DefaultFallbackPlan { get; set; }

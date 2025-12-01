@@ -2073,4 +2073,27 @@
     <value>System</value>
   </data>
 
+  <!-- Plan Entitlements -->
+  <data name="PlanEntitlement.MustHaveTarget" xml:space="preserve">
+    <value>Entitlement must have either a Project or Module target</value>
+  </data>
+  <data name="PlanEntitlement.OnlyOneTarget" xml:space="preserve">
+    <value>Entitlement can only have one target (Project OR Module, not both)</value>
+  </data>
+  <data name="PlanEntitlement.AlreadyExists" xml:space="preserve">
+    <value>An entitlement for this target already exists on this plan</value>
+  </data>
+  <data name="PlanEntitlement.NotFound" xml:space="preserve">
+    <value>Plan entitlement not found</value>
+  </data>
+  <data name="PlanEntitlement.Created" xml:space="preserve">
+    <value>Plan entitlement created successfully</value>
+  </data>
+  <data name="PlanEntitlement.Updated" xml:space="preserve">
+    <value>Plan entitlement updated successfully</value>
+  </data>
+  <data name="PlanEntitlement.Deleted" xml:space="preserve">
+    <value>Plan entitlement deleted successfully</value>
+  </data>
+
 </root>

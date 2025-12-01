@@ -54,7 +54,7 @@ namespace Infrastructure.Context
         public DbSet<Domain.Entities.Subscriptions.PlanModule> PlanModules { get; set; }
         public DbSet<Domain.Entities.Subscriptions.OutboxEvent> OutboxEvents { get; set; }
         public DbSet<Domain.Entities.Subscriptions.SubscriptionHistory> SubscriptionHistories { get; set; }
-        // SubscriptionEntitlements REMOVED - Entitlements are now at Plan level (PlanEntitlement)
+        public DbSet<Domain.Entities.Subscriptions.PlanEntitlement> PlanEntitlements { get; set; }
         #endregion
 
         #region Navigation
