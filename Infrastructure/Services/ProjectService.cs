@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.DTOs.Common;
 using Application.DTOs.ProjectDto;
 using Application.DTOs.Subscriptions;
 using Application.DTOs.ModuleDto;
@@ -22,6 +23,7 @@ public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _projectRepo;
     private readonly IModuleRepository _moduleRepo;
+    private readonly IPlanEntitlementRepository _entitlementRepo;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -29,12 +31,14 @@ public class ProjectService : IProjectService
     public ProjectService(
         IProjectRepository projectRepo,
         IModuleRepository moduleRepo,
+        IPlanEntitlementRepository entitlementRepo,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork)
     {
         _projectRepo = projectRepo;
         _moduleRepo = moduleRepo;
+        _entitlementRepo = entitlementRepo;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -145,21 +149,93 @@ public class ProjectService : IProjectService
         return _mapper.Map<ProjectDto>(result);
     }
 
-    public async Task<bool> DeleteAsync(ProjectIdRequest request)
+    /// <inheritdoc />
+    public async Task<DeletePreviewDto> GetDeletePreviewAsync(ProjectIdRequest request)
     {
-        // Use AutoMapper to decrypt the ID (SYNFLOX ID encryption rule)
         var decryptedId = _mapper.Map<Guid>(request);
-        
         var project = await _projectRepo.GetByIdAsync(decryptedId, null);
+        
         if (project == null)
             throw new NotFoundException(_localizer["Project.NotFound"]);
 
-        // Check if project is used in any active subscriptions
-        var isInUse = await _projectRepo.IsUsedInActiveSubscriptionsAsync(decryptedId);
-        if (isInUse)
-            throw new InvalidOperationException(_localizer["Project.InUse"]);
+        var preview = new DeletePreviewDto
+        {
+            EntityType = "Project",
+            EntityName = project.Name
+        };
 
+        // Check if used in active subscriptions (BLOCKING)
+        var isInActiveSubscriptions = await _projectRepo.IsUsedInActiveSubscriptionsAsync(decryptedId);
+        if (isInActiveSubscriptions)
+        {
+            preview.CanDelete = false;
+            preview.BlockingReason = _localizer["Project.InActiveSubscriptions"];
+            return preview;
+        }
+
+        // Get affected Plans (via PlanProjects) - using repository
+        var totalPlans = await _projectRepo.GetAffectedPlansCountAsync(decryptedId);
+        if (totalPlans > 0)
+        {
+            var affectedPlans = await _projectRepo.GetAffectedPlanNamesAsync(decryptedId, 10);
+            preview.AffectedItems.Add(new AffectedItemGroup
+            {
+                ItemType = _localizer["Plans"],
+                Count = totalPlans,
+                ItemNames = affectedPlans
+            });
+            preview.Warnings.Add(string.Format(_localizer["Project.WillBeRemovedFromPlans"], totalPlans));
+        }
+
+        // Get affected Entitlements - using repository
+        var totalEntitlements = await _entitlementRepo.GetCountByProjectIdAsync(decryptedId);
+        if (totalEntitlements > 0)
+        {
+            preview.AffectedItems.Add(new AffectedItemGroup
+            {
+                ItemType = _localizer["Entitlements"],
+                Count = totalEntitlements,
+                ItemNames = new List<string>() // Too many to list
+            });
+            preview.Warnings.Add(string.Format(_localizer["Project.EntitlementsWillBeDeleted"], totalEntitlements));
+        }
+
+        preview.TotalAffectedCount = totalPlans + totalEntitlements;
+        preview.CanDelete = true;
+
+        return preview;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteAsync(ProjectIdRequest request, bool confirmCascade = false)
+    {
+        var decryptedId = _mapper.Map<Guid>(request);
+        var project = await _projectRepo.GetByIdAsync(decryptedId, null);
+        
+        if (project == null)
+            throw new NotFoundException(_localizer["Project.NotFound"]);
+
+        // Always check blocking condition
+        var isInActiveSubscriptions = await _projectRepo.IsUsedInActiveSubscriptionsAsync(decryptedId);
+        if (isInActiveSubscriptions)
+            throw new InvalidOperationException(_localizer["Project.InActiveSubscriptions"]);
+
+        // Check if cascade is needed - using repository
+        var hasRelatedRecords = await _projectRepo.HasRelatedRecordsAsync(decryptedId);
+
+        // If there are related records and cascade not confirmed, throw
+        if (hasRelatedRecords && !confirmCascade)
+            throw new InvalidOperationException(_localizer["Project.HasRelatedRecords"]);
+
+        // ⭐ CASCADE 1: Remove from all Plans - using repository
+        await _projectRepo.RemoveFromAllPlansAsync(decryptedId);
+
+        // ⭐ CASCADE 2: Soft delete all entitlements referencing this project
+        await _entitlementRepo.DeleteAllByProjectIdAsync(decryptedId);
+
+        // ⭐ CASCADE 3: Soft delete the project itself
         await _projectRepo.DeleteAsync(decryptedId);
+        
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

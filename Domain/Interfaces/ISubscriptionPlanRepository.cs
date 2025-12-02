@@ -23,4 +23,10 @@ public interface ISubscriptionPlanRepository : IBaseRepository<Guid, Subscriptio
     /// Get all free tier plans (for fallback plan selection)
     /// </summary>
     Task<IEnumerable<SubscriptionPlan>> GetFreeTierPlansAsync(CancellationToken cancellationToken = default);
+    
+    // Delete cascade support
+    Task<int> GetChildPlansCountAsync(Guid planId, CancellationToken cancellationToken = default);
+    Task<int> GetFallbackReferencesCountAsync(Guid planId, CancellationToken cancellationToken = default);
+    Task NullifyChildPlanReferencesAsync(Guid planId, CancellationToken cancellationToken = default);
+    Task NullifyFallbackReferencesAsync(Guid planId, CancellationToken cancellationToken = default);
 }

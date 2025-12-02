@@ -83,14 +83,26 @@ public class CompanyController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get delete preview for a company
+    /// </summary>
+    [HttpGet("{id}/delete-preview")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<IActionResult> GetDeletePreview(Guid id)
+    {
+        var request = new GetCompanyByIdRequest { CompanyId = id };
+        var preview = await _companyService.GetDeletePreviewAsync(request);
+        return Ok(new ApiResponse<object>(200, _localizer["Success"], preview));
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Policy = "SuperAdminOnly")]
-    public async Task<IActionResult> DeleteCompany(Guid id, [FromQuery] string? lang = null)
+    public async Task<IActionResult> DeleteCompany(Guid id, [FromQuery] bool confirmCascade = false, [FromQuery] string? lang = null)
     {
         try
         {
             var request = new DeleteCompanyRequest { CompanyId = id };
-            var deleted = await _companyService.DeleteCompanyAsync(request, lang);
+            var deleted = await _companyService.DeleteCompanyAsync(request, confirmCascade, lang);
             if (!deleted)
             {
                 return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));

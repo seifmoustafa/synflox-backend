@@ -648,10 +648,14 @@ public class AdminProfileService : IAdminProfileService
     {
         // Protect root superadmin from self-deletion
         var admin = await _repo.GetByIdAsync(currentUserId, null);
-        if (admin != null && admin.Username.Equals("superadmin", StringComparison.OrdinalIgnoreCase))
-        {
+        if (admin == null)
+            throw new NotFoundException(_localizer["Admin.NotFound"]);
+            
+        if (admin.Username.Equals("superadmin", StringComparison.OrdinalIgnoreCase))
             throw new BadRequestException(_localizer["SuperAdmin.CannotDeleteSelf"]);
-        }
+
+        // ⭐ CASCADE: Delete auth records (refresh tokens, backup codes, reset tokens)
+        await _repo.SoftDeleteAuthRecordsAsync(currentUserId);
 
         await _repo.DeleteAsync(currentUserId);
         await _unitOfWork.SaveChangesAsync();

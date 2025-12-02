@@ -68,13 +68,24 @@ public class ModulesController : ControllerBase
         return Ok(module);
     }
 
+    /// <summary>
+    /// Get delete preview for a module
+    /// </summary>
+    [HttpGet("{id}/delete-preview")]
+    public async Task<IActionResult> GetDeletePreview(Guid id)
+    {
+        var request = new ModuleIdRequest { ModuleId = id };
+        var preview = await _moduleService.GetDeletePreviewAsync(request);
+        return Ok(preview);
+    }
+
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, [FromQuery] bool confirmCascade = false)
     {
         // Create request DTO for AutoMapper decryption (SYNFLOX ID encryption rule)
         var request = new ModuleIdRequest { ModuleId = id };
         
-        await _moduleService.DeleteAsync(request);
+        await _moduleService.DeleteAsync(request, confirmCascade);
         return NoContent();
     }
 

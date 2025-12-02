@@ -65,12 +65,23 @@ public class ProjectsController : ControllerBase
         return Ok(project);
     }
 
+    /// <summary>
+    /// Get delete preview for a project
+    /// </summary>
+    [HttpGet("{id}/delete-preview")]
+    public async Task<IActionResult> GetDeletePreview(Guid id)
+    {
+        var request = new ProjectIdRequest { ProjectId = id };
+        var preview = await _projectService.GetDeletePreviewAsync(request);
+        return Ok(preview);
+    }
+
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, [FromQuery] bool confirmCascade = false)
     {
         // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
         var request = new ProjectIdRequest { ProjectId = id };
-        await _projectService.DeleteAsync(request);
+        await _projectService.DeleteAsync(request, confirmCascade);
         return NoContent();
     }
 }

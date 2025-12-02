@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Application.DTOs.Common;
 using Application.DTOs.Company;
 using Domain.Entities.Common;
 
@@ -35,9 +36,14 @@ public interface ICompanyService
     Task<CompanyDto?> UpdateCompanyAsync(UpdateCompanyByIdRequest request, string? language = null);
 
     /// <summary>
-    /// Deletes a company (soft delete).
+    /// Preview what will be affected by deleting a company
     /// </summary>
-    Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request, string? language = null);
+    Task<DeletePreviewDto> GetDeletePreviewAsync(GetCompanyByIdRequest request);
+    
+    /// <summary>
+    /// Deletes a company (soft delete) with optional cascade.
+    /// </summary>
+    Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request, bool confirmCascade = false, string? language = null);
 
     /// <summary>
     /// Activates a company.

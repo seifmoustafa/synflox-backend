@@ -31,8 +31,16 @@ public class PlanEntitlementMappingProfile : Profile
             .ForMember(d => d.ProjectName, opt => opt.MapFrom(s => s.Project != null ? s.Project.Name : null))
             .ForMember(d => d.ModuleId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.ModuleId))
             .ForMember(d => d.ModuleName, opt => opt.MapFrom(s => s.Module != null ? s.Module.Name : null))
+            // Hierarchy fields
+            .ForMember(d => d.ParentProjectId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.ParentProjectId))
+            .ForMember(d => d.ParentProjectName, opt => opt.MapFrom(s => s.ParentProject != null ? s.ParentProject.Name : null))
+            .ForMember(d => d.IsOverride, opt => opt.MapFrom(s => s.IsOverride))
+            // Computed properties
             .ForMember(d => d.TargetType, opt => opt.MapFrom(s => s.TargetType))
             .ForMember(d => d.TargetName, opt => opt.MapFrom(s => s.TargetName))
+            .ForMember(d => d.IsModuleUnderProject, opt => opt.MapFrom(s => s.IsModuleUnderProject))
+            .ForMember(d => d.IsStandaloneModule, opt => opt.MapFrom(s => s.IsStandaloneModule))
+            .ForMember(d => d.IsProjectEntitlement, opt => opt.MapFrom(s => s.IsProjectEntitlement))
             .ForMember(d => d.AccessLevelDisplay, opt => opt.MapFrom(s => GetAccessLevelDisplay(s.AccessLevel)))
             .ForMember(d => d.HasFullAccess, opt => opt.MapFrom(s => s.HasFullAccess))
             // Audit fields

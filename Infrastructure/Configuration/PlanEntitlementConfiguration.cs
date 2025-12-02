@@ -33,8 +33,16 @@ public class PlanEntitlementConfiguration : IEntityTypeConfiguration<PlanEntitle
             .HasForeignKey(e => e.ModuleId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Parent Project relationship (for modules under a project in this plan)
+        // Use NoAction to avoid multiple cascade paths (ProjectId already has SetNull)
+        builder.HasOne(e => e.ParentProject)
+            .WithMany()
+            .HasForeignKey(e => e.ParentProjectId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         // Indexes
         builder.HasIndex(e => e.PlanId);
+        builder.HasIndex(e => e.ParentProjectId);
         builder.HasIndex(e => new { e.PlanId, e.ProjectId, e.ModuleId })
             .IsUnique()
             .HasFilter("IsDeleted = 0"); // Unique constraint only for non-deleted records
@@ -45,6 +53,12 @@ public class PlanEntitlementConfiguration : IEntityTypeConfiguration<PlanEntitle
             "(ProjectId IS NOT NULL AND ModuleId IS NULL) OR (ProjectId IS NULL AND ModuleId IS NOT NULL)"
         ));
 
+        // Check constraint: ParentProjectId only valid for module entitlements
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_PlanEntitlement_ParentProject",
+            "ParentProjectId IS NULL OR ModuleId IS NOT NULL"
+        ));
+
         // Property configurations
         builder.Property(e => e.Features)
             .HasMaxLength(500);
@@ -52,9 +66,15 @@ public class PlanEntitlementConfiguration : IEntityTypeConfiguration<PlanEntitle
         builder.Property(e => e.AccessLevel)
             .HasConversion<int>();
 
+        builder.Property(e => e.IsOverride)
+            .HasDefaultValue(false);
+
         // Ignore computed properties
         builder.Ignore(e => e.TargetType);
         builder.Ignore(e => e.TargetName);
         builder.Ignore(e => e.HasFullAccess);
+        builder.Ignore(e => e.IsModuleUnderProject);
+        builder.Ignore(e => e.IsStandaloneModule);
+        builder.Ignore(e => e.IsProjectEntitlement);
     }
 }

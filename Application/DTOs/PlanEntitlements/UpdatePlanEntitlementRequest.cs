@@ -57,4 +57,11 @@ public class UpdatePlanEntitlementRequest
     /// Is the entitlement active
     /// </summary>
     public bool? IsActive { get; set; }
+    
+    /// <summary>
+    /// When updating a PROJECT entitlement, if true, will reset all child module overrides
+    /// and cascade the new permission to all modules under this project.
+    /// If false and there are child overrides, an error will be returned.
+    /// </summary>
+    public bool ResetChildOverrides { get; set; } = false;
 }

@@ -2095,5 +2095,77 @@
   <data name="PlanEntitlement.Deleted" xml:space="preserve">
     <value>تم حذف استحقاق الخطة بنجاح</value>
   </data>
+  <data name="PlanEntitlement.HasOverrides" xml:space="preserve">
+    <value>يحتوي هذا المشروع على وحدات فرعية بصلاحيات مخصصة. سيؤدي التحديث إلى إعادة تعيينها</value>
+  </data>
+  <data name="PlanEntitlement.ModulesWithOverrides" xml:space="preserve">
+    <value>وحدات بصلاحيات مخصصة</value>
+  </data>
+  <data name="PlanEntitlement.ModuleInProject" xml:space="preserve">
+    <value>هذه الوحدة مضمنة بالفعل عبر مشروع مضمن</value>
+  </data>
+  <data name="PlanEntitlement.StandaloneModulesWillBeLost" xml:space="preserve">
+    <value>سيتم تحويل الوحدات المستقلة التالية إلى وحدات تابعة للمشروع</value>
+  </data>
+  <data name="PlanEntitlement.Cascaded" xml:space="preserve">
+    <value>تم نشر الصلاحيات لجميع الوحدات الفرعية</value>
+  </data>
+
+  <!-- Delete Preview / Cascade Delete -->
+  <data name="Plans" xml:space="preserve">
+    <value>الخطط</value>
+  </data>
+  <data name="Projects" xml:space="preserve">
+    <value>المشاريع</value>
+  </data>
+  <data name="Entitlements" xml:space="preserve">
+    <value>الاستحقاقات</value>
+  </data>
+  <data name="Project.InActiveSubscriptions" xml:space="preserve">
+    <value>لا يمكن حذف المشروع: يتم استخدامه في اشتراكات نشطة</value>
+  </data>
+  <data name="Project.WillBeRemovedFromPlans" xml:space="preserve">
+    <value>سيتم إزالة هذا المشروع من {0} خطة/خطط</value>
+  </data>
+  <data name="Project.EntitlementsWillBeDeleted" xml:space="preserve">
+    <value>سيتم حذف {0} استحقاق/استحقاقات تشير إلى هذا المشروع</value>
+  </data>
+  <data name="Project.HasRelatedRecords" xml:space="preserve">
+    <value>المشروع مرتبط بسجلات أخرى. استخدم المعاينة لرؤية العناصر المتأثرة وتأكيد الحذف المتسلسل.</value>
+  </data>
+  <data name="Module.WillBeRemovedFromProjects" xml:space="preserve">
+    <value>سيتم إزالة هذه الوحدة من {0} مشروع/مشاريع</value>
+  </data>
+  <data name="Module.WillBeRemovedFromPlans" xml:space="preserve">
+    <value>سيتم إزالة هذه الوحدة من {0} خطة/خطط</value>
+  </data>
+  <data name="Module.EntitlementsWillBeDeleted" xml:space="preserve">
+    <value>سيتم حذف {0} استحقاق/استحقاقات تشير إلى هذه الوحدة</value>
+  </data>
+  <data name="Module.HasRelatedRecords" xml:space="preserve">
+    <value>الوحدة مرتبطة بسجلات أخرى. استخدم المعاينة لرؤية العناصر المتأثرة وتأكيد الحذف المتسلسل.</value>
+  </data>
+
+  <!-- Company Cascade Delete -->
+  <data name="Subscriptions" xml:space="preserve">
+    <value>الاشتراكات</value>
+  </data>
+  <data name="ClientTokens" xml:space="preserve">
+    <value>رموز العميل</value>
+  </data>
+  <data name="Company.SubscriptionsWillBeDeleted" xml:space="preserve">
+    <value>سيتم حذف {0} اشتراك/اشتراكات مع هذه الشركة</value>
+  </data>
+  <data name="Company.ClientTokensWillBeDeleted" xml:space="preserve">
+    <value>سيتم حذف {0} رمز/رموز عميل مع هذه الشركة</value>
+  </data>
+  <data name="Company.HasRelatedRecords" xml:space="preserve">
+    <value>الشركة مرتبطة بسجلات أخرى. استخدم المعاينة لرؤية العناصر المتأثرة وتأكيد الحذف المتسلسل.</value>
+  </data>
+
+  <!-- AdminType Cascade Delete -->
+  <data name="AdminType.HasAdmins" xml:space="preserve">
+    <value>لا يمكن حذف نوع المسؤول: {0} مسؤول/مسؤولين يستخدمون هذا النوع. قم بإعادة تعيينهم أولاً.</value>
+  </data>
 
 </root>

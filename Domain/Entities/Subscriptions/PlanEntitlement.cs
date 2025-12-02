@@ -34,6 +34,22 @@ public class PlanEntitlement : AuditEntity<Guid>
     public Guid? ModuleId { get; set; }
     public virtual Module? Module { get; set; }
 
+    /// <summary>
+    /// If this is a module entitlement that belongs to a project in this plan,
+    /// this references the parent project. Used for hierarchical permission cascading.
+    /// Null for standalone modules and project entitlements.
+    /// </summary>
+    public Guid? ParentProjectId { get; set; }
+    public virtual Project? ParentProject { get; set; }
+
+    /// <summary>
+    /// Whether this module's permission was manually overridden from its parent project.
+    /// Only applicable for module entitlements under a project.
+    /// When false, permission cascades from parent project.
+    /// When true, this module has its own independent permission.
+    /// </summary>
+    public bool IsOverride { get; set; } = false;
+
     #endregion
 
     #region Access Configuration
@@ -98,6 +114,21 @@ public class PlanEntitlement : AuditEntity<Guid>
     /// Returns true if this grants full CRUD access
     /// </summary>
     public bool HasFullAccess => CanCreate && CanRead && CanUpdate && CanDelete && CanExport;
+
+    /// <summary>
+    /// Returns true if this is a module that belongs to a project in this plan
+    /// </summary>
+    public bool IsModuleUnderProject => ModuleId.HasValue && ParentProjectId.HasValue;
+
+    /// <summary>
+    /// Returns true if this is a standalone module (not under any project in this plan)
+    /// </summary>
+    public bool IsStandaloneModule => ModuleId.HasValue && !ParentProjectId.HasValue;
+
+    /// <summary>
+    /// Returns true if this is a project entitlement
+    /// </summary>
+    public bool IsProjectEntitlement => ProjectId.HasValue;
 
     #endregion
 }

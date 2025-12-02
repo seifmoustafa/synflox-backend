@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Application.DTOs.Common;
 using Application.DTOs.Company;
 using Application.Services;
 using Application.Services_Interfaces;
@@ -189,21 +190,81 @@ public class CompanyService : ICompanyService
         return result;
     }
 
-    public async Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request, string? language = null)
+    /// <inheritdoc />
+    public async Task<DeletePreviewDto> GetDeletePreviewAsync(GetCompanyByIdRequest request)
     {
-        // Use AutoMapper to decrypt the ID
+        var decryptedId = _mapper.Map<Guid>(request);
+        var company = await _repository.GetByIdAsync(decryptedId, null);
+        
+        if (company == null)
+            throw new NotFoundException(_localizer["Company.CompanyNotFound"]);
+
+        var preview = new DeletePreviewDto
+        {
+            EntityType = "Company",
+            EntityName = company.Name
+        };
+
+        // Get affected Subscriptions
+        var totalSubscriptions = await _repository.GetSubscriptionsCountAsync(decryptedId);
+        if (totalSubscriptions > 0)
+        {
+            var subNames = await _repository.GetSubscriptionNamesAsync(decryptedId, 10);
+            preview.AffectedItems.Add(new AffectedItemGroup
+            {
+                ItemType = _localizer["Subscriptions"],
+                Count = totalSubscriptions,
+                ItemNames = subNames
+            });
+            preview.Warnings.Add(string.Format(_localizer["Company.SubscriptionsWillBeDeleted"], totalSubscriptions));
+        }
+
+        // Get affected Client Tokens
+        var totalTokens = await _repository.GetClientTokensCountAsync(decryptedId);
+        if (totalTokens > 0)
+        {
+            preview.AffectedItems.Add(new AffectedItemGroup
+            {
+                ItemType = _localizer["ClientTokens"],
+                Count = totalTokens,
+                ItemNames = new List<string>()
+            });
+            preview.Warnings.Add(string.Format(_localizer["Company.ClientTokensWillBeDeleted"], totalTokens));
+        }
+
+        preview.TotalAffectedCount = totalSubscriptions + totalTokens;
+        preview.CanDelete = true;
+
+        return preview;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteCompanyAsync(DeleteCompanyRequest request, bool confirmCascade = false, string? language = null)
+    {
         var decryptedId = _mapper.Map<Guid>(request);
         
         var company = await _repository.GetByIdAsync(decryptedId, null);
         if (company == null)
-        {
             throw new NotFoundException(_localizer["Company.CompanyNotFound"]);
-        }
+
+        // Check if cascade is needed
+        var hasRelatedRecords = await _repository.HasRelatedRecordsAsync(decryptedId);
+
+        // If there are related records and cascade not confirmed, throw
+        if (hasRelatedRecords && !confirmCascade)
+            throw new InvalidOperationException(_localizer["Company.HasRelatedRecords"]);
 
         // Store company info for email before deletion
         var companyName = company.Name;
         var contactEmail = company.ContactEmail;
 
+        // ⭐ CASCADE 1: Soft delete all subscriptions (and their histories)
+        await _repository.SoftDeleteSubscriptionsAsync(decryptedId);
+
+        // ⭐ CASCADE 2: Soft delete all client tokens
+        await _repository.SoftDeleteClientTokensAsync(decryptedId);
+
+        // ⭐ CASCADE 3: Soft delete the company itself
         await _repository.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         
@@ -214,7 +275,6 @@ public class CompanyService : ICompanyService
         }
         catch (Exception ex)
         {
-            // Log email error but don't fail the operation
             Console.WriteLine($"Failed to send company deletion email: {ex.Message}");
         }
         
@@ -322,6 +382,13 @@ public class CompanyService : ICompanyService
                 var companyName = company.Name;
                 var contactEmail = company.ContactEmail;
 
+                // ⭐ CASCADE 1: Soft delete all subscriptions (and their histories)
+                await _repository.SoftDeleteSubscriptionsAsync(decryptedId);
+
+                // ⭐ CASCADE 2: Soft delete all client tokens
+                await _repository.SoftDeleteClientTokensAsync(decryptedId);
+
+                // ⭐ CASCADE 3: Soft delete the company itself
                 await _repository.DeleteAsync(decryptedId);
                 result.SuccessfulIds.Add(encryptedId);
                 result.SuccessCount++;

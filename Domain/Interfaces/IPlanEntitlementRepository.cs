@@ -45,4 +45,26 @@ public interface IPlanEntitlementRepository : IBaseRepository<Guid, PlanEntitlem
     /// Copy entitlements from one plan to another
     /// </summary>
     Task CopyEntitlementsAsync(Guid sourcePlanId, Guid targetPlanId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Soft delete all entitlements that reference a specific project (direct or as parent)
+    /// Called when a project is deleted
+    /// </summary>
+    Task DeleteAllByProjectIdAsync(Guid projectId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Soft delete all entitlements that reference a specific module
+    /// Called when a module is deleted
+    /// </summary>
+    Task DeleteAllByModuleIdAsync(Guid moduleId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Get count of entitlements that reference a specific project (direct or as parent)
+    /// </summary>
+    Task<int> GetCountByProjectIdAsync(Guid projectId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Get count of entitlements that reference a specific module
+    /// </summary>
+    Task<int> GetCountByModuleIdAsync(Guid moduleId, CancellationToken cancellationToken = default);
 }

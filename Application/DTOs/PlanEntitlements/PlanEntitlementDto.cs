@@ -18,9 +18,17 @@ public class PlanEntitlementDto
     public Guid? ModuleId { get; set; }
     public string? ModuleName { get; set; }
     
+    // Hierarchy (for modules under a project)
+    public Guid? ParentProjectId { get; set; }
+    public string? ParentProjectName { get; set; }
+    public bool IsOverride { get; set; }
+    
     // Computed
     public string TargetType { get; set; } = string.Empty;
     public string TargetName { get; set; } = string.Empty;
+    public bool IsModuleUnderProject { get; set; }
+    public bool IsStandaloneModule { get; set; }
+    public bool IsProjectEntitlement { get; set; }
     
     // Access Configuration
     public EntitlementAccessLevel AccessLevel { get; set; }

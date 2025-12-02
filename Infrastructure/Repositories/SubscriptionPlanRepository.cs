@@ -82,4 +82,46 @@ public class SubscriptionPlanRepository : BaseRepository<Guid, SubscriptionPlan>
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
     }
+
+    #region Delete Cascade Support
+
+    public async Task<int> GetChildPlansCountAsync(Guid planId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<SubscriptionPlan>()
+            .CountAsync(p => p.ParentPlanId == planId && !p.IsDeleted, cancellationToken);
+    }
+
+    public async Task<int> GetFallbackReferencesCountAsync(Guid planId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<SubscriptionPlan>()
+            .CountAsync(p => p.DefaultFallbackPlanId == planId && !p.IsDeleted, cancellationToken);
+    }
+
+    public async Task NullifyChildPlanReferencesAsync(Guid planId, CancellationToken cancellationToken = default)
+    {
+        var childPlans = await _context.Set<SubscriptionPlan>()
+            .Where(p => p.ParentPlanId == planId && !p.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        foreach (var child in childPlans)
+        {
+            child.ParentPlanId = null;
+            child.UpdatedTimestamp = DateTime.UtcNow;
+        }
+    }
+
+    public async Task NullifyFallbackReferencesAsync(Guid planId, CancellationToken cancellationToken = default)
+    {
+        var referencingPlans = await _context.Set<SubscriptionPlan>()
+            .Where(p => p.DefaultFallbackPlanId == planId && !p.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        foreach (var plan in referencingPlans)
+        {
+            plan.DefaultFallbackPlanId = null;
+            plan.UpdatedTimestamp = DateTime.UtcNow;
+        }
+    }
+
+    #endregion
 }

@@ -2095,5 +2095,77 @@
   <data name="PlanEntitlement.Deleted" xml:space="preserve">
     <value>Plan entitlement deleted successfully</value>
   </data>
+  <data name="PlanEntitlement.HasOverrides" xml:space="preserve">
+    <value>This project has child modules with custom permissions. Updating will reset them</value>
+  </data>
+  <data name="PlanEntitlement.ModulesWithOverrides" xml:space="preserve">
+    <value>modules with custom permissions</value>
+  </data>
+  <data name="PlanEntitlement.ModuleInProject" xml:space="preserve">
+    <value>This module is already included via an included project</value>
+  </data>
+  <data name="PlanEntitlement.StandaloneModulesWillBeLost" xml:space="preserve">
+    <value>The following standalone modules will be converted to project-based</value>
+  </data>
+  <data name="PlanEntitlement.Cascaded" xml:space="preserve">
+    <value>Permission cascaded to all child modules</value>
+  </data>
+
+  <!-- Delete Preview / Cascade Delete -->
+  <data name="Plans" xml:space="preserve">
+    <value>Plans</value>
+  </data>
+  <data name="Projects" xml:space="preserve">
+    <value>Projects</value>
+  </data>
+  <data name="Entitlements" xml:space="preserve">
+    <value>Entitlements</value>
+  </data>
+  <data name="Project.InActiveSubscriptions" xml:space="preserve">
+    <value>Cannot delete project: It is used in active subscriptions</value>
+  </data>
+  <data name="Project.WillBeRemovedFromPlans" xml:space="preserve">
+    <value>This project will be removed from {0} plan(s)</value>
+  </data>
+  <data name="Project.EntitlementsWillBeDeleted" xml:space="preserve">
+    <value>{0} entitlement(s) referencing this project will be deleted</value>
+  </data>
+  <data name="Project.HasRelatedRecords" xml:space="preserve">
+    <value>Project has related records. Use preview to see affected items and confirm cascade delete.</value>
+  </data>
+  <data name="Module.WillBeRemovedFromProjects" xml:space="preserve">
+    <value>This module will be removed from {0} project(s)</value>
+  </data>
+  <data name="Module.WillBeRemovedFromPlans" xml:space="preserve">
+    <value>This module will be removed from {0} plan(s)</value>
+  </data>
+  <data name="Module.EntitlementsWillBeDeleted" xml:space="preserve">
+    <value>{0} entitlement(s) referencing this module will be deleted</value>
+  </data>
+  <data name="Module.HasRelatedRecords" xml:space="preserve">
+    <value>Module has related records. Use preview to see affected items and confirm cascade delete.</value>
+  </data>
+
+  <!-- Company Cascade Delete -->
+  <data name="Subscriptions" xml:space="preserve">
+    <value>Subscriptions</value>
+  </data>
+  <data name="ClientTokens" xml:space="preserve">
+    <value>Client Tokens</value>
+  </data>
+  <data name="Company.SubscriptionsWillBeDeleted" xml:space="preserve">
+    <value>{0} subscription(s) will be deleted with this company</value>
+  </data>
+  <data name="Company.ClientTokensWillBeDeleted" xml:space="preserve">
+    <value>{0} client token(s) will be deleted with this company</value>
+  </data>
+  <data name="Company.HasRelatedRecords" xml:space="preserve">
+    <value>Company has related records. Use preview to see affected items and confirm cascade delete.</value>
+  </data>
+
+  <!-- AdminType Cascade Delete -->
+  <data name="AdminType.HasAdmins" xml:space="preserve">
+    <value>Cannot delete admin type: {0} admin(s) are using this type. Reassign them first.</value>
+  </data>
 
 </root>

@@ -89,6 +89,14 @@ public class PlanEntitlementService : IPlanEntitlementService
             var module = await _moduleRepo.GetByIdAsync(request.ModuleId.Value, null);
             if (module == null || module.IsDeleted)
                 throw new NotFoundException(_localizer["Module.NotFound"]);
+            
+            // Check if this module is already included via a project
+            var existingEntitlements = await _entitlementRepo.GetByPlanIdAsync(request.PlanId, cancellationToken);
+            var moduleAlreadyInProject = existingEntitlements
+                .Any(e => e.ModuleId == request.ModuleId.Value && e.ParentProjectId.HasValue);
+            
+            if (moduleAlreadyInProject)
+                throw new BadRequestException(_localizer["PlanEntitlement.ModuleInProject"]);
         }
         
         // Check for duplicate
@@ -132,11 +140,71 @@ public class PlanEntitlementService : IPlanEntitlementService
     /// <inheritdoc />
     public async Task<PlanEntitlementDto> UpdateAsync(UpdatePlanEntitlementRequest request, CancellationToken cancellationToken = default)
     {
-        var entitlement = await _entitlementRepo.GetByIdAsync(request.Id, new[] { "Plan", "Project", "Module" });
+        var entitlement = await _entitlementRepo.GetByIdAsync(request.Id, new[] { "Plan", "Project", "Module", "ParentProject" });
         if (entitlement == null || entitlement.IsDeleted)
             throw new NotFoundException(_localizer["PlanEntitlement.NotFound"]);
         
-        // Update fields if provided
+        var now = DateTime.UtcNow;
+        
+        // If this is a PROJECT entitlement, handle cascading to child modules
+        if (entitlement.IsProjectEntitlement)
+        {
+            // Check for child modules with overrides
+            var childEntitlements = (await _entitlementRepo.GetByPlanIdAsync(entitlement.PlanId, cancellationToken))
+                .Where(e => e.ParentProjectId == entitlement.ProjectId && !e.IsDeleted)
+                .ToList();
+            
+            var overriddenChildren = childEntitlements.Where(e => e.IsOverride).ToList();
+            
+            // If there are overrides and user hasn't confirmed reset
+            if (overriddenChildren.Any() && !request.ResetChildOverrides)
+            {
+                throw new BadRequestException(
+                    $"{_localizer["PlanEntitlement.HasOverrides"]} ({overriddenChildren.Count} {_localizer["PlanEntitlement.ModulesWithOverrides"]})");
+            }
+            
+            // Apply changes to project
+            ApplyUpdateToEntitlement(entitlement, request, now);
+            await _entitlementRepo.UpdateAsync(entitlement);
+            
+            // Cascade to all child modules (reset overrides if confirmed)
+            foreach (var child in childEntitlements)
+            {
+                CascadePermissionToChild(child, entitlement, now);
+                await _entitlementRepo.UpdateAsync(child);
+            }
+        }
+        // If this is a MODULE entitlement
+        else if (entitlement.ModuleId.HasValue)
+        {
+            // If this module has a parent project, mark it as override
+            if (entitlement.ParentProjectId.HasValue)
+            {
+                entitlement.IsOverride = true;
+            }
+            
+            ApplyUpdateToEntitlement(entitlement, request, now);
+            await _entitlementRepo.UpdateAsync(entitlement);
+        }
+        
+        // Increment plan's entitlement version
+        var plan = await _planRepo.GetByIdAsync(entitlement.PlanId, null);
+        if (plan != null)
+        {
+            plan.EntitlementVersion++;
+            await _planRepo.UpdateAsync(plan);
+        }
+        
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return _mapper.Map<PlanEntitlementDto>(entitlement);
+    }
+    
+    /// <summary>
+    /// Apply update request fields to an entitlement
+    /// </summary>
+    private void ApplyUpdateToEntitlement(PlanEntitlement entitlement, UpdatePlanEntitlementRequest request, DateTime now)
+    {
         if (request.AccessLevel.HasValue)
             entitlement.AccessLevel = request.AccessLevel.Value;
         
@@ -164,21 +232,23 @@ public class PlanEntitlementService : IPlanEntitlementService
         if (request.IsActive.HasValue)
             entitlement.IsActive = request.IsActive.Value;
 
-        entitlement.UpdatedTimestamp = DateTime.UtcNow;
-
-        await _entitlementRepo.UpdateAsync(entitlement);
-        
-        // Increment plan's entitlement version
-        var plan = await _planRepo.GetByIdAsync(entitlement.PlanId, null);
-        if (plan != null)
-        {
-            plan.EntitlementVersion++;
-            await _planRepo.UpdateAsync(plan);
-        }
-        
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return _mapper.Map<PlanEntitlementDto>(entitlement);
+        entitlement.UpdatedTimestamp = now;
+    }
+    
+    /// <summary>
+    /// Cascade parent project's permission to a child module entitlement
+    /// </summary>
+    private void CascadePermissionToChild(PlanEntitlement child, PlanEntitlement parent, DateTime now)
+    {
+        child.AccessLevel = parent.AccessLevel;
+        child.CanCreate = parent.CanCreate;
+        child.CanRead = parent.CanRead;
+        child.CanUpdate = parent.CanUpdate;
+        child.CanDelete = parent.CanDelete;
+        child.CanExport = parent.CanExport;
+        child.DisplayInMenu = parent.DisplayInMenu;
+        child.IsOverride = false; // Reset override flag
+        child.UpdatedTimestamp = now;
     }
 
     /// <inheritdoc />

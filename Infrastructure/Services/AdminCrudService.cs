@@ -333,10 +333,14 @@ public class AdminCrudService : IAdminService
 
         // Protect root superadmin from deletion
         var admin = await _repo.GetByIdAsync(decryptedId, null);
-        if (admin != null && admin.Username.Equals(ROOT_SUPERADMIN_USERNAME, StringComparison.OrdinalIgnoreCase))
-        {
+        if (admin == null)
+            throw new NotFoundException(_localizer["Admin.NotFound"]);
+            
+        if (admin.Username.Equals(ROOT_SUPERADMIN_USERNAME, StringComparison.OrdinalIgnoreCase))
             throw new BadRequestException(_localizer["SuperAdmin.CannotDelete"]);
-        }
+
+        // ⭐ CASCADE: Delete auth records (refresh tokens, backup codes, reset tokens)
+        await _repo.SoftDeleteAuthRecordsAsync(decryptedId);
 
         await _repo.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
@@ -359,6 +363,12 @@ public class AdminCrudService : IAdminService
                 .Select(a => a.Id)
                 .ToList();
             
+            // ⭐ CASCADE: Delete auth records for each admin
+            foreach (var adminId in deleteIds)
+            {
+                await _repo.SoftDeleteAuthRecordsAsync(adminId, ct);
+            }
+            
             if (deleteIds.Any())
                 await _repo.DeleteRangeAsync(deleteIds, ct);
             deleted = deleteIds.Count;
@@ -378,6 +388,12 @@ public class AdminCrudService : IAdminService
                 .Where(a => !a.Username.Equals(ROOT_SUPERADMIN_USERNAME, StringComparison.OrdinalIgnoreCase))
                 .Select(a => a.Id)
                 .ToList();
+            
+            // ⭐ CASCADE: Delete auth records for each admin
+            foreach (var adminId in deleteIds)
+            {
+                await _repo.SoftDeleteAuthRecordsAsync(adminId, ct);
+            }
             
             if (deleteIds.Any())
                 await _repo.DeleteRangeAsync(deleteIds, ct);
