@@ -23,8 +23,11 @@ public class PlanEntitlementRepository : BaseRepository<Guid, PlanEntitlement>, 
     public async Task<IEnumerable<PlanEntitlement>> GetByPlanIdAsync(Guid planId, CancellationToken cancellationToken = default)
     {
         return await _context.PlanEntitlements
+            .Include(e => e.Project)
+            .Include(e => e.Module)
+            .Include(e => e.ParentProject)
             .Where(e => e.PlanId == planId && !e.IsDeleted)
-            .OrderBy(e => e.TargetType)
+            .OrderBy(e => e.ProjectId.HasValue ? 0 : 1) // Projects first (TargetType is computed, can't use in EF)
             .ThenBy(e => e.CreatedTimestamp)
             .ToListAsync(cancellationToken);
     }
