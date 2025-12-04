@@ -1,12 +1,13 @@
 namespace Domain.Enums;
 
 /// <summary>
-/// Represents the subscription status of a company.
+/// Represents the subscription status for history tracking.
+/// Used by SubscriptionHistory to record status transitions.
 /// </summary>
 public enum LicenseStatus
 {
     /// <summary>
-    /// Company is active and subscription is valid.
+    /// Subscription is active and valid.
     /// </summary>
     Active = 1,
 
@@ -16,8 +17,7 @@ public enum LicenseStatus
     Expired = 2,
 
     /// <summary>
-    /// Company subscription is suspended (manually deactivated).
+    /// Subscription is suspended (manually deactivated).
     /// </summary>
     Suspended = 3
 }
-

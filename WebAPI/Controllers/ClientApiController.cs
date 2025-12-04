@@ -199,9 +199,10 @@ public class ClientApiController : ControllerBase
 
     /// <summary>
     /// Validates a license key for the authenticated client
+    /// Uses enterprise-grade AES-256-GCM encrypted license validation
     /// </summary>
     /// <param name="licenseKey">The license key to validate</param>
-    /// <returns>License validation result</returns>
+    /// <returns>License validation result with entitlements</returns>
     [HttpPost("license/validate")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<object>>> ValidateLicenseKey([FromBody] string licenseKey)
@@ -225,6 +226,9 @@ public class ClientApiController : ControllerBase
 
             var result = await _clientApiService.ValidateLicenseKeyAsync(licenseKey, companyId.Value);
 
+            // Determine if validation was successful
+            var isValid = result is Application.DTOs.OfflineLicense.ValidateLicenseResponse response && response.IsValid;
+
             // Record API usage
             if (tokenId.HasValue)
             {
@@ -232,20 +236,15 @@ public class ClientApiController : ControllerBase
                     tokenId.Value,
                     "/api/client/license/validate",
                     "POST",
-                    result.IsValid ? 200 : 400,
+                    isValid ? 200 : 400,
                     0,
                     HttpContext.Connection.RemoteIpAddress?.ToString(),
                     HttpContext.Request.Headers.UserAgent.ToString(),
-                    result.IsValid ? null : result.Message
+                    isValid ? null : "License validation failed"
                 );
             }
 
-            if (result.IsValid)
-            {
-                return Ok(ApiResponse<object>.Success(result, "License key is valid"));
-            }
-
-            return BadRequest(ApiResponse<object>.Error(result.Message ?? "License key validation failed"));
+            return Ok(ApiResponse<object>.Success(result));
         }
         catch (Exception ex)
         {

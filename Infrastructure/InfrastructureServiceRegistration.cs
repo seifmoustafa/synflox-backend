@@ -56,8 +56,9 @@ public static class InfrastructureServiceRegistration
             .Bind(configuration.GetSection("Encryption"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        services.AddOptions<LicenseKeySettings>()
-            .Bind(configuration.GetSection("LicenseKeySettings"))
+        // Offline License Settings (Enterprise-grade)
+        services.AddOptions<OfflineLicenseSettings>()
+            .Bind(configuration.GetSection("OfflineLicenseSettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddOptions<ClientTokenSettings>()
@@ -217,7 +218,8 @@ public static class InfrastructureServiceRegistration
         
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
-        services.AddScoped<ILicenseService, LicenseService>();
+        // Offline License Service (Enterprise-grade with AES-256-GCM)
+        services.AddScoped<IOfflineLicenseService, OfflineLicenseService>();
         services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
@@ -271,6 +273,9 @@ public static class InfrastructureServiceRegistration
         
         // Entitlement System Background Job (Phase 7)
         services.AddHostedService<AccessModeTransitionJob>();
+        
+        // License Expiry Reminder Job (sends 30/7/1 day reminders)
+        services.AddHostedService<LicenseExpiryReminderJob>();
         #endregion
 
         #region Repositories Registration

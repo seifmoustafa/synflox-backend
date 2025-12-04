@@ -610,6 +610,10 @@ public class SubscriptionService : ISubscriptionService
         subscription.IsActive = false;
         subscription.IsExpired = true;
         subscription.StatusReason = reason ?? "Canceled by administrator";
+        
+        // Revoke offline license key when subscription is canceled (security)
+        subscription.OfflineLicenseKey = null;
+        subscription.LicenseKeyGeneratedAt = null;
 
         await _subscriptionRepo.UpdateAsync(subscription);
         
@@ -663,6 +667,10 @@ public class SubscriptionService : ISubscriptionService
 
         subscription.IsActive = false;
         subscription.StatusReason = reason ?? "Suspended by administrator";
+        
+        // Revoke offline license key when subscription is suspended (security)
+        subscription.OfflineLicenseKey = null;
+        subscription.LicenseKeyGeneratedAt = null;
 
         await _subscriptionRepo.UpdateAsync(subscription);
         

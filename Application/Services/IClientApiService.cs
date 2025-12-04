@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
 // TODO: Restore when PlanEntitlement DTOs are created
 // using Application.DTOs.Entitlements;
-using Application.DTOs.Licensing;
+// using Application.DTOs.Licensing; // REMOVED - ILicenseService being reimplemented
 
 namespace Application.Services;
 
@@ -28,8 +28,9 @@ public interface IClientApiService
 
     /// <summary>
     /// Validates a license key for the authenticated client
+    /// TODO: Will be reimplemented with new OfflineLicenseService
     /// </summary>
-    Task<LicenseKeyValidationResponse> ValidateLicenseKeyAsync(string licenseKey, Guid companyId);
+    Task<object> ValidateLicenseKeyAsync(string licenseKey, Guid companyId);
 
     /// <summary>
     /// Gets company profile information that client is allowed to see

@@ -558,6 +558,12 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>Subscription not found</value>
   </data>
+  <data name="Subscription.PlanNotFound" xml:space="preserve">
+    <value>Subscription plan data not found. Please contact administrator.</value>
+  </data>
+  <data name="Subscription.CompanyNotFound" xml:space="preserve">
+    <value>Company data not found. Please contact administrator.</value>
+  </data>
   <data name="Subscription.NextPlanBeforeExpiry" xml:space="preserve">
     <value>Next plan start date must be after current subscription expiry</value>
   </data>
@@ -2186,6 +2192,95 @@
   <!-- AdminType Cascade Delete -->
   <data name="AdminType.HasAdmins" xml:space="preserve">
     <value>Cannot delete admin type: {0} admin(s) are using this type. Reassign them first.</value>
+  </data>
+
+  <!-- Offline License Messages -->
+  <data name="OfflineLicense.GeneratedSuccessfully" xml:space="preserve">
+    <value>License key generated successfully</value>
+  </data>
+  <data name="OfflineLicense.CannotGenerateForInactive" xml:space="preserve">
+    <value>Cannot generate license key for inactive subscription</value>
+  </data>
+  <data name="OfflineLicense.KeyAlreadyExists" xml:space="preserve">
+    <value>License key already exists. Use regenerate to create a new key.</value>
+  </data>
+  <data name="OfflineLicense.InsufficientFingerprint" xml:space="preserve">
+    <value>Insufficient machine identifiers for hardware binding</value>
+  </data>
+  <data name="OfflineLicense.InvalidFormat" xml:space="preserve">
+    <value>Invalid license key format</value>
+  </data>
+  <data name="OfflineLicense.TamperedKey" xml:space="preserve">
+    <value>License key has been tampered with</value>
+  </data>
+  <data name="OfflineLicense.DecryptionFailed" xml:space="preserve">
+    <value>Failed to decrypt license key</value>
+  </data>
+  <data name="OfflineLicense.InvalidIssuer" xml:space="preserve">
+    <value>License key was not issued by this system</value>
+  </data>
+  <data name="OfflineLicense.OutdatedVersion" xml:space="preserve">
+    <value>License key version is no longer supported. Please request a new key.</value>
+  </data>
+  <data name="OfflineLicense.Revoked" xml:space="preserve">
+    <value>License key has been revoked</value>
+  </data>
+  <data name="OfflineLicense.MachineRequired" xml:space="preserve">
+    <value>Machine fingerprint is required for this license</value>
+  </data>
+  <data name="OfflineLicense.MachineNotAuthorized" xml:space="preserve">
+    <value>This machine is not authorized to use this license</value>
+  </data>
+  <data name="OfflineLicense.ClockTamperingDetected" xml:space="preserve">
+    <value>System clock tampering detected</value>
+  </data>
+  <data name="OfflineLicense.NotYetActive" xml:space="preserve">
+    <value>License is not yet active. Activation date has not been reached.</value>
+  </data>
+  <data name="OfflineLicense.InGracePeriod" xml:space="preserve">
+    <value>License expired but in grace period. {0} days remaining for renewal.</value>
+  </data>
+  <data name="OfflineLicense.ExportOnlyMode" xml:space="preserve">
+    <value>License is in export-only mode. Please renew to restore full access.</value>
+  </data>
+  <data name="OfflineLicense.Blocked" xml:space="preserve">
+    <value>License has been blocked due to expiry. Please contact administrator.</value>
+  </data>
+  <data name="OfflineLicense.ExpiresInDays" xml:space="preserve">
+    <value>License expires in {0} days</value>
+  </data>
+  <data name="OfflineLicense.StaleEntitlements" xml:space="preserve">
+    <value>License entitlements may be outdated. Please regenerate the key.</value>
+  </data>
+  <data name="OfflineLicense.SubscriptionInactive" xml:space="preserve">
+    <value>The associated subscription is no longer active</value>
+  </data>
+  <data name="OfflineLicense.CompanyInactive" xml:space="preserve">
+    <value>The company account is inactive. Please contact administrator.</value>
+  </data>
+  <data name="OfflineLicense.Valid" xml:space="preserve">
+    <value>License is valid</value>
+  </data>
+  <data name="OfflineLicense.Invalid" xml:space="preserve">
+    <value>License is invalid</value>
+  </data>
+  <data name="OfflineLicense.ValidationError" xml:space="preserve">
+    <value>Error validating license key</value>
+  </data>
+  <data name="OfflineLicense.RevokedSuccessfully" xml:space="preserve">
+    <value>License key revoked successfully</value>
+  </data>
+  <data name="OfflineLicense.NoKeyExists" xml:space="preserve">
+    <value>No license key exists for this subscription</value>
+  </data>
+  <data name="OfflineLicense.KeyRequired" xml:space="preserve">
+    <value>License key is required</value>
+  </data>
+  <data name="OfflineLicense.MachineAdded" xml:space="preserve">
+    <value>Machine added to authorized list successfully</value>
+  </data>
+  <data name="OfflineLicense.FingerprintError" xml:space="preserve">
+    <value>Error computing machine fingerprint</value>
   </data>
 
 </root>

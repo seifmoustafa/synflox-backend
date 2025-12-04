@@ -123,6 +123,9 @@ public class SubscriptionRepository : BaseRepository<Guid, Subscription>, ISubsc
             .Include(s => s.Plan)
                 .ThenInclude(p => p.PlanModules)
                     .ThenInclude(pm => pm.Module)
+            // Include Plan Entitlements for offline license generation
+            .Include(s => s.Plan)
+                .ThenInclude(p => p.Entitlements)
             .Include(s => s.NextSubscription)
             .Include(s => s.ParentSubscription)
             .Where(s => !s.IsDeleted && s.Id == id)

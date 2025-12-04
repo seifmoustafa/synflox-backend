@@ -4,9 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.DTOs.ClientAccess;
-// TODO: Restore when PlanEntitlement DTOs are created
-// using Application.DTOs.Entitlements;
-using Application.DTOs.Licensing;
+using Application.DTOs.OfflineLicense;
 using Application.Services;
 using AutoMapper;
 using Domain.Entities.Subscriptions;
@@ -25,7 +23,7 @@ public class ClientApiService : IClientApiService
     private readonly ICompanyRepository _companyRepo;
     private readonly IClientAccessTokenRepository _tokenRepo;
     private readonly IClientTokenUsageLogRepository _usageLogRepo;
-    private readonly ILicenseService _licenseService;
+    private readonly IOfflineLicenseService _offlineLicenseService;
     private readonly ISubscriptionPlanRepository _planRepo;
     private readonly IMapper _mapper;
     private readonly ILogger<ClientApiService> _logger;
@@ -35,7 +33,7 @@ public class ClientApiService : IClientApiService
         ICompanyRepository companyRepo,
         IClientAccessTokenRepository tokenRepo,
         IClientTokenUsageLogRepository usageLogRepo,
-        ILicenseService licenseService,
+        IOfflineLicenseService offlineLicenseService,
         ISubscriptionPlanRepository planRepo,
         IMapper mapper,
         ILogger<ClientApiService> logger)
@@ -44,7 +42,7 @@ public class ClientApiService : IClientApiService
         _companyRepo = companyRepo;
         _tokenRepo = tokenRepo;
         _usageLogRepo = usageLogRepo;
-        _licenseService = licenseService;
+        _offlineLicenseService = offlineLicenseService;
         _planRepo = planRepo;
         _mapper = mapper;
         _logger = logger;
@@ -165,42 +163,33 @@ public class ClientApiService : IClientApiService
 
     /// <summary>
     /// Validates a license key for the authenticated client
+    /// Uses the new enterprise-grade OfflineLicenseService
     /// </summary>
-    public async Task<LicenseKeyValidationResponse> ValidateLicenseKeyAsync(string licenseKey, Guid companyId)
+    public async Task<object> ValidateLicenseKeyAsync(string licenseKey, Guid companyId)
     {
         _logger.LogInformation("Validating license key for company {CompanyId}", companyId);
-
-        try
+        
+        var result = await _offlineLicenseService.ValidateLicenseKeyAsync(new ValidateLicenseRequest
         {
-            // Use the existing license service for validation
-            var validationRequest = new ValidateLicenseKeyRequest { LicenseKey = licenseKey };
-            var validationResult = await _licenseService.ValidateOfflineLicenseKeyAsync(validationRequest);
-            
-            // Ensure the license belongs to the requesting company
-            if (validationResult.IsValid && validationResult.CompanyId != companyId)
-            {
-                _logger.LogWarning("License key validation attempted for wrong company. Expected: {ExpectedCompanyId}, Got: {ActualCompanyId}", 
-                    companyId, validationResult.CompanyId);
-                
-                return new LicenseKeyValidationResponse
-                {
-                    IsValid = false,
-                    Message = "License key does not belong to this company"
-                };
-            }
-
-            return validationResult;
-        }
-        catch (Exception ex)
+            LicenseKey = licenseKey,
+            ValidateOnline = true, // Always validate online for client API
+            UpdateLastValidation = true
+        });
+        
+        // Verify the license belongs to this company
+        if (result.IsValid && result.CompanyId != companyId)
         {
-            _logger.LogError(ex, "Error validating license key for company {CompanyId}", companyId);
-            
-            return new LicenseKeyValidationResponse
+            _logger.LogWarning("License key company mismatch. Expected: {Expected}, Got: {Got}", 
+                companyId, result.CompanyId);
+            return new
             {
                 IsValid = false,
-                Message = "License validation failed"
+                Message = "License key does not belong to this company",
+                CompanyId = companyId
             };
         }
+        
+        return result;
     }
 
     /// <summary>

@@ -558,6 +558,12 @@
   <data name="Subscription.NotFound" xml:space="preserve">
     <value>الاشتراك غير موجود</value>
   </data>
+  <data name="Subscription.PlanNotFound" xml:space="preserve">
+    <value>بيانات خطة الاشتراك غير موجودة. يرجى الاتصال بالمسؤول.</value>
+  </data>
+  <data name="Subscription.CompanyNotFound" xml:space="preserve">
+    <value>بيانات الشركة غير موجودة. يرجى الاتصال بالمسؤول.</value>
+  </data>
   <data name="Subscription.NextPlanBeforeExpiry" xml:space="preserve">
     <value>يجب أن يكون تاريخ بدء الخطة التالية بعد انتهاء الاشتراك الحالي</value>
   </data>
@@ -2186,6 +2192,95 @@
   <!-- AdminType Cascade Delete -->
   <data name="AdminType.HasAdmins" xml:space="preserve">
     <value>لا يمكن حذف نوع المسؤول: {0} مسؤول/مسؤولين يستخدمون هذا النوع. قم بإعادة تعيينهم أولاً.</value>
+  </data>
+
+  <!-- Offline License Messages -->
+  <data name="OfflineLicense.GeneratedSuccessfully" xml:space="preserve">
+    <value>تم إنشاء مفتاح الترخيص بنجاح</value>
+  </data>
+  <data name="OfflineLicense.CannotGenerateForInactive" xml:space="preserve">
+    <value>لا يمكن إنشاء مفتاح ترخيص لاشتراك غير نشط</value>
+  </data>
+  <data name="OfflineLicense.KeyAlreadyExists" xml:space="preserve">
+    <value>مفتاح الترخيص موجود بالفعل. استخدم إعادة الإنشاء لإنشاء مفتاح جديد.</value>
+  </data>
+  <data name="OfflineLicense.InsufficientFingerprint" xml:space="preserve">
+    <value>معرّفات الجهاز غير كافية لربط الأجهزة</value>
+  </data>
+  <data name="OfflineLicense.InvalidFormat" xml:space="preserve">
+    <value>تنسيق مفتاح الترخيص غير صالح</value>
+  </data>
+  <data name="OfflineLicense.TamperedKey" xml:space="preserve">
+    <value>تم العبث بمفتاح الترخيص</value>
+  </data>
+  <data name="OfflineLicense.DecryptionFailed" xml:space="preserve">
+    <value>فشل فك تشفير مفتاح الترخيص</value>
+  </data>
+  <data name="OfflineLicense.InvalidIssuer" xml:space="preserve">
+    <value>مفتاح الترخيص لم يصدر من هذا النظام</value>
+  </data>
+  <data name="OfflineLicense.OutdatedVersion" xml:space="preserve">
+    <value>إصدار مفتاح الترخيص لم يعد مدعوماً. يرجى طلب مفتاح جديد.</value>
+  </data>
+  <data name="OfflineLicense.Revoked" xml:space="preserve">
+    <value>تم إلغاء مفتاح الترخيص</value>
+  </data>
+  <data name="OfflineLicense.MachineRequired" xml:space="preserve">
+    <value>بصمة الجهاز مطلوبة لهذا الترخيص</value>
+  </data>
+  <data name="OfflineLicense.MachineNotAuthorized" xml:space="preserve">
+    <value>هذا الجهاز غير مصرح له باستخدام هذا الترخيص</value>
+  </data>
+  <data name="OfflineLicense.ClockTamperingDetected" xml:space="preserve">
+    <value>تم اكتشاف تلاعب بساعة النظام</value>
+  </data>
+  <data name="OfflineLicense.NotYetActive" xml:space="preserve">
+    <value>الترخيص غير نشط بعد. لم يتم الوصول إلى تاريخ التفعيل.</value>
+  </data>
+  <data name="OfflineLicense.InGracePeriod" xml:space="preserve">
+    <value>انتهت صلاحية الترخيص ولكنه في فترة السماح. {0} أيام متبقية للتجديد.</value>
+  </data>
+  <data name="OfflineLicense.ExportOnlyMode" xml:space="preserve">
+    <value>الترخيص في وضع التصدير فقط. يرجى التجديد لاستعادة الوصول الكامل.</value>
+  </data>
+  <data name="OfflineLicense.Blocked" xml:space="preserve">
+    <value>تم حظر الترخيص بسبب انتهاء الصلاحية. يرجى الاتصال بالمسؤول.</value>
+  </data>
+  <data name="OfflineLicense.ExpiresInDays" xml:space="preserve">
+    <value>تنتهي صلاحية الترخيص خلال {0} أيام</value>
+  </data>
+  <data name="OfflineLicense.StaleEntitlements" xml:space="preserve">
+    <value>قد تكون استحقاقات الترخيص قديمة. يرجى إعادة إنشاء المفتاح.</value>
+  </data>
+  <data name="OfflineLicense.SubscriptionInactive" xml:space="preserve">
+    <value>الاشتراك المرتبط لم يعد نشطاً</value>
+  </data>
+  <data name="OfflineLicense.CompanyInactive" xml:space="preserve">
+    <value>حساب الشركة غير نشط. يرجى الاتصال بالمسؤول.</value>
+  </data>
+  <data name="OfflineLicense.Valid" xml:space="preserve">
+    <value>الترخيص صالح</value>
+  </data>
+  <data name="OfflineLicense.Invalid" xml:space="preserve">
+    <value>الترخيص غير صالح</value>
+  </data>
+  <data name="OfflineLicense.ValidationError" xml:space="preserve">
+    <value>خطأ في التحقق من مفتاح الترخيص</value>
+  </data>
+  <data name="OfflineLicense.RevokedSuccessfully" xml:space="preserve">
+    <value>تم إلغاء مفتاح الترخيص بنجاح</value>
+  </data>
+  <data name="OfflineLicense.NoKeyExists" xml:space="preserve">
+    <value>لا يوجد مفتاح ترخيص لهذا الاشتراك</value>
+  </data>
+  <data name="OfflineLicense.KeyRequired" xml:space="preserve">
+    <value>مفتاح الترخيص مطلوب</value>
+  </data>
+  <data name="OfflineLicense.MachineAdded" xml:space="preserve">
+    <value>تمت إضافة الجهاز إلى قائمة الأجهزة المصرح بها بنجاح</value>
+  </data>
+  <data name="OfflineLicense.FingerprintError" xml:space="preserve">
+    <value>خطأ في حساب بصمة الجهاز</value>
   </data>
 
 </root>
