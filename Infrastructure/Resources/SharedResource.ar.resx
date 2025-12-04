@@ -532,6 +532,17 @@
   <data name="Plan.ModuleAlreadyInherited" xml:space="preserve">
     <value>واحدة أو أكثر من الوحدات موروثة بالفعل من الخطة الأم</value>
   </data>
+  
+  <!-- Plan Module Conflict Messages -->
+  <data name="Plan.ModuleConflictWarning" xml:space="preserve">
+    <value>{0} وحدة/وحدات مضمنة بالفعل في المشاريع المحددة: {1}. سيتم إدارتها تحت مشاريعها، وليس كوحدات مستقلة.</value>
+  </data>
+  <data name="Plan.ModuleConflictRequiresConfirmation" xml:space="preserve">
+    <value>بعض الوحدات موجودة بالفعل في المشاريع المحددة. يرجى التأكيد لإزالة التكرارات.</value>
+  </data>
+  <data name="Plan.Updated" xml:space="preserve">
+    <value>تم تحديث الخطة بنجاح</value>
+  </data>
 
   <!-- Project Messages -->
   <data name="Project.NotFound" xml:space="preserve">

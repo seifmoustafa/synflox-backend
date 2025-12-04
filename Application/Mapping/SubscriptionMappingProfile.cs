@@ -66,7 +66,7 @@ public class SubscriptionMappingProfile : Profile
         // ========== Subscription Plan Mappings ==========
         CreateMap<SubscriptionPlan, PlanDtos.PlanDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
-            .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
+            .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices ?? new List<PlanPrice>()))
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
             .ForMember(d => d.IsLifetimePlan, opt => opt.MapFrom(s => s.IsLifetimePlan))
             .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)))
@@ -78,27 +78,45 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.DefaultFallbackPlanName, opt => opt.MapFrom(s => s.DefaultFallbackPlan != null ? s.DefaultFallbackPlan.Name : null))
             .ForMember(d => d.ShowLockedModulesInMenu, opt => opt.MapFrom(s => s.ShowLockedModulesInMenu))
             .ForMember(d => d.LockedItemStyle, opt => opt.MapFrom(s => s.LockedItemStyle))
-            // Project & Module counts
-            .ForMember(d => d.ProjectCount, opt => opt.MapFrom(s => s.PlanProjects.Count))
-            .ForMember(d => d.ModuleCount, opt => opt.MapFrom(s => s.PlanModules.Count))
+            // Project & Module counts (ModuleCount only counts truly standalone modules) - with null safety
+            .ForMember(d => d.ProjectCount, opt => opt.MapFrom(s => s.PlanProjects != null ? s.PlanProjects.Count : 0))
+            .ForMember(d => d.ModuleCount, opt => opt.MapFrom(s => 
+                s.PlanModules != null && s.PlanProjects != null
+                    ? s.PlanModules.Count(pm => !s.PlanProjects
+                        .Where(pp => pp.Project != null && pp.Project.ProjectModules != null)
+                        .SelectMany(pp => pp.Project.ProjectModules)
+                        .Any(prm => prm.ModuleId == pm.ModuleId))
+                    : (s.PlanModules != null ? s.PlanModules.Count : 0)))
             // Plan Hierarchy
             .ForMember(d => d.ParentPlanId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.ParentPlanId))
             .ForMember(d => d.ParentPlanName, opt => opt.MapFrom(s => s.ParentPlan != null ? s.ParentPlan.Name : null))
             .ForMember(d => d.DisplayOrder, opt => opt.MapFrom(s => s.DisplayOrder))
-            .ForMember(d => d.ChildPlanCount, opt => opt.MapFrom(s => s.ChildPlans.Count))
+            .ForMember(d => d.ChildPlanCount, opt => opt.MapFrom(s => s.ChildPlans != null ? s.ChildPlans.Count : 0))
             .ForMember(d => d.InheritedProjectsCount, opt => opt.Ignore()) // Calculated in service
             .ForMember(d => d.InheritedModulesCount, opt => opt.Ignore()); // Calculated in service
 
         CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
-            .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices))
+            .ForMember(d => d.Prices, opt => opt.MapFrom(s => s.PlanPrices ?? new List<PlanPrice>()))
             .ForMember(d => d.DurationType, opt => opt.MapFrom(s => s.DurationType))
             .ForMember(d => d.IsLifetimePlan, opt => opt.MapFrom(s => s.IsLifetimePlan))
             .ForMember(d => d.DurationDescription, opt => opt.MapFrom(s => PlanDurationHelper.GetDurationDescription(s.DurationType)))
             .ForMember(d => d.Projects, opt => opt.MapFrom(s => 
-                s.PlanProjects.Select(pp => pp.Project)))
+                s.PlanProjects != null 
+                    ? s.PlanProjects.Where(pp => pp.Project != null).Select(pp => pp.Project)
+                    : Enumerable.Empty<Project>()))
+            // Filter out modules that are already in any project (show only truly standalone modules) - with null safety
             .ForMember(d => d.Modules, opt => opt.MapFrom(s => 
-                s.PlanModules.Select(pm => pm.Module)));
+                s.PlanModules != null && s.PlanProjects != null
+                    ? s.PlanModules
+                        .Where(pm => pm.Module != null && !s.PlanProjects
+                            .Where(pp => pp.Project != null && pp.Project.ProjectModules != null)
+                            .SelectMany(pp => pp.Project.ProjectModules)
+                            .Any(prm => prm.ModuleId == pm.ModuleId))
+                        .Select(pm => pm.Module)
+                    : (s.PlanModules != null 
+                        ? s.PlanModules.Where(pm => pm.Module != null).Select(pm => pm.Module)
+                        : Enumerable.Empty<Module>())));
 
         CreateMap<CreateSubscriptionPlanDto, SubscriptionPlan>()
             .ForMember(d => d.Id, opt => opt.Ignore())

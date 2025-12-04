@@ -52,6 +52,14 @@ public class SubscriptionPlanService : ISubscriptionPlanService
 
     public async Task<PlanDto> CreateAsync(CreateSubscriptionPlanDto dto)
     {
+        return await CreateAsyncInternal(dto, skipModuleValidation: false);
+    }
+    
+    /// <summary>
+    /// Internal create method with option to skip module conflict validation
+    /// </summary>
+    private async Task<PlanDto> CreateAsyncInternal(CreateSubscriptionPlanDto dto, bool skipModuleValidation)
+    {
         // ⭐ FREE TIER PLAN VALIDATION - Must be first (overrides everything)
         if (dto.IsFreeTier)
         {
@@ -121,6 +129,27 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         // Must include at least one project or module (unless inheriting from parent)
         if (!dto.ProjectIds.Any() && !dto.ModuleIds.Any() && !dto.ParentPlanId.HasValue)
             throw new BadRequestException(_localizer["Plan.MustIncludeContent"]);
+        
+        // ⭐ MODULE CONFLICT VALIDATION - Check for modules already in projects (CREATE)
+        // Skip if called from CreateWithConfirmationAsync (already validated and filtered)
+        if (!skipModuleValidation && dto.ProjectIds.Any() && dto.ModuleIds.Any())
+        {
+            var decryptedProjectIds = _mapper.Map<IEnumerable<Guid>>(new ProjectIdsRequest { ProjectIds = dto.ProjectIds }).ToList();
+            var decryptedModuleIds = _mapper.Map<IEnumerable<Guid>>(new ModuleIdsRequest { ModuleIds = dto.ModuleIds }).ToList();
+            
+            var validation = await ValidatePlanModulesAsync(new ValidatePlanModulesRequest
+            {
+                PlanId = null, // New plan
+                ProjectIds = decryptedProjectIds,
+                ModuleIds = decryptedModuleIds
+            });
+            
+            if (validation.HasWarnings)
+            {
+                // Throw exception - frontend must use CreateWithConfirmationAsync
+                throw new PlanModuleConflictException(validation);
+            }
+        }
 
         // ⭐ PLAN HIERARCHY VALIDATION
         HashSet<Guid> inheritedProjectIds = new();
@@ -262,7 +291,14 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     public async Task<(IEnumerable<PlanDto> Plans, PaginationMetadata Meta)> GetAllAsync(int page, int pageSize, string? search)
     {
         var (plans, meta) = await _planRepo.GetAllAsync(
-            new[] { "PlanPrices", "PlanProjects", "PlanModules", "ParentPlan", "DefaultFallbackPlan" },
+            new[] { 
+                "PlanPrices", 
+                "PlanProjects.Project.ProjectModules",  // Need Project and its modules for filtering
+                "PlanModules.Module",  // Need Module entity for mapping
+                "ParentPlan", 
+                "DefaultFallbackPlan",
+                "ChildPlans"  // Need for ChildPlanCount
+            },
             page,
             pageSize,
             search,
@@ -274,6 +310,14 @@ public class SubscriptionPlanService : ISubscriptionPlanService
     }
 
     public async Task<PlanDto?> UpdateAsync(PlanIdRequest request, UpdatePlanDto dto)
+    {
+        return await UpdateAsyncInternal(request, dto, skipModuleValidation: false);
+    }
+    
+    /// <summary>
+    /// Internal update method with option to skip module conflict validation
+    /// </summary>
+    private async Task<PlanDto?> UpdateAsyncInternal(PlanIdRequest request, UpdatePlanDto dto, bool skipModuleValidation)
     {
         // Decrypt Plan ID using AutoMapper (SYNFLOX ID encryption rule compliance)
         var decryptedPlanId = _mapper.Map<Guid>(request);
@@ -340,6 +384,27 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         
         if (dto.AllowTrial == true && (!dto.TrialDurationDays.HasValue || dto.TrialDurationDays.Value <= 0))
             throw new BadRequestException(_localizer["Plan.TrialDurationRequired"]);
+
+        // ⭐ MODULE CONFLICT VALIDATION - Check for modules already in projects
+        // Skip if called from UpdateWithConfirmationAsync (already validated and filtered)
+        if (!skipModuleValidation && dto.ProjectIds != null && dto.ModuleIds != null && dto.ProjectIds.Any() && dto.ModuleIds.Any())
+        {
+            var decryptedProjectIds = _mapper.Map<IEnumerable<Guid>>(new ProjectIdsRequest { ProjectIds = dto.ProjectIds }).ToList();
+            var decryptedModuleIds = _mapper.Map<IEnumerable<Guid>>(new ModuleIdsRequest { ModuleIds = dto.ModuleIds }).ToList();
+            
+            var validation = await ValidatePlanModulesAsync(new ValidatePlanModulesRequest
+            {
+                PlanId = decryptedPlanId,
+                ProjectIds = decryptedProjectIds,
+                ModuleIds = decryptedModuleIds
+            });
+            
+            if (validation.HasWarnings)
+            {
+                // Throw exception - frontend must use UpdateWithConfirmationAsync
+                throw new PlanModuleConflictException(validation);
+            }
+        }
 
         if (dto.Name != null && dto.Name != plan.Name)
         {
@@ -544,6 +609,177 @@ public class SubscriptionPlanService : ISubscriptionPlanService
             descendantIds.Add(child.Id);
             await CollectDescendantIdsAsync(child.Id, descendantIds, allPlans);
         }
+    }
+    
+    #endregion
+    
+    #region Module Conflict Validation
+    
+    /// <summary>
+    /// Validates if any standalone modules are already included in projects
+    /// Returns warnings for conflicts, not errors - user can confirm to proceed
+    /// </summary>
+    public async Task<PlanValidationResultDto> ValidatePlanModulesAsync(ValidatePlanModulesRequest request)
+    {
+        var result = new PlanValidationResultDto { IsValid = true };
+        
+        if (!request.ProjectIds.Any() || !request.ModuleIds.Any())
+        {
+            // No conflicts possible if either list is empty
+            result.ValidStandaloneModuleIds = request.ModuleIds;
+            return result;
+        }
+        
+        // Get all modules that belong to the selected projects
+        var moduleIdsInProjects = new Dictionary<Guid, (Guid ProjectId, string ProjectName)>();
+        
+        foreach (var projectId in request.ProjectIds)
+        {
+            var project = await _projectRepo.GetByIdAsync(projectId, new[] { "ProjectModules.Module" });
+            if (project == null) continue;
+            
+            foreach (var pm in project.ProjectModules)
+            {
+                if (!moduleIdsInProjects.ContainsKey(pm.ModuleId))
+                {
+                    moduleIdsInProjects[pm.ModuleId] = (projectId, project.Name);
+                }
+            }
+        }
+        
+        // Check each requested standalone module for conflicts
+        foreach (var moduleId in request.ModuleIds)
+        {
+            if (moduleIdsInProjects.TryGetValue(moduleId, out var projectInfo))
+            {
+                // This module is already in one of the selected projects
+                var module = await _moduleRepo.GetByIdAsync(moduleId, null);
+                
+                result.ModuleConflicts.Add(new PlanModuleConflictDto
+                {
+                    ModuleId = moduleId,
+                    ModuleName = module?.Name ?? "Unknown Module",
+                    ProjectId = projectInfo.ProjectId,
+                    ProjectName = projectInfo.ProjectName
+                });
+            }
+            else
+            {
+                // This module is truly standalone
+                result.ValidStandaloneModuleIds.Add(moduleId);
+            }
+        }
+        
+        // Build warning message if there are conflicts
+        if (result.ModuleConflicts.Any())
+        {
+            var conflictCount = result.ModuleConflicts.Count;
+            var moduleNames = string.Join(", ", result.ModuleConflicts.Select(c => c.ModuleName));
+            
+            result.WarningMessage = string.Format(_localizer["Plan.ModuleConflictWarning"], conflictCount, moduleNames);
+        }
+        
+        return result;
+    }
+    
+    /// <summary>
+    /// Create plan with explicit confirmation to remove duplicate modules
+    /// </summary>
+    public async Task<PlanDto> CreateWithConfirmationAsync(CreatePlanWithConfirmationDto dto)
+    {
+        // If ModuleIds and ProjectIds provided, validate for conflicts
+        if (dto.ProjectIds.Any() && dto.ModuleIds.Any())
+        {
+            // Decrypt IDs
+            var decryptedProjectIds = _mapper.Map<IEnumerable<Guid>>(new ProjectIdsRequest { ProjectIds = dto.ProjectIds }).ToList();
+            var decryptedModuleIds = _mapper.Map<IEnumerable<Guid>>(new ModuleIdsRequest { ModuleIds = dto.ModuleIds }).ToList();
+            
+            // Build encrypted→decrypted mapping to preserve encrypted IDs
+            var encryptedToDecrypted = new Dictionary<Guid, Guid>();
+            for (int i = 0; i < dto.ModuleIds.Count; i++)
+            {
+                encryptedToDecrypted[dto.ModuleIds[i]] = decryptedModuleIds[i];
+            }
+            
+            // Validate
+            var validation = await ValidatePlanModulesAsync(new ValidatePlanModulesRequest
+            {
+                PlanId = null, // New plan
+                ProjectIds = decryptedProjectIds,
+                ModuleIds = decryptedModuleIds
+            });
+            
+            if (validation.HasWarnings && !dto.ConfirmRemoveDuplicates)
+            {
+                // Return the validation result as an exception with details
+                throw new PlanModuleConflictException(validation);
+            }
+            
+            // If confirmed, filter to only valid standalone modules (keep encrypted IDs)
+            if (validation.HasWarnings && dto.ConfirmRemoveDuplicates)
+            {
+                var validDecryptedSet = validation.ValidStandaloneModuleIds.ToHashSet();
+                
+                // Keep only encrypted IDs whose decrypted values are in the valid set
+                dto.ModuleIds = encryptedToDecrypted
+                    .Where(kvp => validDecryptedSet.Contains(kvp.Value))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+            }
+        }
+        
+        // Proceed with normal create - skip validation since we already handled it
+        return await CreateAsyncInternal(dto, skipModuleValidation: true);
+    }
+    
+    /// <summary>
+    /// Update plan with explicit confirmation to remove duplicate modules
+    /// </summary>
+    public async Task<PlanDto?> UpdateWithConfirmationAsync(PlanIdRequest request, UpdatePlanWithConfirmationDto dto)
+    {
+        // If ModuleIds and ProjectIds provided, validate for conflicts
+        if (dto.ModuleIds != null && dto.ProjectIds != null && dto.ModuleIds.Any() && dto.ProjectIds.Any())
+        {
+            // Decrypt IDs
+            var decryptedProjectIds = _mapper.Map<IEnumerable<Guid>>(new ProjectIdsRequest { ProjectIds = dto.ProjectIds }).ToList();
+            var decryptedModuleIds = _mapper.Map<IEnumerable<Guid>>(new ModuleIdsRequest { ModuleIds = dto.ModuleIds }).ToList();
+            
+            // Build encrypted→decrypted mapping to preserve encrypted IDs
+            var encryptedToDecrypted = new Dictionary<Guid, Guid>();
+            for (int i = 0; i < dto.ModuleIds.Count; i++)
+            {
+                encryptedToDecrypted[dto.ModuleIds[i]] = decryptedModuleIds[i];
+            }
+            
+            // Validate
+            var validation = await ValidatePlanModulesAsync(new ValidatePlanModulesRequest
+            {
+                PlanId = _mapper.Map<Guid>(request),
+                ProjectIds = decryptedProjectIds,
+                ModuleIds = decryptedModuleIds
+            });
+            
+            if (validation.HasWarnings && !dto.ConfirmRemoveDuplicates)
+            {
+                // Return the validation result as an exception with details
+                throw new PlanModuleConflictException(validation);
+            }
+            
+            // If confirmed, filter to only valid standalone modules (keep encrypted IDs)
+            if (validation.HasWarnings && dto.ConfirmRemoveDuplicates)
+            {
+                var validDecryptedSet = validation.ValidStandaloneModuleIds.ToHashSet();
+                
+                // Keep only encrypted IDs whose decrypted values are in the valid set
+                dto.ModuleIds = encryptedToDecrypted
+                    .Where(kvp => validDecryptedSet.Contains(kvp.Value))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+            }
+        }
+        
+        // Proceed with normal update - skip validation since we already handled it
+        return await UpdateAsyncInternal(request, dto, skipModuleValidation: true);
     }
     
     #endregion

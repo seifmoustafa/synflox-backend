@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Application.DTOs.PlanDto;
 using Application.DTOs.Subscriptions;
 using Application.Services;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -74,8 +76,45 @@ public class PlansController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var plan = await _planService.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = plan.Id }, plan);
+        try
+        {
+            var plan = await _planService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = plan.Id }, new { data = plan, message = _localizer["Plan.Created"] });
+        }
+        catch (PlanModuleConflictException ex)
+        {
+            // Return 409 Conflict with validation details - frontend should show confirmation dialog
+            return Conflict(new { 
+                requiresConfirmation = true,
+                validationResult = ex.ValidationResult,
+                message = _localizer["Plan.ModuleConflictRequiresConfirmation"]
+            });
+        }
+    }
+    
+    /// <summary>
+    /// Create plan with confirmation to remove duplicate modules
+    /// </summary>
+    [HttpPost("with-confirmation")]
+    public async Task<IActionResult> CreateWithConfirmation([FromBody] CreatePlanWithConfirmationDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
+        {
+            var plan = await _planService.CreateWithConfirmationAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = plan.Id }, new { data = plan, message = _localizer["Plan.Created"] });
+        }
+        catch (PlanModuleConflictException ex)
+        {
+            // Return 409 Conflict if user hasn't confirmed yet
+            return Conflict(new { 
+                requiresConfirmation = true,
+                validationResult = ex.ValidationResult,
+                message = _localizer["Plan.ModuleConflictRequiresConfirmation"]
+            });
+        }
     }
 
     [HttpPut("{id}")]
@@ -84,13 +123,25 @@ public class PlansController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
-        var request = new PlanIdRequest { PlanId = id };
-        var plan = await _planService.UpdateAsync(request, dto);
-        if (plan == null)
-            return NotFound(new { message = _localizer["Plan.NotFound"] });
+        try
+        {
+            // Create request DTO with encrypted ID from route (SYNFLOX ID encryption rule compliance)
+            var request = new PlanIdRequest { PlanId = id };
+            var plan = await _planService.UpdateAsync(request, dto);
+            if (plan == null)
+                return NotFound(new { message = _localizer["Plan.NotFound"] });
 
-        return Ok(plan);
+            return Ok(new { data = plan, message = _localizer["Plan.Updated"] });
+        }
+        catch (PlanModuleConflictException ex)
+        {
+            // Return 409 Conflict with validation details - frontend should show confirmation dialog
+            return Conflict(new { 
+                requiresConfirmation = true,
+                validationResult = ex.ValidationResult,
+                message = _localizer["Plan.ModuleConflictRequiresConfirmation"]
+            });
+        }
     }
 
     [HttpDelete("{id}")]
@@ -100,5 +151,60 @@ public class PlansController : ControllerBase
         var request = new PlanIdRequest { PlanId = id };
         await _planService.DeleteAsync(request);
         return NoContent();
+    }
+    
+    /// <summary>
+    /// Validate plan modules for conflicts before save
+    /// Returns warnings if any standalone modules are already in projects
+    /// </summary>
+    [HttpPost("validate-modules")]
+    public async Task<IActionResult> ValidateModules([FromBody] ValidatePlanModulesRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        
+        var result = await _planService.ValidatePlanModulesAsync(request);
+        
+        // Return validation result with appropriate status
+        if (result.RequiresConfirmation)
+        {
+            // 200 OK with warning data - frontend decides whether to confirm
+            return Ok(new { 
+                data = result,
+                requiresConfirmation = true,
+                message = result.WarningMessage 
+            });
+        }
+        
+        return Ok(new { data = result, requiresConfirmation = false });
+    }
+    
+    /// <summary>
+    /// Update plan with confirmation to remove duplicate modules
+    /// </summary>
+    [HttpPut("{id}/with-confirmation")]
+    public async Task<IActionResult> UpdateWithConfirmation(Guid id, [FromBody] UpdatePlanWithConfirmationDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        
+        try
+        {
+            var request = new PlanIdRequest { PlanId = id };
+            var plan = await _planService.UpdateWithConfirmationAsync(request, dto);
+            if (plan == null)
+                return NotFound(new { message = _localizer["Plan.NotFound"] });
+            
+            return Ok(new { data = plan, message = _localizer["Plan.Updated"] });
+        }
+        catch (PlanModuleConflictException ex)
+        {
+            // Return 409 Conflict with validation result for frontend to show confirmation dialog
+            return Conflict(new { 
+                requiresConfirmation = true,
+                validationResult = ex.ValidationResult,
+                message = _localizer["Plan.ModuleConflictRequiresConfirmation"]
+            });
+        }
     }
 }

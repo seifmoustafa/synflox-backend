@@ -30,4 +30,20 @@ public interface ISubscriptionPlanService
     /// Get all plans that can be set as parent (excludes plan itself and descendants to prevent circular refs)
     /// </summary>
     Task<IEnumerable<PlanDto>> GetAvailableParentPlansAsync(Guid? excludePlanId = null);
+    
+    /// <summary>
+    /// Validate plan modules before create/update
+    /// Checks for modules that are already in projects assigned to the plan
+    /// </summary>
+    Task<PlanValidationResultDto> ValidatePlanModulesAsync(ValidatePlanModulesRequest request);
+    
+    /// <summary>
+    /// Create plan with confirmation to remove duplicate modules
+    /// </summary>
+    Task<PlanDto> CreateWithConfirmationAsync(CreatePlanWithConfirmationDto dto);
+    
+    /// <summary>
+    /// Update plan with confirmation to remove duplicate modules
+    /// </summary>
+    Task<PlanDto?> UpdateWithConfirmationAsync(PlanIdRequest request, UpdatePlanWithConfirmationDto dto);
 }

@@ -532,6 +532,17 @@
   <data name="Plan.ModuleAlreadyInherited" xml:space="preserve">
     <value>One or more modules are already inherited from the parent plan</value>
   </data>
+  
+  <!-- Plan Module Conflict Messages -->
+  <data name="Plan.ModuleConflictWarning" xml:space="preserve">
+    <value>{0} module(s) are already included in selected projects: {1}. These will be managed under their projects, not as standalone modules.</value>
+  </data>
+  <data name="Plan.ModuleConflictRequiresConfirmation" xml:space="preserve">
+    <value>Some modules are already in selected projects. Please confirm to remove duplicates.</value>
+  </data>
+  <data name="Plan.Updated" xml:space="preserve">
+    <value>Plan updated successfully</value>
+  </data>
 
   <!-- Project Messages -->
   <data name="Project.NotFound" xml:space="preserve">
