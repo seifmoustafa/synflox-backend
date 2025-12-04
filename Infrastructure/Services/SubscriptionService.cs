@@ -769,17 +769,40 @@ public class SubscriptionService : ISubscriptionService
         if (!subscription.IsActive)
             throw new InvalidOperationException(_localizer["Subscription.NotActive"]);
 
-        // Store the pause date to calculate remaining time later
-        subscription.StatusReason = $"Paused: {reason ?? "Paused by administrator"}";
-        // Note: In a full implementation, you'd want to add PausedAtUtc field to track pause time
+        if (subscription.IsPaused)
+            throw new InvalidOperationException(_localizer["Subscription.AlreadyPaused"]);
+
+        // Lifetime subscriptions cannot be paused (no timer to freeze)
+        if (subscription.IsLifetime)
+            throw new InvalidOperationException(_localizer["Subscription.LifetimeCannotPause"]);
+
+        // Calculate and store remaining days
+        var now = DateTime.UtcNow;
+        var remainingDays = Math.Max(0, (subscription.ExpiryDateUtc - now).Days);
+
+        // Set pause state - timer is now frozen
+        subscription.IsPaused = true;
+        subscription.PausedAtUtc = now;
+        subscription.RemainingDaysWhenPaused = remainingDays;
+        subscription.StatusReason = reason ?? "Paused by administrator";
 
         await _subscriptionRepo.UpdateAsync(subscription);
         
         // Record history
         await RecordHistoryAsync(subscriptionId, "Paused", LicenseStatus.Active, null, 
-            reason: reason ?? "Paused by administrator");
+            reason: reason ?? "Paused by administrator",
+            notes: $"Remaining days frozen: {remainingDays}");
         
         await _unitOfWork.SaveChangesAsync();
+
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Updated,
+            subscription.Id,
+            $"{subscription.Company.Name} - {subscription.Plan.Name}",
+            _currentUserService.UserId,
+            null,
+            $"Subscription paused with {remainingDays} days remaining");
 
         // Send email notification
         await _emailService.SendSubscriptionPausedEmailAsync(
@@ -798,23 +821,54 @@ public class SubscriptionService : ISubscriptionService
         if (subscription == null)
             throw new NotFoundException(_localizer["Subscription.NotFound"]);
 
+        if (!subscription.IsPaused)
+            throw new InvalidOperationException(_localizer["Subscription.NotPaused"]);
+
+        var now = DateTime.UtcNow;
+        var oldExpiryDate = subscription.ExpiryDateUtc;
+        
+        // Restore remaining days from when it was paused
+        // This effectively extends the expiry by the pause duration
+        if (subscription.RemainingDaysWhenPaused.HasValue)
+        {
+            subscription.ExpiryDateUtc = now.AddDays(subscription.RemainingDaysWhenPaused.Value);
+        }
+
+        // Clear pause state
+        subscription.IsPaused = false;
+        var pauseDuration = subscription.PausedAtUtc.HasValue 
+            ? (now - subscription.PausedAtUtc.Value).Days 
+            : 0;
+        subscription.PausedAtUtc = null;
+        subscription.RemainingDaysWhenPaused = null;
         subscription.StatusReason = reason ?? "Unpaused by administrator";
-        // Note: In a full implementation, you'd calculate and adjust the expiry date based on pause duration
 
         await _subscriptionRepo.UpdateAsync(subscription);
         
-        // Record history
-        await RecordHistoryAsync(subscriptionId, "Unpaused", null, LicenseStatus.Active, 
-            reason: reason ?? "Unpaused by administrator");
+        // Record history with expiry date change
+        await RecordHistoryAsync(subscriptionId, "Unpaused", null, LicenseStatus.Active,
+            previousExpiryDate: oldExpiryDate,
+            newExpiryDate: subscription.ExpiryDateUtc,
+            reason: reason ?? "Unpaused by administrator",
+            notes: $"Paused for {pauseDuration} days, expiry extended");
         
         await _unitOfWork.SaveChangesAsync();
+
+        // Log activity
+        await _activityLogService.LogSubscriptionActivityAsync(
+            ActivityActionType.Updated,
+            subscription.Id,
+            $"{subscription.Company.Name} - {subscription.Plan.Name}",
+            _currentUserService.UserId,
+            null,
+            $"Subscription unpaused, expiry extended to {subscription.ExpiryDateUtc:d}");
 
         // Send email notification
         await _emailService.SendSubscriptionResumedEmailAsync(
             subscription.Company.ContactEmail,
             subscription.Company.Name,
             subscription.Plan.Name,
-            null,
+            reason,
             language);
 
         return true;

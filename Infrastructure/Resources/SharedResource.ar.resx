@@ -582,6 +582,15 @@
   <data name="Subscription.NotTrial" xml:space="preserve">
     <value>الاشتراك ليس في فترة تجريبية</value>
   </data>
+  <data name="Subscription.AlreadyPaused" xml:space="preserve">
+    <value>الاشتراك متوقف مؤقتاً بالفعل</value>
+  </data>
+  <data name="Subscription.NotPaused" xml:space="preserve">
+    <value>الاشتراك غير متوقف مؤقتاً</value>
+  </data>
+  <data name="Subscription.LifetimeCannotPause" xml:space="preserve">
+    <value>لا يمكن إيقاف الاشتراكات مدى الحياة مؤقتاً</value>
+  </data>
   
   <!-- Subscription Action Success Messages -->
   <data name="Subscription.Suspended" xml:space="preserve">

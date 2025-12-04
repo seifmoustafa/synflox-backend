@@ -26,6 +26,26 @@ public class SubscriptionDto
     public bool IsLifetime { get; set; }
     
     public bool AutoRenew { get; set; }
+    
+    #region Pause State (Timer Freeze)
+    
+    /// <summary>
+    /// Whether this subscription is currently paused (timer frozen)
+    /// </summary>
+    public bool IsPaused { get; set; }
+    
+    /// <summary>
+    /// When the subscription was paused
+    /// </summary>
+    public DateTime? PausedAtUtc { get; set; }
+    
+    /// <summary>
+    /// Days remaining when pause was initiated
+    /// </summary>
+    public int? RemainingDaysWhenPaused { get; set; }
+    
+    #endregion
+    
     public Currency Currency { get; set; }
     public decimal Amount { get; set; }
     public string? StatusReason { get; set; }
@@ -128,6 +148,7 @@ public class SubscriptionDto
         get
         {
             if (IsLifetime) return "Lifetime";
+            if (IsPaused) return "Paused";
             if (IsTrial) return "Trial";
             if (IsExpired) return "Expired";
             if (!IsActive) return "Suspended";
@@ -151,13 +172,15 @@ public class SubscriptionDto
     }
     
     // Action Permissions
-    public bool CanRenew => (IsActive || IsExpired) && !IsLifetime;
-    public bool CanSuspend => IsActive && !IsLifetime;
-    public bool CanResume => !IsActive && !IsExpired && !IsLifetime;
+    public bool CanRenew => (IsActive || IsExpired) && !IsLifetime && !IsPaused;
+    public bool CanSuspend => IsActive && !IsLifetime && !IsPaused;
+    public bool CanResume => !IsActive && !IsExpired && !IsLifetime && !IsPaused;
     public bool CanCancel => IsActive && !IsLifetime;
-    public bool CanUpgrade => IsActive && !IsLifetime;
-    public bool CanExtend => IsActive && !IsLifetime;
+    public bool CanUpgrade => IsActive && !IsLifetime && !IsPaused;
+    public bool CanExtend => IsActive && !IsLifetime && !IsPaused;
     public bool CanReactivate => IsExpired && !IsLifetime;
+    public bool CanPause => IsActive && !IsLifetime && !IsPaused && !IsExpired;
+    public bool CanUnpause => IsPaused;
     
     // Plan Features - Included projects, modules, and custom features
     public List<SubscriptionProjectDto> Projects { get; set; } = new();

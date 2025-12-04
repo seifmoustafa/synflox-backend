@@ -63,6 +63,28 @@ public class Subscription : AuditEntity<Guid>
     /// </summary>
     public bool AutoRenew { get; set; }
 
+    #region Pause State (Timer Freeze)
+
+    /// <summary>
+    /// Whether this subscription is currently paused (timer frozen)
+    /// Different from Suspended: Pause freezes time, Suspend just blocks access
+    /// </summary>
+    public bool IsPaused { get; set; }
+
+    /// <summary>
+    /// When the subscription was paused (UTC)
+    /// Used to calculate how long it was paused when unpausing
+    /// </summary>
+    public DateTime? PausedAtUtc { get; set; }
+
+    /// <summary>
+    /// Days remaining when pause was initiated
+    /// Stored for easy restoration when unpausing
+    /// </summary>
+    public int? RemainingDaysWhenPaused { get; set; }
+
+    #endregion
+
     /// <summary>
     /// Scheduled next subscription for deferred upgrades.
     /// When upgrading, a new subscription is created in "Scheduled" state and linked here.
