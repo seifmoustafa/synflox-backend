@@ -114,4 +114,50 @@ public class CreateSubscriptionPlanDto
     public int DisplayOrder { get; set; } = 0;
     
     #endregion
+    
+    #region Device Activation Limits
+    
+    /// <summary>
+    /// Maximum number of devices that can be bound to this plan.
+    /// 0 = unlimited devices (no binding required)
+    /// 1+ = specific limit, devices must be bound by client admin
+    /// </summary>
+    [Range(0, 1000)]
+    public int MaxDevices { get; set; } = 0;
+    
+    /// <summary>
+    /// Require machine binding for license validation.
+    /// If true, devices must be bound before license can be validated on them.
+    /// </summary>
+    public bool RequireMachineBinding { get; set; } = false;
+    
+    /// <summary>
+    /// How to handle device replacement when max devices reached.
+    /// AdminApproval = Client admin must approve (default, most secure)
+    /// AutoReplaceOldest = Automatically replace oldest device
+    /// AutoReplaceLeastActive = Automatically replace least recently used device
+    /// </summary>
+    public DeviceReplacementPolicy DeviceReplacementPolicy { get; set; } = DeviceReplacementPolicy.AdminApproval;
+    
+    /// <summary>
+    /// Number of hardware component changes allowed before requiring re-binding.
+    /// Prevents false positives when user upgrades RAM, disk, etc.
+    /// </summary>
+    [Range(0, 10)]
+    public int HardwareChangeTolerance { get; set; } = 2;
+    
+    /// <summary>
+    /// Allow same license on multiple devices at same time.
+    /// If false, will detect concurrent usage and warn/block.
+    /// </summary>
+    public bool AllowConcurrentUsage { get; set; } = true;
+    
+    /// <summary>
+    /// Minutes of inactivity before device is considered "not concurrent".
+    /// Only applies if AllowConcurrentUsage = false.
+    /// </summary>
+    [Range(5, 1440)]
+    public int ConcurrentUsageTimeoutMinutes { get; set; } = 30;
+    
+    #endregion
 }

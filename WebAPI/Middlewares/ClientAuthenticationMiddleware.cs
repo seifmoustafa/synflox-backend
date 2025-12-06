@@ -109,7 +109,9 @@ public class ClientAuthenticationMiddleware
         var anonymousEndpoints = new[]
         {
             "/api/client/auth/validate-token",
-            "/api/client/docs"
+            "/api/client/docs",
+            // Device binding uses its own token authentication (OfflineLicenseAdminToken)
+            "/api/client/devices"
         };
 
         return anonymousEndpoints.Any(endpoint => path.StartsWithSegments(endpoint));

@@ -2205,7 +2205,16 @@
     <value>مفتاح الترخيص موجود بالفعل. استخدم إعادة الإنشاء لإنشاء مفتاح جديد.</value>
   </data>
   <data name="OfflineLicense.InsufficientFingerprint" xml:space="preserve">
-    <value>معرّفات الجهاز غير كافية لربط الأجهزة</value>
+    <value>معرّفات الجهاز المطلوبة مفقودة. عنوان MAC والرقم التسلسلي للوحة الأم مطلوبان لربط الجهاز.</value>
+  </data>
+  <data name="OfflineLicense.MissingFingerprint" xml:space="preserve">
+    <value>المعرّفات المطلوبة مفقودة: {0}</value>
+  </data>
+  <data name="OfflineLicense.DeviceNotBound" xml:space="preserve">
+    <value>الجهاز غير مرتبط بهذا الترخيص. يرجى التواصل مع المسؤول لربط هذا الجهاز.</value>
+  </data>
+  <data name="OfflineLicense.DeviceBindingRequired" xml:space="preserve">
+    <value>ربط الجهاز مطلوب لهذا الترخيص. يجب توفير بصمة الجهاز.</value>
   </data>
   <data name="OfflineLicense.InvalidFormat" xml:space="preserve">
     <value>تنسيق مفتاح الترخيص غير صالح</value>
@@ -2302,6 +2311,39 @@
   </data>
   <data name="OfflineLicense.AllDevicesDeactivated" xml:space="preserve">
     <value>تم إلغاء تفعيل جميع الأجهزة بنجاح</value>
+  </data>
+  <data name="OfflineLicense.AdminTokenGenerated" xml:space="preserve">
+    <value>تم إنشاء رمز المسؤول بنجاح. احفظه بأمان - لن يظهر مرة أخرى!</value>
+  </data>
+  <data name="OfflineLicense.InvalidToken" xml:space="preserve">
+    <value>رمز المسؤول غير صالح أو منتهي الصلاحية</value>
+  </data>
+  <data name="OfflineLicense.PermissionDenied" xml:space="preserve">
+    <value>ليس لديك صلاحية لهذه العملية</value>
+  </data>
+  <data name="OfflineLicense.TokenNotFound" xml:space="preserve">
+    <value>رمز المسؤول غير موجود</value>
+  </data>
+  <data name="OfflineLicense.TokenRevoked" xml:space="preserve">
+    <value>تم إلغاء رمز المسؤول بنجاح</value>
+  </data>
+  <data name="OfflineLicense.ReplacementNotFound" xml:space="preserve">
+    <value>طلب الاستبدال غير موجود</value>
+  </data>
+  <data name="OfflineLicense.ReplacementExpiredOrResolved" xml:space="preserve">
+    <value>طلب الاستبدال منتهي الصلاحية أو تمت معالجته بالفعل</value>
+  </data>
+  <data name="OfflineLicense.ReplacementApproved" xml:space="preserve">
+    <value>تمت الموافقة على استبدال الجهاز بنجاح</value>
+  </data>
+  <data name="OfflineLicense.ReplacementRejected" xml:space="preserve">
+    <value>تم رفض استبدال الجهاز</value>
+  </data>
+  <data name="OfflineLicense.ReplacementAlreadyPending" xml:space="preserve">
+    <value>طلب استبدال قيد الانتظار بالفعل لهذا الجهاز</value>
+  </data>
+  <data name="OfflineLicense.ReplacementRequestCreated" xml:space="preserve">
+    <value>تم إنشاء طلب الاستبدال. في انتظار موافقة المسؤول.</value>
   </data>
 
 </root>

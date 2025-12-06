@@ -97,4 +97,42 @@ public class UpdatePlanDto
     public int? DisplayOrder { get; set; }
     
     #endregion
+    
+    #region Device Activation Limits
+    
+    /// <summary>
+    /// Maximum number of devices that can be bound to this plan.
+    /// 0 = unlimited devices (no binding required)
+    /// </summary>
+    [Range(0, 1000)]
+    public int? MaxDevices { get; set; }
+    
+    /// <summary>
+    /// Require machine binding for license validation.
+    /// </summary>
+    public bool? RequireMachineBinding { get; set; }
+    
+    /// <summary>
+    /// Policy for handling device replacement when max devices reached.
+    /// </summary>
+    public DeviceReplacementPolicy? DeviceReplacementPolicy { get; set; }
+    
+    /// <summary>
+    /// Number of hardware component changes allowed before requiring re-binding.
+    /// </summary>
+    [Range(0, 10)]
+    public int? HardwareChangeTolerance { get; set; }
+    
+    /// <summary>
+    /// Allow same license on multiple devices at same time.
+    /// </summary>
+    public bool? AllowConcurrentUsage { get; set; }
+    
+    /// <summary>
+    /// Minutes of inactivity before device is considered "not concurrent".
+    /// </summary>
+    [Range(5, 1440)]
+    public int? ConcurrentUsageTimeoutMinutes { get; set; }
+    
+    #endregion
 }

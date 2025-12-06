@@ -116,6 +116,41 @@ public class PlanDto
     public int InheritedModulesCount { get; set; }
     
     #endregion
+    
+    #region Device Activation Limits
+    
+    /// <summary>
+    /// Maximum number of devices that can be bound to this plan.
+    /// 0 = unlimited devices (no binding required)
+    /// </summary>
+    public int MaxDevices { get; set; }
+    
+    /// <summary>
+    /// Whether machine binding is required for license validation.
+    /// </summary>
+    public bool RequireMachineBinding { get; set; }
+    
+    /// <summary>
+    /// Policy for handling device replacement when max devices reached.
+    /// </summary>
+    public DeviceReplacementPolicy DeviceReplacementPolicy { get; set; }
+    
+    /// <summary>
+    /// Number of hardware component changes allowed before requiring re-binding.
+    /// </summary>
+    public int HardwareChangeTolerance { get; set; }
+    
+    /// <summary>
+    /// Allow same license on multiple devices at same time.
+    /// </summary>
+    public bool AllowConcurrentUsage { get; set; }
+    
+    /// <summary>
+    /// Minutes of inactivity before device is considered "not concurrent".
+    /// </summary>
+    public int ConcurrentUsageTimeoutMinutes { get; set; }
+    
+    #endregion
 }
 
 public class PlanPriceDto

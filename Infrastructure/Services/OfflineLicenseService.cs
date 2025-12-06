@@ -258,8 +258,65 @@ public class OfflineLicenseService : IOfflineLicenseService
                     _localizer["OfflineLicense.Revoked"]);
             }
 
-            // Step 6: Check machine fingerprint if bound
-            if (_settings.EnforceMachineBinding && !string.IsNullOrEmpty(payload.MachineFingerprint))
+            // Step 6: Check device binding based on plan settings
+            // First, check if plan requires machine binding via LicenseActivation table
+            var subscription = await _subscriptionRepo.GetWithDetailsAsync(payload.SubscriptionId);
+            var plan = subscription?.Plan;
+            
+            if (plan != null && plan.MaxDevices > 0 && plan.RequireMachineBinding)
+            {
+                // Device binding is required - check LicenseActivation table
+                if (request.MachineFingerprint == null)
+                {
+                    return FailValidation(response, OfflineLicenseValidationStatus.MachineNotAuthorized,
+                        _localizer["OfflineLicense.DeviceBindingRequired"]);
+                }
+
+                if (!request.MachineFingerprint.HasMinimumIdentifiers())
+                {
+                    var missing = request.MachineFingerprint.GetMissingRequiredIdentifiers();
+                    return FailValidation(response, OfflineLicenseValidationStatus.MachineNotAuthorized,
+                        string.Format(_localizer["OfflineLicense.MissingFingerprint"], string.Join(", ", missing)));
+                }
+
+                var requestFingerprintHash = ComputeFingerprintHash(request.MachineFingerprint);
+                
+                // Check if device is bound in LicenseActivation table (database)
+                var deviceActivation = await _activationRepo.GetByMachineHashAsync(
+                    payload.SubscriptionId, requestFingerprintHash);
+                
+                if (deviceActivation == null || !deviceActivation.IsActive)
+                {
+                    _logger.LogWarning("Device not bound for license {LicenseId}. Hash: {Hash}",
+                        payload.LicenseId, TruncateForDisplay(requestFingerprintHash));
+                    return FailValidation(response, OfflineLicenseValidationStatus.MachineNotAuthorized,
+                        _localizer["OfflineLicense.DeviceNotBound"]);
+                }
+
+                // Update last seen time for the device
+                await _activationRepo.UpdateLastSeenAsync(deviceActivation.Id);
+                
+                // Check concurrent usage if not allowed
+                if (!plan.AllowConcurrentUsage)
+                {
+                    var concurrentThreshold = DateTime.UtcNow.AddMinutes(-plan.ConcurrentUsageTimeoutMinutes);
+                    var activeDevices = await _activationRepo.GetBySubscriptionAsync(payload.SubscriptionId);
+                    var concurrentDevice = activeDevices.FirstOrDefault(a => 
+                        a.Id != deviceActivation.Id && 
+                        a.LastSeenAtUtc > concurrentThreshold);
+                    
+                    if (concurrentDevice != null)
+                    {
+                        response.Warnings.Add(_localizer["OfflineLicense.ConcurrentUsageDetected"]);
+                        _logger.LogWarning("Concurrent usage detected for license {LicenseId}: {CurrentDevice} and {OtherDevice}",
+                            payload.LicenseId, deviceActivation.DeviceName, concurrentDevice.DeviceName);
+                    }
+                }
+
+                response.MachineAuthorized = true;
+            }
+            // Fallback: Check embedded fingerprint in license key (legacy support)
+            else if (_settings.EnforceMachineBinding && !string.IsNullOrEmpty(payload.MachineFingerprint))
             {
                 if (request.MachineFingerprint == null)
                 {
@@ -355,28 +412,29 @@ public class OfflineLicenseService : IOfflineLicenseService
             // Step 11: Online validation if requested
             if (request.ValidateOnline)
             {
-                var subscription = await _subscriptionRepo.GetWithDetailsAsync(payload.SubscriptionId);
-                if (subscription == null)
+                // Reuse subscription from step 6 if available, otherwise fetch
+                var onlineSubscription = subscription ?? await _subscriptionRepo.GetWithDetailsAsync(payload.SubscriptionId);
+                if (onlineSubscription == null)
                 {
                     return FailValidation(response, OfflineLicenseValidationStatus.SubscriptionNotFound,
                         _localizer["Subscription.NotFound"]);
                 }
 
                 // Check company status
-                if (subscription.Company != null && !subscription.Company.IsActive)
+                if (onlineSubscription.Company != null && !onlineSubscription.Company.IsActive)
                 {
                     return FailValidation(response, OfflineLicenseValidationStatus.CompanyInactive,
                         _localizer["OfflineLicense.CompanyInactive"]);
                 }
 
-                if (!subscription.IsActive)
+                if (!onlineSubscription.IsActive)
                 {
                     return FailValidation(response, OfflineLicenseValidationStatus.SubscriptionNotFound,
                         _localizer["OfflineLicense.SubscriptionInactive"]);
                 }
 
                 // Check if entitlements version changed
-                if ((subscription.Plan?.EntitlementVersion ?? 1) > payload.EntitlementsVersion)
+                if ((onlineSubscription.Plan?.EntitlementVersion ?? 1) > payload.EntitlementsVersion)
                 {
                     response.Warnings.Add(_localizer["OfflineLicense.StaleEntitlements"]);
                 }

@@ -146,6 +146,14 @@ public class SubscriptionPlan : AuditEntity<Guid>
     [Range(5, 1440)]
     public int ConcurrentUsageTimeoutMinutes { get; set; } = 30;
 
+    /// <summary>
+    /// Policy for handling device replacement when max devices reached.
+    /// AdminApproval = Client admin must approve (default, most secure)
+    /// AutoReplaceOldest = Automatically replace oldest device
+    /// AutoReplaceLeastActive = Automatically replace least recently used device
+    /// </summary>
+    public DeviceReplacementPolicy DeviceReplacementPolicy { get; set; } = DeviceReplacementPolicy.AdminApproval;
+
     #endregion
 
     #region Plan Hierarchy (Inheritance)

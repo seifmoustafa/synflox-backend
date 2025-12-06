@@ -2205,7 +2205,16 @@
     <value>License key already exists. Use regenerate to create a new key.</value>
   </data>
   <data name="OfflineLicense.InsufficientFingerprint" xml:space="preserve">
-    <value>Insufficient machine identifiers for hardware binding</value>
+    <value>Missing required machine identifiers. MAC Address and Motherboard Serial are required for device binding.</value>
+  </data>
+  <data name="OfflineLicense.MissingFingerprint" xml:space="preserve">
+    <value>Missing required identifiers: {0}</value>
+  </data>
+  <data name="OfflineLicense.DeviceNotBound" xml:space="preserve">
+    <value>Device is not bound to this license. Please contact your administrator to bind this device.</value>
+  </data>
+  <data name="OfflineLicense.DeviceBindingRequired" xml:space="preserve">
+    <value>Device binding is required for this license. Machine fingerprint must be provided.</value>
   </data>
   <data name="OfflineLicense.InvalidFormat" xml:space="preserve">
     <value>Invalid license key format</value>
@@ -2302,6 +2311,39 @@
   </data>
   <data name="OfflineLicense.AllDevicesDeactivated" xml:space="preserve">
     <value>All devices deactivated successfully</value>
+  </data>
+  <data name="OfflineLicense.AdminTokenGenerated" xml:space="preserve">
+    <value>Admin token generated successfully. Store it securely - it will only be shown once!</value>
+  </data>
+  <data name="OfflineLicense.InvalidToken" xml:space="preserve">
+    <value>Invalid or expired admin token</value>
+  </data>
+  <data name="OfflineLicense.PermissionDenied" xml:space="preserve">
+    <value>Permission denied for this operation</value>
+  </data>
+  <data name="OfflineLicense.TokenNotFound" xml:space="preserve">
+    <value>Admin token not found</value>
+  </data>
+  <data name="OfflineLicense.TokenRevoked" xml:space="preserve">
+    <value>Admin token revoked successfully</value>
+  </data>
+  <data name="OfflineLicense.ReplacementNotFound" xml:space="preserve">
+    <value>Replacement request not found</value>
+  </data>
+  <data name="OfflineLicense.ReplacementExpiredOrResolved" xml:space="preserve">
+    <value>Replacement request has expired or already been resolved</value>
+  </data>
+  <data name="OfflineLicense.ReplacementApproved" xml:space="preserve">
+    <value>Device replacement approved successfully</value>
+  </data>
+  <data name="OfflineLicense.ReplacementRejected" xml:space="preserve">
+    <value>Device replacement rejected</value>
+  </data>
+  <data name="OfflineLicense.ReplacementAlreadyPending" xml:space="preserve">
+    <value>A replacement request is already pending for this device</value>
+  </data>
+  <data name="OfflineLicense.ReplacementRequestCreated" xml:space="preserve">
+    <value>Replacement request created. Waiting for admin approval.</value>
   </data>
 
 </root>

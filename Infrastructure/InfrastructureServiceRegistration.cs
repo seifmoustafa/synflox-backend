@@ -220,6 +220,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICompanyService, CompanyService>();
         // Offline License Service (Enterprise-grade with AES-256-GCM)
         services.AddScoped<IOfflineLicenseService, OfflineLicenseService>();
+        // Offline License Admin Service (Client Admin Token Management)
+        services.AddScoped<IOfflineLicenseAdminService, OfflineLicenseAdminService>();
         services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
@@ -307,6 +309,12 @@ public static class InfrastructureServiceRegistration
         
         // License Activation Repository
         services.AddScoped<ILicenseActivationRepository, LicenseActivationRepository>();
+        
+        // Offline License Admin Token Repository
+        services.AddScoped<IOfflineLicenseAdminTokenRepository, OfflineLicenseAdminTokenRepository>();
+        
+        // Device Replacement Request Repository
+        services.AddScoped<IDeviceReplacementRequestRepository, DeviceReplacementRequestRepository>();
         
         // Activity Tracking
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();

@@ -93,7 +93,14 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.DisplayOrder, opt => opt.MapFrom(s => s.DisplayOrder))
             .ForMember(d => d.ChildPlanCount, opt => opt.MapFrom(s => s.ChildPlans != null ? s.ChildPlans.Count : 0))
             .ForMember(d => d.InheritedProjectsCount, opt => opt.Ignore()) // Calculated in service
-            .ForMember(d => d.InheritedModulesCount, opt => opt.Ignore()); // Calculated in service
+            .ForMember(d => d.InheritedModulesCount, opt => opt.Ignore()) // Calculated in service
+            // Device Activation Limits
+            .ForMember(d => d.MaxDevices, opt => opt.MapFrom(s => s.MaxDevices))
+            .ForMember(d => d.RequireMachineBinding, opt => opt.MapFrom(s => s.RequireMachineBinding))
+            .ForMember(d => d.DeviceReplacementPolicy, opt => opt.MapFrom(s => s.DeviceReplacementPolicy))
+            .ForMember(d => d.HardwareChangeTolerance, opt => opt.MapFrom(s => s.HardwareChangeTolerance))
+            .ForMember(d => d.AllowConcurrentUsage, opt => opt.MapFrom(s => s.AllowConcurrentUsage))
+            .ForMember(d => d.ConcurrentUsageTimeoutMinutes, opt => opt.MapFrom(s => s.ConcurrentUsageTimeoutMinutes));
 
         CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))

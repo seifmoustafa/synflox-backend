@@ -42,6 +42,8 @@ namespace Infrastructure.Context
         #region Licensing
         public DbSet<Company> Companies { get; set; }
         public DbSet<LicenseActivation> LicenseActivations { get; set; }
+        public DbSet<OfflineLicenseAdminToken> OfflineLicenseAdminTokens { get; set; }
+        public DbSet<DeviceReplacementRequest> DeviceReplacementRequests { get; set; }
         #endregion
 
         #region Subscriptions (Phase 1)

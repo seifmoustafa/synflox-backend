@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Application.DTOs.OfflineLicense;
@@ -60,20 +61,46 @@ public class MachineFingerprint
 
     /// <summary>
     /// Validates that minimum required identifiers are present.
-    /// SECURITY: PrecomputedHash is NOT counted - actual hardware identifiers are required.
+    /// REQUIRED: MAC Address AND Motherboard Serial (these are mandatory)
+    /// OPTIONAL: CPU, Disk, BIOS, OS Product ID (additional security)
+    /// SECURITY: PrecomputedHash is NEVER counted - actual hardware identifiers are required.
     /// </summary>
     public bool HasMinimumIdentifiers()
     {
+        // MAC Address and Motherboard Serial are REQUIRED (mandatory minimum)
+        // These are the most reliable hardware identifiers that:
+        // - Are easy to get on any OS (Windows/Linux/Mac)
+        // - Rarely change (unless hardware swap)
+        // - Are unique enough for licensing purposes
+        var hasMacAddress = !string.IsNullOrWhiteSpace(MacAddress);
+        var hasMotherboardSerial = !string.IsNullOrWhiteSpace(MotherboardSerial);
+        
+        // Both MAC and Motherboard are REQUIRED
+        return hasMacAddress && hasMotherboardSerial;
+    }
+    
+    /// <summary>
+    /// Gets the count of optional identifiers provided (for additional security scoring).
+    /// Higher count = more secure binding.
+    /// </summary>
+    public int GetOptionalIdentifierCount()
+    {
         var count = 0;
         if (!string.IsNullOrWhiteSpace(CpuId)) count++;
-        if (!string.IsNullOrWhiteSpace(MotherboardSerial)) count++;
         if (!string.IsNullOrWhiteSpace(DiskSerial)) count++;
-        if (!string.IsNullOrWhiteSpace(MacAddress)) count++;
         if (!string.IsNullOrWhiteSpace(BiosUuid)) count++;
         if (!string.IsNullOrWhiteSpace(OsProductId)) count++;
-
-        // Require at least 2 hardware identifiers for reliable binding
-        // NOTE: PrecomputedHash is intentionally NOT accepted as a bypass
-        return count >= 2;
+        return count;
+    }
+    
+    /// <summary>
+    /// Gets missing required identifiers for error messaging.
+    /// </summary>
+    public List<string> GetMissingRequiredIdentifiers()
+    {
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(MacAddress)) missing.Add("MAC Address");
+        if (string.IsNullOrWhiteSpace(MotherboardSerial)) missing.Add("Motherboard Serial");
+        return missing;
     }
 }
