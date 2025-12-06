@@ -109,6 +109,45 @@ public class SubscriptionPlan : AuditEntity<Guid>
 
     #endregion
 
+    #region Device/Machine Activation Limits
+
+    /// <summary>
+    /// Maximum number of devices that can activate this plan
+    /// 0 = unlimited, 1 = single device, N = up to N devices
+    /// </summary>
+    [Range(0, 1000)]
+    public int MaxDevices { get; set; } = 1;
+
+    /// <summary>
+    /// Whether machine binding is required for this plan
+    /// If true, license key must be bound to specific machine fingerprint
+    /// </summary>
+    public bool RequireMachineBinding { get; set; } = false;
+
+    /// <summary>
+    /// Number of hardware component changes allowed before re-activation required
+    /// Example: 2 = allow 2 component changes (e.g., new disk + new RAM = OK)
+    /// 0 = any change requires re-activation
+    /// </summary>
+    [Range(0, 4)]
+    public int HardwareChangeTolerance { get; set; } = 2;
+
+    /// <summary>
+    /// Allow concurrent usage on multiple activated devices
+    /// If false, validation on one device invalidates others
+    /// </summary>
+    public bool AllowConcurrentUsage { get; set; } = true;
+
+    /// <summary>
+    /// Timeout in minutes for concurrent usage detection
+    /// Device is considered "not in use" after this timeout
+    /// Only applies when AllowConcurrentUsage = false
+    /// </summary>
+    [Range(5, 1440)]
+    public int ConcurrentUsageTimeoutMinutes { get; set; } = 30;
+
+    #endregion
+
     #region Plan Hierarchy (Inheritance)
 
     /// <summary>

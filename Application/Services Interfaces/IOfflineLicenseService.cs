@@ -144,6 +144,77 @@ public interface IOfflineLicenseService
 
     #endregion
 
+    #region Device Activation
+
+    /// <summary>
+    /// Activate a device for a subscription license.
+    /// Checks device limits, concurrent usage, and hardware changes.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription ID</param>
+    /// <param name="request">Activation request with fingerprint</param>
+    /// <param name="ipAddress">Client IP address</param>
+    /// <param name="userAgent">Client user agent</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Activation result</returns>
+    Task<ActivationResponse> ActivateDeviceAsync(
+        Guid subscriptionId,
+        ActivateDeviceRequest request,
+        string? ipAddress = null,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deactivate a device from a subscription license.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription ID</param>
+    /// <param name="request">Deactivation request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success status</returns>
+    Task<bool> DeactivateDeviceAsync(
+        Guid subscriptionId,
+        DeactivateDeviceRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get activation summary for a subscription.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Activation summary with device list</returns>
+    Task<ActivationSummaryDto> GetActivationSummaryAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Record a heartbeat/validation from a device (updates LastSeenAt).
+    /// Used for concurrent usage detection.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription ID</param>
+    /// <param name="machineHash">Machine fingerprint hash</param>
+    /// <param name="ipAddress">Client IP address</param>
+    /// <param name="userAgent">Client user agent</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task RecordDeviceHeartbeatAsync(
+        Guid subscriptionId,
+        string machineHash,
+        string? ipAddress = null,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deactivate all devices for a subscription.
+    /// Used when license is revoked.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription ID</param>
+    /// <param name="reason">Reason for deactivation</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task DeactivateAllDevicesAsync(
+        Guid subscriptionId,
+        string reason,
+        CancellationToken cancellationToken = default);
+
+    #endregion
+
     #region Utilities
 
     /// <summary>

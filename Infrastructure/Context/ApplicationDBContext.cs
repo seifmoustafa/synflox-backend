@@ -41,6 +41,7 @@ namespace Infrastructure.Context
 
         #region Licensing
         public DbSet<Company> Companies { get; set; }
+        public DbSet<LicenseActivation> LicenseActivations { get; set; }
         #endregion
 
         #region Subscriptions (Phase 1)

@@ -12,9 +12,13 @@ using Domain.Entities.Subscriptions;
 using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
+using Domain.Entities.Licensing;
+using AutoMapper;
 using Infrastructure.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Application.DTOs.ClientAccess;
 
 namespace Infrastructure.Services;
 
@@ -37,11 +41,13 @@ public class OfflineLicenseService : IOfflineLicenseService
     private readonly ISubscriptionRepository _subscriptionRepo;
     private readonly ISubscriptionPlanRepository _planRepo;
     private readonly ICompanyRepository _companyRepo;
+    private readonly ILicenseActivationRepository _activationRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILocalizationService _localizer;
     private readonly ILogger<OfflineLicenseService> _logger;
     private readonly OfflineLicenseSettings _settings;
+    private readonly IMapper _mapper;
 
     // Header sizes
     private const int VERSION_SIZE = 2;
@@ -54,20 +60,24 @@ public class OfflineLicenseService : IOfflineLicenseService
         ISubscriptionRepository subscriptionRepo,
         ISubscriptionPlanRepository planRepo,
         ICompanyRepository companyRepo,
+        ILicenseActivationRepository activationRepo,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         ILocalizationService localizer,
         ILogger<OfflineLicenseService> logger,
-        IOptions<OfflineLicenseSettings> settings)
+        IOptions<OfflineLicenseSettings> settings,
+        IMapper mapper)
     {
         _subscriptionRepo = subscriptionRepo;
         _planRepo = planRepo;
         _companyRepo = companyRepo;
+        _activationRepo = activationRepo;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _localizer = localizer;
         _logger = logger;
         _settings = settings.Value;
+        _mapper = mapper;
     }
 
     #region Generation
@@ -982,6 +992,245 @@ public class OfflineLicenseService : IOfflineLicenseService
         }
         
         return Convert.FromBase64String(base64);
+    }
+
+    #endregion
+
+    #region Device Activation
+
+    public async Task<ActivationResponse> ActivateDeviceAsync(
+        Guid subscriptionId,
+        ActivateDeviceRequest request,
+        string? ipAddress = null,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default)
+    {
+        var response = new ActivationResponse();
+        
+        // Get subscription with plan
+        var subscription = await _subscriptionRepo.GetByIdAsync(subscriptionId, new[] { "Plan", "Company" }, cancellationToken);
+        if (subscription == null)
+        {
+            response.Message = _localizer["Subscription.NotFound"];
+            return response;
+        }
+
+        var plan = subscription.Plan;
+        var machineHash = ComputeFingerprintHash(request.MachineFingerprint);
+        
+        response.MaxActivations = plan.MaxDevices;
+        
+        // Check if machine is already activated
+        var existingActivation = await _activationRepo.GetByMachineHashAsync(subscriptionId, machineHash, cancellationToken);
+        
+        if (existingActivation != null && existingActivation.IsActive)
+        {
+            // Already activated - update last seen
+            await _activationRepo.UpdateLastSeenAsync(existingActivation.Id, ipAddress, userAgent, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            response.IsActivated = true;
+            response.Message = _localizer["OfflineLicense.DeviceAlreadyActivated"];
+            response.ActivationId = existingActivation.Id;
+            response.CurrentActivations = await _activationRepo.GetActiveActivationCountAsync(subscriptionId, cancellationToken);
+            response.ActivatedDevices = await GetActivatedDevicesListAsync(subscriptionId, cancellationToken);
+            
+            // Check concurrent usage if not allowed
+            if (!plan.AllowConcurrentUsage)
+            {
+                var recentDevices = await _activationRepo.GetRecentlyActiveDevicesAsync(
+                    subscriptionId, plan.ConcurrentUsageTimeoutMinutes, cancellationToken);
+                
+                var otherDevices = recentDevices.Where(d => d.Id != existingActivation.Id).ToList();
+                if (otherDevices.Any())
+                {
+                    response.ConcurrentUsageDetected = true;
+                    response.OtherActiveDevices = otherDevices.Select(MapToActivationDto).ToList();
+                    response.Warnings.Add(_localizer["OfflineLicense.ConcurrentUsageDetected"]);
+                }
+            }
+            
+            return response;
+        }
+
+        // Check device limit
+        var currentCount = await _activationRepo.GetActiveActivationCountAsync(subscriptionId, cancellationToken);
+        response.CurrentActivations = currentCount;
+
+        if (plan.MaxDevices > 0 && currentCount >= plan.MaxDevices)
+        {
+            if (request.ForceActivation)
+            {
+                // Deactivate oldest device
+                var activations = await _activationRepo.GetBySubscriptionAsync(subscriptionId, false, cancellationToken);
+                var oldest = activations.OrderBy(a => a.LastSeenAtUtc).FirstOrDefault();
+                
+                if (oldest != null)
+                {
+                    await _activationRepo.DeactivateDeviceAsync(oldest.Id, "Auto-deactivated: new device activation", cancellationToken);
+                    response.Warnings.Add($"Device '{oldest.DeviceName ?? "Unknown"}' was deactivated to make room for this device.");
+                }
+            }
+            else
+            {
+                response.Message = _localizer["OfflineLicense.MaxDevicesReached"];
+                response.ActivatedDevices = await GetActivatedDevicesListAsync(subscriptionId, cancellationToken);
+                return response;
+            }
+        }
+
+        // Reactivate existing deactivated device or create new
+        if (existingActivation != null && !existingActivation.IsActive)
+        {
+            existingActivation.IsActive = true;
+            existingActivation.DeactivatedAtUtc = null;
+            existingActivation.DeactivationReason = null;
+            existingActivation.LastSeenAtUtc = DateTime.UtcNow;
+            existingActivation.LastIpAddress = ipAddress;
+            existingActivation.DeviceName = request.DeviceName ?? existingActivation.DeviceName;
+            existingActivation.OperatingSystem = request.OperatingSystem ?? existingActivation.OperatingSystem;
+            
+            response.ActivationId = existingActivation.Id;
+        }
+        else
+        {
+            // Create new activation
+            var newActivation = new LicenseActivation
+            {
+                Id = Guid.NewGuid(),
+                SubscriptionId = subscriptionId,
+                CompanyId = subscription.CompanyId,
+                MachineHash = machineHash,
+                DeviceName = request.DeviceName,
+                OperatingSystem = request.OperatingSystem,
+                CpuId = request.MachineFingerprint.CpuId,
+                MotherboardSerial = request.MachineFingerprint.MotherboardSerial,
+                DiskSerial = request.MachineFingerprint.DiskSerial,
+                MacAddress = request.MachineFingerprint.MacAddress,
+                ActivatedAtUtc = DateTime.UtcNow,
+                LastSeenAtUtc = DateTime.UtcNow,
+                LastIpAddress = ipAddress,
+                LastUserAgent = userAgent?.Length > 500 ? userAgent[..500] : userAgent,
+                IsActive = true,
+                ValidationCount = 1
+            };
+            
+            await _activationRepo.AddAsync(newActivation, cancellationToken);
+            response.ActivationId = newActivation.Id;
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        response.IsActivated = true;
+        response.Message = _localizer["OfflineLicense.DeviceActivated"];
+        response.CurrentActivations = await _activationRepo.GetActiveActivationCountAsync(subscriptionId, cancellationToken);
+        response.ActivatedDevices = await GetActivatedDevicesListAsync(subscriptionId, cancellationToken);
+        
+        _logger.LogInformation("Device activated for subscription {SubscriptionId}: {MachineHash}", 
+            subscriptionId, TruncateForDisplay(machineHash));
+
+        return response;
+    }
+
+    public async Task<bool> DeactivateDeviceAsync(
+        Guid subscriptionId,
+        DeactivateDeviceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var activation = await _activationRepo.GetByIdAsync(request.ActivationId, null, cancellationToken);
+        
+        if (activation == null || activation.SubscriptionId != subscriptionId)
+        {
+            _logger.LogWarning("Deactivation attempted for non-existent or mismatched activation {ActivationId}", request.ActivationId);
+            return false;
+        }
+
+        await _activationRepo.DeactivateDeviceAsync(request.ActivationId, request.Reason ?? "Manual deactivation", cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        _logger.LogInformation("Device deactivated for subscription {SubscriptionId}: {DeviceName}", 
+            subscriptionId, activation.DeviceName ?? "Unknown");
+
+        return true;
+    }
+
+    public async Task<ActivationSummaryDto> GetActivationSummaryAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        var subscription = await _subscriptionRepo.GetByIdAsync(subscriptionId, new[] { "Plan", "Company" }, cancellationToken);
+        if (subscription == null)
+        {
+            throw new NotFoundException(_localizer["Subscription.NotFound"]);
+        }
+
+        var activations = await _activationRepo.GetBySubscriptionAsync(subscriptionId, false, cancellationToken);
+
+        return new ActivationSummaryDto
+        {
+            SubscriptionId = subscriptionId,
+            CompanyName = subscription.Company.Name,
+            PlanName = subscription.Plan.Name,
+            MaxDevices = subscription.Plan.MaxDevices,
+            ActiveDeviceCount = activations.Count,
+            RequireMachineBinding = subscription.Plan.RequireMachineBinding,
+            AllowConcurrentUsage = subscription.Plan.AllowConcurrentUsage,
+            HardwareChangeTolerance = subscription.Plan.HardwareChangeTolerance,
+            Activations = activations.Select(MapToActivationDto).ToList()
+        };
+    }
+
+    public async Task RecordDeviceHeartbeatAsync(
+        Guid subscriptionId,
+        string machineHash,
+        string? ipAddress = null,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default)
+    {
+        var activation = await _activationRepo.GetByMachineHashAsync(subscriptionId, machineHash, cancellationToken);
+        
+        if (activation != null && activation.IsActive)
+        {
+            await _activationRepo.UpdateLastSeenAsync(activation.Id, ipAddress, userAgent, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task DeactivateAllDevicesAsync(
+        Guid subscriptionId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        await _activationRepo.DeactivateAllForSubscriptionAsync(subscriptionId, reason, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        _logger.LogInformation("All devices deactivated for subscription {SubscriptionId}: {Reason}", 
+            subscriptionId, reason);
+    }
+
+    private async Task<List<LicenseActivationDto>> GetActivatedDevicesListAsync(
+        Guid subscriptionId, 
+        CancellationToken cancellationToken)
+    {
+        var activations = await _activationRepo.GetBySubscriptionAsync(subscriptionId, false, cancellationToken);
+        return activations.Select(MapToActivationDto).ToList();
+    }
+
+    private static LicenseActivationDto MapToActivationDto(LicenseActivation activation)
+    {
+        return new LicenseActivationDto
+        {
+            ActivationId = activation.Id,
+            DeviceName = activation.DeviceName,
+            OperatingSystem = activation.OperatingSystem,
+            MachineHashTruncated = TruncateForDisplay(activation.MachineHash),
+            ActivatedAtUtc = activation.ActivatedAtUtc,
+            LastSeenAtUtc = activation.LastSeenAtUtc,
+            LastIpAddress = activation.LastIpAddress,
+            IsActive = activation.IsActive,
+            ValidationCount = activation.ValidationCount,
+            HardwareChangeCount = activation.HardwareChangeCount
+        };
     }
 
     #endregion

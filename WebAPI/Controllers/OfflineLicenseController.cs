@@ -1,8 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using Application.DTOs.ClientAccess;
 using Application.DTOs.OfflineLicense;
 using Application.DTOs.Responses;
 using Application.Services;
+using AutoMapper;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -22,15 +25,18 @@ public class OfflineLicenseController : ControllerBase
     private readonly IOfflineLicenseService _licenseService;
     private readonly ILocalizationService _localizer;
     private readonly ILogger<OfflineLicenseController> _logger;
+    private readonly IMapper _mapper;
 
     public OfflineLicenseController(
         IOfflineLicenseService licenseService,
         ILocalizationService localizer,
-        ILogger<OfflineLicenseController> logger)
+        ILogger<OfflineLicenseController> logger,
+        IMapper mapper)
     {
         _licenseService = licenseService;
         _localizer = localizer;
         _logger = logger;
+        _mapper = mapper;
     }
 
     #region Generation
@@ -50,10 +56,13 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
             request ??= new GenerateLicenseRequest();
-            request.SubscriptionId = subscriptionId;
+            request.SubscriptionId = decryptedId;
 
-            var result = await _licenseService.GenerateLicenseKeyAsync(subscriptionId, request);
+            var result = await _licenseService.GenerateLicenseKeyAsync(decryptedId, request);
             return Ok(ApiResponse<GenerateLicenseResponse>.Success(result, result.Message));
         }
         catch (Exception ex)
@@ -78,11 +87,14 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
             request ??= new GenerateLicenseRequest();
-            request.SubscriptionId = subscriptionId;
+            request.SubscriptionId = decryptedId;
             request.ForceRegenerate = true;
 
-            var result = await _licenseService.RegenerateLicenseKeyAsync(subscriptionId, request);
+            var result = await _licenseService.RegenerateLicenseKeyAsync(decryptedId, request);
             return Ok(ApiResponse<GenerateLicenseResponse>.Success(result, result.Message));
         }
         catch (Exception ex)
@@ -175,7 +187,10 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
-            var result = await _licenseService.RevokeLicenseKeyAsync(subscriptionId, reason);
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
+            var result = await _licenseService.RevokeLicenseKeyAsync(decryptedId, reason);
             return Ok(ApiResponse<bool>.Success(result, _localizer["OfflineLicense.RevokedSuccessfully"]));
         }
         catch (Exception ex)
@@ -196,7 +211,10 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
-            var result = await _licenseService.GetLicenseInfoAsync(subscriptionId);
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
+            var result = await _licenseService.GetLicenseInfoAsync(decryptedId);
             if (result == null)
                 return NotFound(ApiResponse<OfflineLicenseDto>.Error(_localizer["Subscription.NotFound"]));
 
@@ -220,7 +238,10 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
-            var result = await _licenseService.GetCompanyLicensesAsync(companyId);
+            // Decrypt company ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new CompanyIdRequest { CompanyId = companyId });
+            
+            var result = await _licenseService.GetCompanyLicensesAsync(decryptedId);
             return Ok(ApiResponse<CompanyLicenseSummaryDto>.Success(result));
         }
         catch (Exception ex)
@@ -241,7 +262,10 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
-            var result = await _licenseService.HasValidLicenseKeyAsync(subscriptionId);
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
+            var result = await _licenseService.HasValidLicenseKeyAsync(decryptedId);
             return Ok(ApiResponse<bool>.Success(result));
         }
         catch (Exception ex)
@@ -267,7 +291,10 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
-            var licenseInfo = await _licenseService.GetLicenseInfoAsync(subscriptionId);
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
+            var licenseInfo = await _licenseService.GetLicenseInfoAsync(decryptedId);
             if (licenseInfo == null || string.IsNullOrEmpty(licenseInfo.LicenseKey))
                 return NotFound(ApiResponse<object>.Error(_localizer["OfflineLicense.NoKeyExists"]));
 
@@ -304,10 +331,13 @@ public class OfflineLicenseController : ControllerBase
     {
         try
         {
+            // Decrypt subscription ID (SYNFLOX ID encryption rule compliance)
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+            
             if (!fingerprint.HasMinimumIdentifiers())
                 return BadRequest(ApiResponse<GenerateLicenseResponse>.Error(_localizer["OfflineLicense.InsufficientFingerprint"]));
 
-            var result = await _licenseService.AddAuthorizedMachineAsync(subscriptionId, fingerprint);
+            var result = await _licenseService.AddAuthorizedMachineAsync(decryptedId, fingerprint);
             return Ok(ApiResponse<GenerateLicenseResponse>.Success(result, _localizer["OfflineLicense.MachineAdded"]));
         }
         catch (Exception ex)
@@ -339,6 +369,141 @@ public class OfflineLicenseController : ControllerBase
         {
             _logger.LogError(ex, "Error computing fingerprint");
             return BadRequest(ApiResponse<string>.Error(_localizer["OfflineLicense.FingerprintError"]));
+        }
+    }
+
+    #endregion
+
+    #region Device Activation
+
+    /// <summary>
+    /// Activate a device for a subscription license.
+    /// Checks device limits, concurrent usage, and hardware changes.
+    /// </summary>
+    /// <param name="subscriptionId">Encrypted subscription ID</param>
+    /// <param name="request">Activation request with fingerprint</param>
+    /// <returns>Activation result</returns>
+    [HttpPost("{subscriptionId}/activate")]
+    [AllowAnonymous] // Allow client apps to activate
+    public async Task<ActionResult<ApiResponse<ActivationResponse>>> ActivateDevice(
+        Guid subscriptionId,
+        [FromBody] ActivateDeviceRequest request)
+    {
+        try
+        {
+            if (!request.MachineFingerprint.HasMinimumIdentifiers())
+                return BadRequest(ApiResponse<ActivationResponse>.Error(_localizer["OfflineLicense.InsufficientFingerprint"]));
+
+            // Decrypt subscription ID
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+
+            var result = await _licenseService.ActivateDeviceAsync(decryptedId, request, ipAddress, userAgent);
+            
+            if (result.IsActivated)
+            {
+                return Ok(ApiResponse<ActivationResponse>.Success(result, result.Message));
+            }
+            
+            return BadRequest(ApiResponse<ActivationResponse>.Error(result.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating device for subscription {SubscriptionId}", subscriptionId);
+            return BadRequest(ApiResponse<ActivationResponse>.Error(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Deactivate a device from a subscription license.
+    /// Admin only endpoint.
+    /// </summary>
+    /// <param name="subscriptionId">Encrypted subscription ID</param>
+    /// <param name="request">Deactivation request</param>
+    /// <returns>Success status</returns>
+    [HttpPost("{subscriptionId}/deactivate")]
+    [Authorize(Policy = "AdminOrSuperAdmin")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeactivateDevice(
+        Guid subscriptionId,
+        [FromBody] DeactivateDeviceRequest request)
+    {
+        try
+        {
+            // Decrypt subscription ID
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+
+            var result = await _licenseService.DeactivateDeviceAsync(decryptedId, request);
+            
+            if (result)
+            {
+                return Ok(ApiResponse<bool>.Success(true, _localizer["OfflineLicense.DeviceDeactivated"]));
+            }
+            
+            return NotFound(ApiResponse<bool>.Error(_localizer["OfflineLicense.ActivationNotFound"]));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deactivating device for subscription {SubscriptionId}", subscriptionId);
+            return BadRequest(ApiResponse<bool>.Error(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Get activation summary for a subscription.
+    /// Shows all activated devices and limits.
+    /// </summary>
+    /// <param name="subscriptionId">Encrypted subscription ID</param>
+    /// <returns>Activation summary</returns>
+    [HttpGet("{subscriptionId}/activations")]
+    [Authorize(Policy = "AdminOrSuperAdmin")]
+    public async Task<ActionResult<ApiResponse<ActivationSummaryDto>>> GetActivations(Guid subscriptionId)
+    {
+        try
+        {
+            // Decrypt subscription ID
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+
+            var result = await _licenseService.GetActivationSummaryAsync(decryptedId);
+            return Ok(ApiResponse<ActivationSummaryDto>.Success(result));
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(ApiResponse<ActivationSummaryDto>.Error(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting activations for subscription {SubscriptionId}", subscriptionId);
+            return BadRequest(ApiResponse<ActivationSummaryDto>.Error(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Deactivate all devices for a subscription.
+    /// Admin only endpoint for emergency situations.
+    /// </summary>
+    /// <param name="subscriptionId">Encrypted subscription ID</param>
+    /// <param name="reason">Reason for deactivation</param>
+    /// <returns>Success status</returns>
+    [HttpDelete("{subscriptionId}/activations")]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeactivateAllDevices(
+        Guid subscriptionId,
+        [FromQuery] string? reason = null)
+    {
+        try
+        {
+            // Decrypt subscription ID
+            var decryptedId = _mapper.Map<Guid>(new SubscriptionIdRequest { SubscriptionId = subscriptionId });
+
+            await _licenseService.DeactivateAllDevicesAsync(decryptedId, reason ?? "Admin bulk deactivation");
+            return Ok(ApiResponse<bool>.Success(true, _localizer["OfflineLicense.AllDevicesDeactivated"]));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deactivating all devices for subscription {SubscriptionId}", subscriptionId);
+            return BadRequest(ApiResponse<bool>.Error(ex.Message));
         }
     }
 

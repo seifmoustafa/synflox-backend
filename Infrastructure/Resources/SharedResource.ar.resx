@@ -2282,5 +2282,26 @@
   <data name="OfflineLicense.FingerprintError" xml:space="preserve">
     <value>خطأ في حساب بصمة الجهاز</value>
   </data>
+  <data name="OfflineLicense.DeviceActivated" xml:space="preserve">
+    <value>تم تفعيل الجهاز بنجاح</value>
+  </data>
+  <data name="OfflineLicense.DeviceAlreadyActivated" xml:space="preserve">
+    <value>الجهاز مفعّل بالفعل</value>
+  </data>
+  <data name="OfflineLicense.DeviceDeactivated" xml:space="preserve">
+    <value>تم إلغاء تفعيل الجهاز بنجاح</value>
+  </data>
+  <data name="OfflineLicense.MaxDevicesReached" xml:space="preserve">
+    <value>تم الوصول إلى الحد الأقصى لعدد الأجهزة. يرجى إلغاء تفعيل جهاز أولاً أو استخدام التفعيل الإجباري.</value>
+  </data>
+  <data name="OfflineLicense.ConcurrentUsageDetected" xml:space="preserve">
+    <value>تم اكتشاف استخدام متزامن على جهاز آخر</value>
+  </data>
+  <data name="OfflineLicense.ActivationNotFound" xml:space="preserve">
+    <value>لم يتم العثور على تفعيل الجهاز</value>
+  </data>
+  <data name="OfflineLicense.AllDevicesDeactivated" xml:space="preserve">
+    <value>تم إلغاء تفعيل جميع الأجهزة بنجاح</value>
+  </data>
 
 </root>

@@ -305,6 +305,9 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IClientAccessTokenRepository, ClientAccessTokenRepository>();
         services.AddScoped<IClientTokenUsageLogRepository, ClientTokenUsageLogRepository>();
         
+        // License Activation Repository
+        services.AddScoped<ILicenseActivationRepository, LicenseActivationRepository>();
+        
         // Activity Tracking
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         services.AddScoped<IActivityLogService, ActivityLogService>();

@@ -2282,5 +2282,26 @@
   <data name="OfflineLicense.FingerprintError" xml:space="preserve">
     <value>Error computing machine fingerprint</value>
   </data>
+  <data name="OfflineLicense.DeviceActivated" xml:space="preserve">
+    <value>Device activated successfully</value>
+  </data>
+  <data name="OfflineLicense.DeviceAlreadyActivated" xml:space="preserve">
+    <value>Device is already activated</value>
+  </data>
+  <data name="OfflineLicense.DeviceDeactivated" xml:space="preserve">
+    <value>Device deactivated successfully</value>
+  </data>
+  <data name="OfflineLicense.MaxDevicesReached" xml:space="preserve">
+    <value>Maximum number of devices reached. Please deactivate a device first or use force activation.</value>
+  </data>
+  <data name="OfflineLicense.ConcurrentUsageDetected" xml:space="preserve">
+    <value>Concurrent usage detected on another device</value>
+  </data>
+  <data name="OfflineLicense.ActivationNotFound" xml:space="preserve">
+    <value>Device activation not found</value>
+  </data>
+  <data name="OfflineLicense.AllDevicesDeactivated" xml:space="preserve">
+    <value>All devices deactivated successfully</value>
+  </data>
 
 </root>
