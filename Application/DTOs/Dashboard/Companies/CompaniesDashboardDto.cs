@@ -6,6 +6,10 @@ namespace Application.DTOs.Dashboard.Companies;
 /// Companies dashboard response with all company analytics
 /// </summary>
 public record CompaniesDashboardDto(
+    // Currency Info
+    string DisplayCurrency,
+    string DisplayCurrencySymbol,
+    
     // Summary Stats
     int TotalCompanies,
     int NewThisMonth,

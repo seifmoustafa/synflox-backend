@@ -4,8 +4,10 @@ using Application.DTOs.Dashboard.Subscriptions;
 using Application.DTOs.Dashboard.Revenue;
 using Application.DTOs.Dashboard.Activity;
 using Application.DTOs.Dashboard.Alerts;
+using Application.DTOs.Dashboard.Shared;
 using Application.Services_Interfaces;
 using Application.Services;
+using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,36 +38,42 @@ public class DashboardController : ControllerBase
     /// <summary>
     /// Get overview dashboard with KPIs and quick stats
     /// </summary>
+    /// <param name="currency">Currency to display all monetary amounts in (default: USD)</param>
     [HttpGet("overview")]
     [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
-    public async Task<ActionResult<OverviewDashboardDto>> GetOverview()
+    public async Task<ActionResult<OverviewDashboardDto>> GetOverview(
+        [FromQuery] Currency currency = Currency.USD)
     {
-        _logger.LogInformation("Getting overview dashboard");
-        var result = await _dashboardService.GetOverviewAsync();
+        _logger.LogInformation("Getting overview dashboard in {Currency}", currency);
+        var result = await _dashboardService.GetOverviewAsync(currency);
         return Ok(result);
     }
 
     /// <summary>
     /// Get companies dashboard with company analytics
     /// </summary>
+    /// <param name="currency">Currency to display all monetary amounts in (default: USD)</param>
     [HttpGet("companies")]
     [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
-    public async Task<ActionResult<CompaniesDashboardDto>> GetCompaniesDashboard()
+    public async Task<ActionResult<CompaniesDashboardDto>> GetCompaniesDashboard(
+        [FromQuery] Currency currency = Currency.USD)
     {
-        _logger.LogInformation("Getting companies dashboard");
-        var result = await _dashboardService.GetCompaniesDashboardAsync();
+        _logger.LogInformation("Getting companies dashboard in {Currency}", currency);
+        var result = await _dashboardService.GetCompaniesDashboardAsync(currency);
         return Ok(result);
     }
 
     /// <summary>
     /// Get subscriptions dashboard with subscription analytics
     /// </summary>
+    /// <param name="currency">Currency to display all monetary amounts in (default: USD)</param>
     [HttpGet("subscriptions")]
     [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
-    public async Task<ActionResult<SubscriptionsDashboardDto>> GetSubscriptionsDashboard()
+    public async Task<ActionResult<SubscriptionsDashboardDto>> GetSubscriptionsDashboard(
+        [FromQuery] Currency currency = Currency.USD)
     {
-        _logger.LogInformation("Getting subscriptions dashboard");
-        var result = await _dashboardService.GetSubscriptionsDashboardAsync();
+        _logger.LogInformation("Getting subscriptions dashboard in {Currency}", currency);
+        var result = await _dashboardService.GetSubscriptionsDashboardAsync(currency);
         return Ok(result);
     }
 
@@ -73,13 +81,29 @@ public class DashboardController : ControllerBase
     /// Get revenue dashboard with financial analytics
     /// SuperAdmin only
     /// </summary>
+    /// <param name="currency">Currency to display all amounts in (default: USD). Real-time conversion.</param>
     [HttpGet("revenue")]
     [Authorize(Policy = "SuperAdminOnly")]
     [ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
-    public async Task<ActionResult<RevenueDashboardDto>> GetRevenueDashboard()
+    public async Task<ActionResult<RevenueDashboardDto>> GetRevenueDashboard(
+        [FromQuery] Currency currency = Currency.USD)
     {
-        _logger.LogInformation("Getting revenue dashboard");
-        var result = await _dashboardService.GetRevenueDashboardAsync();
+        _logger.LogInformation("Getting revenue dashboard in {Currency}", currency);
+        var result = await _dashboardService.GetRevenueDashboardAsync(currency);
+        return Ok(result);
+    }
+    
+    /// <summary>
+    /// Get current exchange rates for all supported currencies
+    /// </summary>
+    /// <param name="baseCurrency">Base currency for rates (default: USD)</param>
+    [HttpGet("exchange-rates")]
+    [ResponseCache(Duration = 3600)] // Cache for 1 hour (rates update daily)
+    public async Task<ActionResult<CurrencyRatesDto>> GetExchangeRates(
+        [FromQuery] Currency baseCurrency = Currency.USD)
+    {
+        _logger.LogInformation("Getting exchange rates for base {Currency}", baseCurrency);
+        var result = await _dashboardService.GetExchangeRatesAsync(baseCurrency);
         return Ok(result);
     }
 

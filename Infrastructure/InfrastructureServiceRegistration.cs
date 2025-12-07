@@ -159,6 +159,9 @@ public static class InfrastructureServiceRegistration
         // HttpClient for IP Geolocation API calls
         services.AddHttpClient();
         
+        // Currency Exchange Service (real-time rates from Frankfurter API)
+        services.AddHttpClient<ICurrencyExchangeService, CurrencyExchangeService>();
+        
         // IP Geolocation & User-Agent Parser (for real analytics)
         services.AddSingleton<IIpGeolocationService, IpGeolocationService>();
         services.AddSingleton<IUserAgentParserService, UserAgentParserService>();

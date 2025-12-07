@@ -6,6 +6,10 @@ namespace Application.DTOs.Dashboard.Subscriptions;
 /// Subscriptions dashboard response with all subscription analytics
 /// </summary>
 public record SubscriptionsDashboardDto(
+    // Currency Info
+    string DisplayCurrency,
+    string DisplayCurrencySymbol,
+    
     // Summary Stats
     int TotalSubscriptions,
     int ActiveSubscriptions,

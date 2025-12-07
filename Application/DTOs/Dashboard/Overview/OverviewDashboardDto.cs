@@ -6,6 +6,10 @@ namespace Application.DTOs.Dashboard.Overview;
 /// Main overview dashboard response containing all summary data
 /// </summary>
 public record OverviewDashboardDto(
+    // Currency Info
+    string DisplayCurrency,
+    string DisplayCurrencySymbol,
+    
     // KPI Cards
     KpiCardDto CompaniesKpi,
     KpiCardDto SubscriptionsKpi,

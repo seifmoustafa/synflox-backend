@@ -8,6 +8,7 @@ using Application.DTOs.Dashboard.Shared;
 using Application.Services_Interfaces;
 using Domain.Entities.Licensing;
 using Domain.Entities.Subscriptions;
+using Domain.Enums;
 using Domain.Interfaces;
 using Infrastructure.Context;
 using Application.Services;
@@ -26,24 +27,27 @@ public class DashboardService : IDashboardService
     private readonly IActivityLogRepository _activityLogRepository;
     private readonly Application.Services.ILocalizationService _localizer;
     private readonly IIdEncryptionService _idEncryption;
+    private readonly ICurrencyExchangeService _currencyExchange;
 
     public DashboardService(
         ApplicationDBContext context,
         ILogger<DashboardService> logger,
         IActivityLogRepository activityLogRepository,
         Application.Services.ILocalizationService localizer,
-        IIdEncryptionService idEncryption)
+        IIdEncryptionService idEncryption,
+        ICurrencyExchangeService currencyExchange)
     {
         _context = context;
         _logger = logger;
         _activityLogRepository = activityLogRepository;
         _localizer = localizer;
         _idEncryption = idEncryption;
+        _currencyExchange = currencyExchange;
     }
 
     #region Overview Dashboard
 
-    public async Task<OverviewDashboardDto> GetOverviewAsync()
+    public async Task<OverviewDashboardDto> GetOverviewAsync(Currency displayCurrency = Currency.USD)
     {
         try
         {
@@ -68,6 +72,7 @@ public class DashboardService : IDashboardService
                     s.IsTrial,
                     s.ExpiryDateUtc,
                     s.Amount,
+                    s.Currency,
                     s.CreatedTimestamp
                 })
                 .ToListAsync();
@@ -123,16 +128,21 @@ public class DashboardService : IDashboardService
             var prevMonthSubscriptions = subscriptions.Count(s => s.CreatedTimestamp < lastMonth);
             var subscriptionGrowthRate = CalculateGrowthRate(prevMonthSubscriptions, totalSubscriptions);
 
-            // Calculate current MRR safely with decimal
-            var mrr = subscriptions
-                .Where(s => s.IsActive && !s.IsExpired)
-                .Sum(s => s.Amount);
+            // Calculate current MRR safely with decimal - convert all currencies to display currency
+            decimal mrr = 0;
+            foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
+            {
+                var converted = await _currencyExchange.ConvertAsync(sub.Amount, sub.Currency, displayCurrency);
+                mrr += converted;
+            }
 
             // Calculate previous month's MRR (subscriptions that were active before this month)
-            // For simplicity, use subscriptions created before last month that are still active
-            var prevMonthMrr = subscriptions
-                .Where(s => s.CreatedTimestamp < lastMonth && s.IsActive && !s.IsExpired)
-                .Sum(s => s.Amount);
+            decimal prevMonthMrr = 0;
+            foreach (var sub in subscriptions.Where(s => s.CreatedTimestamp < lastMonth && s.IsActive && !s.IsExpired))
+            {
+                var converted = await _currencyExchange.ConvertAsync(sub.Amount, sub.Currency, displayCurrency);
+                prevMonthMrr += converted;
+            }
             
             var mrrGrowthRate = CalculateGrowthRateDecimal(prevMonthMrr, mrr);
 
@@ -164,7 +174,8 @@ public class DashboardService : IDashboardService
                 ChangePercentage: mrrGrowthRate,
                 ChangeDirection: mrrGrowthRate > 0 ? "up" : mrrGrowthRate < 0 ? "down" : "unchanged",
                 Icon: "DollarSign",
-                Color: "purple"
+                Color: "purple",
+                CurrencySymbol: GetCurrencySymbol(displayCurrency)
             );
 
             var alertCount = expiringToday + expiringThisWeek + suspendedSubscriptions;
@@ -238,6 +249,8 @@ public class DashboardService : IDashboardService
             )).ToList();
 
             return new OverviewDashboardDto(
+                DisplayCurrency: GetCurrencyCode(displayCurrency),
+                DisplayCurrencySymbol: GetCurrencySymbol(displayCurrency),
                 CompaniesKpi: companiesKpi,
                 SubscriptionsKpi: subscriptionsKpi,
                 RevenueKpi: revenueKpi,
@@ -260,7 +273,7 @@ public class DashboardService : IDashboardService
 
     #region Companies Dashboard
 
-    public async Task<CompaniesDashboardDto> GetCompaniesDashboardAsync()
+    public async Task<CompaniesDashboardDto> GetCompaniesDashboardAsync(Currency displayCurrency = Currency.USD)
     {
         try
         {
@@ -339,6 +352,8 @@ public class DashboardService : IDashboardService
             var subscriptionCoverage = CalculatePercentage(activeCount, totalCompanies);
 
             return new CompaniesDashboardDto(
+                DisplayCurrency: GetCurrencyCode(displayCurrency),
+                DisplayCurrencySymbol: GetCurrencySymbol(displayCurrency),
                 TotalCompanies: totalCompanies,
                 NewThisMonth: newThisMonth,
                 NewThisWeek: newThisWeek,
@@ -369,7 +384,7 @@ public class DashboardService : IDashboardService
 
     #region Subscriptions Dashboard
 
-    public async Task<SubscriptionsDashboardDto> GetSubscriptionsDashboardAsync()
+    public async Task<SubscriptionsDashboardDto> GetSubscriptionsDashboardAsync(Currency displayCurrency = Currency.USD)
     {
         try
         {
@@ -388,9 +403,13 @@ public class DashboardService : IDashboardService
             var expiredSubscriptions = subscriptions.Count(s => s.IsExpired);
             var suspendedSubscriptions = subscriptions.Count(s => !s.IsActive && !s.IsExpired);
             
-            var totalMonthlyRevenue = subscriptions
-                .Where(s => s.IsActive && !s.IsExpired)
-                .Sum(s => s.Amount);
+            // Calculate total monthly revenue with currency conversion
+            decimal totalMonthlyRevenue = 0;
+            foreach (var sub in subscriptions.Where(s => s.IsActive && !s.IsExpired))
+            {
+                var converted = await _currencyExchange.ConvertAsync(sub.Amount, sub.Currency, displayCurrency);
+                totalMonthlyRevenue += converted;
+            }
 
             var statusDistribution = new SubscriptionStatusDistributionDto(
                 Active: activeSubscriptions,
@@ -416,6 +435,8 @@ public class DashboardService : IDashboardService
             var growth = GenerateSubscriptionGrowth(subscriptions, today, activeSubscriptions);
 
             return new SubscriptionsDashboardDto(
+                DisplayCurrency: GetCurrencyCode(displayCurrency),
+                DisplayCurrencySymbol: GetCurrencySymbol(displayCurrency),
                 TotalSubscriptions: totalSubscriptions,
                 ActiveSubscriptions: activeSubscriptions + trialSubscriptions,
                 TrialSubscriptions: trialSubscriptions,
@@ -440,7 +461,7 @@ public class DashboardService : IDashboardService
 
     #region Revenue Dashboard
 
-    public async Task<RevenueDashboardDto> GetRevenueDashboardAsync()
+    public async Task<RevenueDashboardDto> GetRevenueDashboardAsync(Currency displayCurrency = Currency.USD)
     {
         try
         {
@@ -454,7 +475,22 @@ public class DashboardService : IDashboardService
 
             var activeSubscriptions = subscriptions.Where(s => s.IsActive && !s.IsExpired).ToList();
             
-            var mrr = activeSubscriptions.Sum(s => s.Amount);
+            // Convert all amounts to display currency
+            decimal mrr = 0;
+            decimal totalLifetimeRevenue = 0;
+            
+            foreach (var sub in activeSubscriptions)
+            {
+                var converted = await _currencyExchange.ConvertAsync(sub.Amount, sub.Currency, displayCurrency);
+                mrr += converted;
+            }
+            
+            foreach (var sub in subscriptions)
+            {
+                var converted = await _currencyExchange.ConvertAsync(sub.Amount, sub.Currency, displayCurrency);
+                totalLifetimeRevenue += converted;
+            }
+            
             var arr = mrr * 12;
             var activeCustomers = activeSubscriptions.Select(s => s.CompanyId).Distinct().Count();
             var arpc = activeCustomers > 0 ? mrr / activeCustomers : 0;
@@ -464,37 +500,53 @@ public class DashboardService : IDashboardService
             var mrrChangePercentage = previousMrr > 0 ? (mrrChange / previousMrr) * 100 : 0;
 
             var metrics = new RevenueMetricsDto(
-                MRR: mrr,
-                PreviousMRR: previousMrr,
-                MRRChange: mrrChange,
-                MRRChangePercentage: mrrChangePercentage,
-                ARR: arr,
-                PreviousARR: previousMrr * 12,
-                ARRChange: mrrChange * 12,
-                ARRChangePercentage: mrrChangePercentage,
-                ARPC: arpc,
-                PreviousARPC: arpc * 0.95m,
-                ARPCChange: arpc * 0.05m,
+                MRR: Math.Round(mrr, 2),
+                PreviousMRR: Math.Round(previousMrr, 2),
+                MRRChange: Math.Round(mrrChange, 2),
+                MRRChangePercentage: Math.Round(mrrChangePercentage, 2),
+                ARR: Math.Round(arr, 2),
+                PreviousARR: Math.Round(previousMrr * 12, 2),
+                ARRChange: Math.Round(mrrChange * 12, 2),
+                ARRChangePercentage: Math.Round(mrrChangePercentage, 2),
+                ARPC: Math.Round(arpc, 2),
+                PreviousARPC: Math.Round(arpc * 0.95m, 2),
+                ARPCChange: Math.Round(arpc * 0.05m, 2),
                 ARPCChangePercentage: 5,
-                EstimatedCLTV: arpc * 24,
+                EstimatedCLTV: Math.Round(arpc * 24, 2),
                 ActiveCustomers: activeCustomers,
                 PreviousActiveCustomers: (int)(activeCustomers * 0.95m)
             );
 
-            var byPlan = GenerateRevenueByPlan(activeSubscriptions, mrr);
+            var byPlan = await GenerateRevenueByPlanAsync(activeSubscriptions, mrr, displayCurrency);
             var trend = GenerateRevenueTrend(mrr, today);
             var projections = GenerateRevenueProjections(activeSubscriptions, mrr, today);
+            
+            // Currency breakdown (original currencies)
+            var currencyGroups = subscriptions
+                .GroupBy(s => s.Currency)
+                .Select(g => new DistributionItemDto(
+                    GetCurrencyCode(g.Key),
+                    g.Count(),
+                    subscriptions.Any() ? Math.Round((decimal)g.Count() / subscriptions.Count * 100, 1) : 0,
+                    GetCurrencyColor(g.Key)
+                ))
+                .ToList();
+
+            var ratesUpdatedAt = await _currencyExchange.GetLastUpdateTimeAsync() ?? now;
 
             return new RevenueDashboardDto(
+                DisplayCurrency: GetCurrencyCode(displayCurrency),
+                DisplayCurrencySymbol: GetCurrencySymbol(displayCurrency),
                 Metrics: metrics,
                 ByPlan: byPlan,
                 ByPlanChart: byPlan.Plans.Select(p => new DistributionItemDto(p.PlanName, p.SubscriptionCount, p.Percentage, p.Color)).ToList(),
                 Trend: trend,
                 Projections: projections,
-                TotalLifetimeRevenue: subscriptions.Sum(s => s.Amount),
-                AverageOrderValue: subscriptions.Any() ? subscriptions.Average(s => s.Amount) : 0,
+                TotalLifetimeRevenue: Math.Round(totalLifetimeRevenue, 2),
+                AverageOrderValue: subscriptions.Any() ? Math.Round(totalLifetimeRevenue / subscriptions.Count, 2) : 0,
                 TotalTransactions: subscriptions.Count,
-                ByCurrency: new List<DistributionItemDto> { new("EGP", subscriptions.Count, 100, "#22c55e") },
+                ByCurrency: currencyGroups,
+                ExchangeRatesUpdatedAt: ratesUpdatedAt,
                 GeneratedAt: now
             );
         }
@@ -503,6 +555,29 @@ public class DashboardService : IDashboardService
             _logger.LogError(ex, "Error generating revenue dashboard");
             throw;
         }
+    }
+    
+    public async Task<CurrencyRatesDto> GetExchangeRatesAsync(Currency baseCurrency = Currency.USD)
+    {
+        var rates = await _currencyExchange.GetAllRatesAsync(baseCurrency);
+        var lastUpdated = await _currencyExchange.GetLastUpdateTimeAsync() ?? DateTime.UtcNow;
+        
+        var rateItems = rates
+            .Where(r => r.Key != Currency.Free)
+            .Select(r => new CurrencyRateItemDto(
+                Code: GetCurrencyCode(r.Key),
+                Name: GetCurrencyName(r.Key),
+                Symbol: GetCurrencySymbol(r.Key),
+                Rate: Math.Round(r.Value, 4)
+            ))
+            .ToList();
+            
+        return new CurrencyRatesDto(
+            BaseCurrency: GetCurrencyCode(baseCurrency),
+            Rates: rateItems,
+            LastUpdated: lastUpdated,
+            Source: "Frankfurter API (European Central Bank)"
+        );
     }
 
     #endregion
@@ -1395,5 +1470,109 @@ public class DashboardService : IDashboardService
         };
     }
 
+    #endregion
+    
+    #region Currency Helpers
+    
+    private async Task<RevenueByPlanDto> GenerateRevenueByPlanAsync(
+        List<Subscription> activeSubscriptions, 
+        decimal totalMrr, 
+        Currency displayCurrency)
+    {
+        var planGroups = new List<RevenueByPlanItemDto>();
+        
+        var groupedByPlan = activeSubscriptions
+            .Where(s => s.Plan != null)
+            .GroupBy(s => s.PlanId)
+            .ToList();
+            
+        foreach (var g in groupedByPlan)
+        {
+            decimal monthlyRevenue = 0;
+            foreach (var sub in g)
+            {
+                var converted = await _currencyExchange.ConvertAsync(sub.Amount, sub.Currency, displayCurrency);
+                monthlyRevenue += converted;
+            }
+            
+            planGroups.Add(new RevenueByPlanItemDto(
+                PlanId: g.Key,
+                PlanName: g.First().Plan?.Name ?? "Unknown",
+                PlanTier: g.First().Plan?.Name ?? "Standard",
+                MonthlyRevenue: Math.Round(monthlyRevenue, 2),
+                AnnualRevenue: Math.Round(monthlyRevenue * 12, 2),
+                SubscriptionCount: g.Count(),
+                Percentage: totalMrr > 0 ? Math.Round(monthlyRevenue / totalMrr * 100, 2) : 0,
+                Color: GetPlanColor(g.First().Plan?.Name ?? "Standard")
+            ));
+        }
+        
+        planGroups = planGroups.OrderByDescending(p => p.MonthlyRevenue).ToList();
+        var topPlan = planGroups.FirstOrDefault();
+        
+        return new RevenueByPlanDto(
+            Plans: planGroups,
+            TopRevenuePlanName: topPlan?.PlanName ?? "N/A",
+            TopRevenuePlanValue: topPlan?.MonthlyRevenue ?? 0,
+            TotalRevenue: totalMrr
+        );
+    }
+    
+    private static string GetCurrencyCode(Currency currency) => currency switch
+    {
+        Currency.Free => "FREE",
+        Currency.USD => "USD",
+        Currency.EUR => "EUR",
+        Currency.EGP => "EGP",
+        Currency.SAR => "SAR",
+        Currency.AED => "AED",
+        Currency.GBP => "GBP",
+        Currency.JPY => "JPY",
+        Currency.CNY => "CNY",
+        _ => "USD"
+    };
+    
+    private static string GetCurrencySymbol(Currency currency) => currency switch
+    {
+        Currency.Free => "-",
+        Currency.USD => "$",
+        Currency.EUR => "€",
+        Currency.EGP => "E£",
+        Currency.SAR => "﷼",
+        Currency.AED => "د.إ",
+        Currency.GBP => "£",
+        Currency.JPY => "¥",
+        Currency.CNY => "¥",
+        _ => "$"
+    };
+    
+    private static string GetCurrencyName(Currency currency) => currency switch
+    {
+        Currency.Free => "Free",
+        Currency.USD => "US Dollar",
+        Currency.EUR => "Euro",
+        Currency.EGP => "Egyptian Pound",
+        Currency.SAR => "Saudi Riyal",
+        Currency.AED => "UAE Dirham",
+        Currency.GBP => "British Pound",
+        Currency.JPY => "Japanese Yen",
+        Currency.CNY => "Chinese Yuan",
+        _ => "US Dollar"
+    };
+    
+    private static string GetCurrencyColor(Currency currency) => currency switch
+    {
+        Currency.Free => "#6b7280",
+        Currency.USD => "#22c55e",
+        Currency.EUR => "#3b82f6",
+        Currency.EGP => "#f97316",
+        Currency.SAR => "#8b5cf6",
+        Currency.AED => "#ec4899",
+        Currency.GBP => "#06b6d4",
+        Currency.JPY => "#ef4444",
+        Currency.CNY => "#eab308",
+        _ => "#6b7280"
+    };
+    
     #endregion
 }

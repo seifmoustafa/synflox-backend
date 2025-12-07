@@ -10,5 +10,6 @@ public record KpiCardDto(
     decimal? ChangePercentage,
     string? ChangeDirection, // "up", "down", "unchanged"
     string Icon,
-    string Color
+    string Color,
+    string? CurrencySymbol = null // Optional currency symbol for monetary values
 );

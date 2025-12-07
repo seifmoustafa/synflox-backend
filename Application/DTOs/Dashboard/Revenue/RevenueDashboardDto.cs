@@ -4,9 +4,14 @@ namespace Application.DTOs.Dashboard.Revenue;
 
 /// <summary>
 /// Revenue dashboard response with all financial analytics
+/// All monetary values are converted to the DisplayCurrency using real-time exchange rates
 /// </summary>
 public record RevenueDashboardDto(
-    // Core Metrics
+    // Display currency info
+    string DisplayCurrency,
+    string DisplayCurrencySymbol,
+    
+    // Core Metrics (all amounts in DisplayCurrency)
     RevenueMetricsDto Metrics,
     
     // Revenue by Plan
@@ -19,13 +24,16 @@ public record RevenueDashboardDto(
     // Projections
     RevenueProjectionDto Projections,
     
-    // Quick Stats
+    // Quick Stats (all amounts in DisplayCurrency)
     decimal TotalLifetimeRevenue,
     decimal AverageOrderValue,
     int TotalTransactions,
     
-    // Currency breakdown (if multi-currency)
+    // Currency breakdown (original currencies before conversion)
     List<DistributionItemDto> ByCurrency,
+    
+    // Exchange rate info
+    DateTime ExchangeRatesUpdatedAt,
     
     // Timestamp
     DateTime GeneratedAt
