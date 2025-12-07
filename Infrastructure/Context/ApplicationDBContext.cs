@@ -44,6 +44,8 @@ namespace Infrastructure.Context
         public DbSet<LicenseActivation> LicenseActivations { get; set; }
         public DbSet<OfflineLicenseAdminToken> OfflineLicenseAdminTokens { get; set; }
         public DbSet<DeviceReplacementRequest> DeviceReplacementRequests { get; set; }
+        public DbSet<CompanyAdmin> CompanyAdmins { get; set; }
+        public DbSet<CompanyAdminSession> CompanyAdminSessions { get; set; }
         #endregion
 
         #region Subscriptions (Phase 1)
@@ -58,6 +60,7 @@ namespace Infrastructure.Context
         public DbSet<Domain.Entities.Subscriptions.OutboxEvent> OutboxEvents { get; set; }
         public DbSet<Domain.Entities.Subscriptions.SubscriptionHistory> SubscriptionHistories { get; set; }
         public DbSet<Domain.Entities.Subscriptions.PlanEntitlement> PlanEntitlements { get; set; }
+        public DbSet<Domain.Entities.Subscriptions.AccessTimeWindow> AccessTimeWindows { get; set; }
         #endregion
 
         #region Navigation

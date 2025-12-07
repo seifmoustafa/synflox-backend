@@ -296,20 +296,37 @@ public class OfflineLicenseService : IOfflineLicenseService
                 // Update last seen time for the device
                 await _activationRepo.UpdateLastSeenAsync(deviceActivation.Id);
                 
-                // Check concurrent usage if not allowed
-                if (!plan.AllowConcurrentUsage)
+                // Check concurrent usage based on access mode
+                if (plan.ConcurrentAccessMode == ConcurrentAccessMode.SingleDevice)
                 {
-                    var concurrentThreshold = DateTime.UtcNow.AddMinutes(-plan.ConcurrentUsageTimeoutMinutes);
+                    var concurrentThreshold = DateTime.UtcNow.AddMinutes(-plan.DeviceHeartbeatTimeoutMinutes);
                     var activeDevices = await _activationRepo.GetBySubscriptionAsync(payload.SubscriptionId);
                     var concurrentDevice = activeDevices.FirstOrDefault(a => 
                         a.Id != deviceActivation.Id && 
-                        a.LastSeenAtUtc > concurrentThreshold);
+                        a.LastSeenAtUtc > concurrentThreshold &&
+                        !a.IsAdminDevice); // Admin devices don't count
                     
                     if (concurrentDevice != null)
                     {
                         response.Warnings.Add(_localizer["OfflineLicense.ConcurrentUsageDetected"]);
                         _logger.LogWarning("Concurrent usage detected for license {LicenseId}: {CurrentDevice} and {OtherDevice}",
                             payload.LicenseId, deviceActivation.DeviceName, concurrentDevice.DeviceName);
+                    }
+                }
+                else if (plan.ConcurrentAccessMode == ConcurrentAccessMode.LimitedConcurrent)
+                {
+                    var concurrentThreshold = DateTime.UtcNow.AddMinutes(-plan.DeviceHeartbeatTimeoutMinutes);
+                    var activeDevices = await _activationRepo.GetBySubscriptionAsync(payload.SubscriptionId);
+                    var activeCount = activeDevices.Count(a => 
+                        a.LastSeenAtUtc > concurrentThreshold && 
+                        !a.IsAdminDevice); // Admin devices don't count
+                    
+                    var maxConcurrent = plan.MaxConcurrentDevices > 0 ? plan.MaxConcurrentDevices : plan.MaxDevices;
+                    if (activeCount > maxConcurrent)
+                    {
+                        response.Warnings.Add(_localizer["OfflineLicense.TooManyConcurrentDevices"]);
+                        _logger.LogWarning("Too many concurrent devices for license {LicenseId}: {Count} active, max {Max}",
+                            payload.LicenseId, activeCount, maxConcurrent);
                     }
                 }
 
@@ -1093,18 +1110,33 @@ public class OfflineLicenseService : IOfflineLicenseService
             response.CurrentActivations = await _activationRepo.GetActiveActivationCountAsync(subscriptionId, cancellationToken);
             response.ActivatedDevices = await GetActivatedDevicesListAsync(subscriptionId, cancellationToken);
             
-            // Check concurrent usage if not allowed
-            if (!plan.AllowConcurrentUsage)
+            // Check concurrent usage based on access mode
+            if (plan.ConcurrentAccessMode == ConcurrentAccessMode.SingleDevice || 
+                plan.ConcurrentAccessMode == ConcurrentAccessMode.LimitedConcurrent)
             {
                 var recentDevices = await _activationRepo.GetRecentlyActiveDevicesAsync(
-                    subscriptionId, plan.ConcurrentUsageTimeoutMinutes, cancellationToken);
+                    subscriptionId, plan.DeviceHeartbeatTimeoutMinutes, cancellationToken);
                 
-                var otherDevices = recentDevices.Where(d => d.Id != existingActivation.Id).ToList();
-                if (otherDevices.Any())
+                // Exclude admin devices from concurrent count
+                var otherDevices = recentDevices
+                    .Where(d => d.Id != existingActivation.Id && !d.IsAdminDevice)
+                    .ToList();
+                
+                if (plan.ConcurrentAccessMode == ConcurrentAccessMode.SingleDevice && otherDevices.Any())
                 {
                     response.ConcurrentUsageDetected = true;
                     response.OtherActiveDevices = otherDevices.Select(MapToActivationDto).ToList();
                     response.Warnings.Add(_localizer["OfflineLicense.ConcurrentUsageDetected"]);
+                }
+                else if (plan.ConcurrentAccessMode == ConcurrentAccessMode.LimitedConcurrent)
+                {
+                    var maxConcurrent = plan.MaxConcurrentDevices > 0 ? plan.MaxConcurrentDevices : plan.MaxDevices;
+                    if (otherDevices.Count >= maxConcurrent)
+                    {
+                        response.ConcurrentUsageDetected = true;
+                        response.OtherActiveDevices = otherDevices.Select(MapToActivationDto).ToList();
+                        response.Warnings.Add(_localizer["OfflineLicense.TooManyConcurrentDevices"]);
+                    }
                 }
             }
             
@@ -1232,7 +1264,9 @@ public class OfflineLicenseService : IOfflineLicenseService
             MaxDevices = subscription.Plan.MaxDevices,
             ActiveDeviceCount = activations.Count,
             RequireMachineBinding = subscription.Plan.RequireMachineBinding,
-            AllowConcurrentUsage = subscription.Plan.AllowConcurrentUsage,
+            ConcurrentAccessMode = subscription.Plan.ConcurrentAccessMode,
+            MaxConcurrentDevices = subscription.Plan.MaxConcurrentDevices,
+            DeviceHeartbeatTimeoutMinutes = subscription.Plan.DeviceHeartbeatTimeoutMinutes,
             HardwareChangeTolerance = subscription.Plan.HardwareChangeTolerance,
             Activations = activations.Select(MapToActivationDto).ToList()
         };

@@ -2345,5 +2345,61 @@
   <data name="OfflineLicense.ReplacementRequestCreated" xml:space="preserve">
     <value>تم إنشاء طلب الاستبدال. في انتظار موافقة المسؤول.</value>
   </data>
+  <data name="OfflineLicense.TooManyConcurrentDevices" xml:space="preserve">
+    <value>عدد كبير جداً من الأجهزة النشطة في نفس الوقت. يرجى الانتظار حتى تصبح الأجهزة الأخرى غير نشطة.</value>
+  </data>
+  
+  <!-- Company Admin -->
+  <data name="CompanyAdmin.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على مسؤول الشركة</value>
+  </data>
+  <data name="CompanyAdmin.AlreadyExists" xml:space="preserve">
+    <value>يوجد بالفعل مسؤول للشركة</value>
+  </data>
+  <data name="CompanyAdmin.UsernameExists" xml:space="preserve">
+    <value>اسم المستخدم موجود بالفعل</value>
+  </data>
+  <data name="CompanyAdmin.InvalidCredentials" xml:space="preserve">
+    <value>اسم المستخدم أو كلمة المرور غير صحيحة</value>
+  </data>
+  <data name="CompanyAdmin.AccountInactive" xml:space="preserve">
+    <value>الحساب غير نشط. يرجى الاتصال بالمسؤول.</value>
+  </data>
+  <data name="CompanyAdmin.AccountLocked" xml:space="preserve">
+    <value>تم قفل الحساب بسبب محاولات تسجيل دخول فاشلة متعددة. يرجى المحاولة لاحقاً.</value>
+  </data>
+  <data name="CompanyAdmin.LoginSuccess" xml:space="preserve">
+    <value>تم تسجيل الدخول بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.InvalidCurrentPassword" xml:space="preserve">
+    <value>كلمة المرور الحالية غير صحيحة</value>
+  </data>
+  <data name="CompanyAdmin.CannotModifySettings" xml:space="preserve">
+    <value>ليس لديك صلاحية لتعديل إعدادات الجلسة</value>
+  </data>
+  <data name="CompanyAdmin.NoAdmin" xml:space="preserve">
+    <value>لا يوجد حساب مسؤول لهذه الشركة</value>
+  </data>
+  <data name="CompanyAdmin.Retrieved" xml:space="preserve">
+    <value>تم استرجاع مسؤول الشركة بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.Created" xml:space="preserve">
+    <value>تم إنشاء مسؤول الشركة بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.Updated" xml:space="preserve">
+    <value>تم تحديث مسؤول الشركة بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.Deleted" xml:space="preserve">
+    <value>تم حذف مسؤول الشركة بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.PasswordReset" xml:space="preserve">
+    <value>تم إعادة تعيين كلمة المرور بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.AccountUnlocked" xml:space="preserve">
+    <value>تم فتح قفل الحساب بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.SessionsTerminated" xml:space="preserve">
+    <value>تم إنهاء الجلسات بنجاح</value>
+  </data>
 
 </root>

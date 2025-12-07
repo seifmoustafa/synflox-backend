@@ -99,8 +99,9 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.RequireMachineBinding, opt => opt.MapFrom(s => s.RequireMachineBinding))
             .ForMember(d => d.DeviceReplacementPolicy, opt => opt.MapFrom(s => s.DeviceReplacementPolicy))
             .ForMember(d => d.HardwareChangeTolerance, opt => opt.MapFrom(s => s.HardwareChangeTolerance))
-            .ForMember(d => d.AllowConcurrentUsage, opt => opt.MapFrom(s => s.AllowConcurrentUsage))
-            .ForMember(d => d.ConcurrentUsageTimeoutMinutes, opt => opt.MapFrom(s => s.ConcurrentUsageTimeoutMinutes));
+            .ForMember(d => d.ConcurrentAccessMode, opt => opt.MapFrom(s => s.ConcurrentAccessMode))
+            .ForMember(d => d.MaxConcurrentDevices, opt => opt.MapFrom(s => s.MaxConcurrentDevices))
+            .ForMember(d => d.DeviceHeartbeatTimeoutMinutes, opt => opt.MapFrom(s => s.DeviceHeartbeatTimeoutMinutes));
 
         CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))

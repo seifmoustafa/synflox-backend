@@ -27,8 +27,24 @@ namespace Domain.Entities.Licensing
         /// </summary>
         public bool IsActive { get; set; } = true;
 
+        /// <summary>
+        /// Timezone identifier for the company (IANA format).
+        /// Used for time-based access window calculations.
+        /// Example: "Africa/Cairo", "America/New_York"
+        /// </summary>
+        [StringLength(100)]
+        public string? TimezoneId { get; set; }
+
         // License keys are now managed per subscription, not per company
         // See Subscription.OfflineLicenseKey for offline license key management
+
+        // Navigation properties
+        
+        /// <summary>
+        /// The company's admin account for device management.
+        /// One admin per company.
+        /// </summary>
+        public virtual CompanyAdmin? Admin { get; set; }
     }
 }
 

@@ -112,39 +112,48 @@ public class SubscriptionPlan : AuditEntity<Guid>
     #region Device/Machine Activation Limits
 
     /// <summary>
-    /// Maximum number of devices that can activate this plan
-    /// 0 = unlimited, 1 = single device, N = up to N devices
+    /// Maximum number of devices that can be activated/bound to this plan.
+    /// 0 = unlimited devices allowed
+    /// 1 = single device only
+    /// N = up to N devices can be bound
+    /// Note: This is the TOTAL allowed devices, not concurrent.
     /// </summary>
-    [Range(0, 1000)]
     public int MaxDevices { get; set; } = 1;
 
     /// <summary>
-    /// Whether machine binding is required for this plan
-    /// If true, license key must be bound to specific machine fingerprint
+    /// How concurrent device access is handled.
+    /// Controls whether multiple devices can use the license simultaneously.
+    /// </summary>
+    public ConcurrentAccessMode ConcurrentAccessMode { get; set; } = ConcurrentAccessMode.Unlimited;
+
+    /// <summary>
+    /// Maximum number of devices that can be ACTIVE simultaneously.
+    /// Only used when ConcurrentAccessMode is LimitedConcurrent or TimeBasedLimited.
+    /// 0 = use MaxDevices value as the concurrent limit.
+    /// </summary>
+    public int MaxConcurrentDevices { get; set; } = 0;
+
+    /// <summary>
+    /// Timeout in minutes for device heartbeat/activity detection.
+    /// Device is considered "inactive" if no heartbeat received within this timeout.
+    /// Used for concurrent access enforcement.
+    /// </summary>
+    [Range(5, 1440)]
+    public int DeviceHeartbeatTimeoutMinutes { get; set; } = 30;
+
+    /// <summary>
+    /// Whether machine binding is required for this plan.
+    /// If true, license key must be bound to specific machine fingerprint.
     /// </summary>
     public bool RequireMachineBinding { get; set; } = false;
 
     /// <summary>
-    /// Number of hardware component changes allowed before re-activation required
+    /// Number of hardware component changes allowed before re-activation required.
     /// Example: 2 = allow 2 component changes (e.g., new disk + new RAM = OK)
-    /// 0 = any change requires re-activation
+    /// 0 = any change requires re-activation.
     /// </summary>
     [Range(0, 4)]
     public int HardwareChangeTolerance { get; set; } = 2;
-
-    /// <summary>
-    /// Allow concurrent usage on multiple activated devices
-    /// If false, validation on one device invalidates others
-    /// </summary>
-    public bool AllowConcurrentUsage { get; set; } = true;
-
-    /// <summary>
-    /// Timeout in minutes for concurrent usage detection
-    /// Device is considered "not in use" after this timeout
-    /// Only applies when AllowConcurrentUsage = false
-    /// </summary>
-    [Range(5, 1440)]
-    public int ConcurrentUsageTimeoutMinutes { get; set; } = 30;
 
     /// <summary>
     /// Policy for handling device replacement when max devices reached.
@@ -188,6 +197,11 @@ public class SubscriptionPlan : AuditEntity<Guid>
     /// Plan-level entitlements that define access for all subscribers
     /// </summary>
     public ICollection<PlanEntitlement> Entitlements { get; set; } = new List<PlanEntitlement>();
+    
+    /// <summary>
+    /// Time windows for time-based access modes (TimeBasedUnlimited, TimeBasedLimited)
+    /// </summary>
+    public ICollection<AccessTimeWindow> AccessTimeWindows { get; set; } = new List<AccessTimeWindow>();
     
     /// <summary>
     /// The default fallback plan for this plan's subscribers

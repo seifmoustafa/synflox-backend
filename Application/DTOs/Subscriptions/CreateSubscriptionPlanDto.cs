@@ -147,17 +147,24 @@ public class CreateSubscriptionPlanDto
     public int HardwareChangeTolerance { get; set; } = 2;
     
     /// <summary>
-    /// Allow same license on multiple devices at same time.
-    /// If false, will detect concurrent usage and warn/block.
+    /// How concurrent device access is handled.
+    /// Controls whether multiple devices can use the license simultaneously.
     /// </summary>
-    public bool AllowConcurrentUsage { get; set; } = true;
+    public ConcurrentAccessMode ConcurrentAccessMode { get; set; } = ConcurrentAccessMode.Unlimited;
     
     /// <summary>
-    /// Minutes of inactivity before device is considered "not concurrent".
-    /// Only applies if AllowConcurrentUsage = false.
+    /// Maximum number of devices that can be ACTIVE simultaneously.
+    /// Only used when ConcurrentAccessMode is LimitedConcurrent or TimeBasedLimited.
+    /// 0 = use MaxDevices value as the concurrent limit.
+    /// </summary>
+    public int MaxConcurrentDevices { get; set; } = 0;
+    
+    /// <summary>
+    /// Timeout in minutes for device heartbeat/activity detection.
+    /// Device is considered "inactive" if no heartbeat received within this timeout.
     /// </summary>
     [Range(5, 1440)]
-    public int ConcurrentUsageTimeoutMinutes { get; set; } = 30;
+    public int DeviceHeartbeatTimeoutMinutes { get; set; } = 30;
     
     #endregion
 }

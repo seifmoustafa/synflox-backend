@@ -141,14 +141,19 @@ public class PlanDto
     public int HardwareChangeTolerance { get; set; }
     
     /// <summary>
-    /// Allow same license on multiple devices at same time.
+    /// How concurrent device access is handled.
     /// </summary>
-    public bool AllowConcurrentUsage { get; set; }
+    public ConcurrentAccessMode ConcurrentAccessMode { get; set; }
     
     /// <summary>
-    /// Minutes of inactivity before device is considered "not concurrent".
+    /// Maximum concurrent devices allowed (for LimitedConcurrent/TimeBasedLimited modes).
     /// </summary>
-    public int ConcurrentUsageTimeoutMinutes { get; set; }
+    public int MaxConcurrentDevices { get; set; }
+    
+    /// <summary>
+    /// Timeout in minutes for device heartbeat detection.
+    /// </summary>
+    public int DeviceHeartbeatTimeoutMinutes { get; set; }
     
     #endregion
 }

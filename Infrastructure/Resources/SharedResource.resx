@@ -2345,5 +2345,61 @@
   <data name="OfflineLicense.ReplacementRequestCreated" xml:space="preserve">
     <value>Replacement request created. Waiting for admin approval.</value>
   </data>
+  <data name="OfflineLicense.TooManyConcurrentDevices" xml:space="preserve">
+    <value>Too many concurrent devices active. Please wait for other devices to become inactive.</value>
+  </data>
+  
+  <!-- Company Admin -->
+  <data name="CompanyAdmin.NotFound" xml:space="preserve">
+    <value>Company admin not found</value>
+  </data>
+  <data name="CompanyAdmin.AlreadyExists" xml:space="preserve">
+    <value>A company admin already exists for this company</value>
+  </data>
+  <data name="CompanyAdmin.UsernameExists" xml:space="preserve">
+    <value>Username already exists</value>
+  </data>
+  <data name="CompanyAdmin.InvalidCredentials" xml:space="preserve">
+    <value>Invalid username or password</value>
+  </data>
+  <data name="CompanyAdmin.AccountInactive" xml:space="preserve">
+    <value>Account is inactive. Please contact your administrator.</value>
+  </data>
+  <data name="CompanyAdmin.AccountLocked" xml:space="preserve">
+    <value>Account is locked due to too many failed login attempts. Please try again later.</value>
+  </data>
+  <data name="CompanyAdmin.LoginSuccess" xml:space="preserve">
+    <value>Login successful</value>
+  </data>
+  <data name="CompanyAdmin.InvalidCurrentPassword" xml:space="preserve">
+    <value>Current password is incorrect</value>
+  </data>
+  <data name="CompanyAdmin.CannotModifySettings" xml:space="preserve">
+    <value>You do not have permission to modify session settings</value>
+  </data>
+  <data name="CompanyAdmin.NoAdmin" xml:space="preserve">
+    <value>No admin account exists for this company</value>
+  </data>
+  <data name="CompanyAdmin.Retrieved" xml:space="preserve">
+    <value>Company admin retrieved successfully</value>
+  </data>
+  <data name="CompanyAdmin.Created" xml:space="preserve">
+    <value>Company admin created successfully</value>
+  </data>
+  <data name="CompanyAdmin.Updated" xml:space="preserve">
+    <value>Company admin updated successfully</value>
+  </data>
+  <data name="CompanyAdmin.Deleted" xml:space="preserve">
+    <value>Company admin deleted successfully</value>
+  </data>
+  <data name="CompanyAdmin.PasswordReset" xml:space="preserve">
+    <value>Password reset successfully</value>
+  </data>
+  <data name="CompanyAdmin.AccountUnlocked" xml:space="preserve">
+    <value>Account unlocked successfully</value>
+  </data>
+  <data name="CompanyAdmin.SessionsTerminated" xml:space="preserve">
+    <value>Sessions terminated successfully</value>
+  </data>
 
 </root>

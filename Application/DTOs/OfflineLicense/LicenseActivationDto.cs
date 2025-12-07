@@ -1,4 +1,5 @@
 using System;
+using Domain.Enums;
 
 namespace Application.DTOs.OfflineLicense;
 
@@ -193,9 +194,19 @@ public class ActivationSummaryDto
     public bool RequireMachineBinding { get; set; }
 
     /// <summary>
-    /// Whether concurrent usage is allowed
+    /// How concurrent device access is handled
     /// </summary>
-    public bool AllowConcurrentUsage { get; set; }
+    public ConcurrentAccessMode ConcurrentAccessMode { get; set; }
+    
+    /// <summary>
+    /// Maximum concurrent devices allowed
+    /// </summary>
+    public int MaxConcurrentDevices { get; set; }
+    
+    /// <summary>
+    /// Heartbeat timeout in minutes
+    /// </summary>
+    public int DeviceHeartbeatTimeoutMinutes { get; set; }
 
     /// <summary>
     /// Hardware change tolerance

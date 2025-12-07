@@ -225,6 +225,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IOfflineLicenseService, OfflineLicenseService>();
         // Offline License Admin Service (Client Admin Token Management)
         services.AddScoped<IOfflineLicenseAdminService, OfflineLicenseAdminService>();
+        // Company Admin Service (Device Access Control)
+        services.AddScoped<ICompanyAdminService, CompanyAdminService>();
         services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
@@ -318,6 +320,11 @@ public static class InfrastructureServiceRegistration
         
         // Device Replacement Request Repository
         services.AddScoped<IDeviceReplacementRequestRepository, DeviceReplacementRequestRepository>();
+        
+        // Company Admin & Session Repositories (Device Access Control)
+        services.AddScoped<ICompanyAdminRepository, CompanyAdminRepository>();
+        services.AddScoped<ICompanyAdminSessionRepository, CompanyAdminSessionRepository>();
+        services.AddScoped<IAccessTimeWindowRepository, AccessTimeWindowRepository>();
         
         // Activity Tracking
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();

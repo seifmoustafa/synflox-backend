@@ -128,7 +128,74 @@ public class LicenseActivation : AuditEntity<Guid>
     [StringLength(500)]
     public string? LastUserAgent { get; set; }
 
+    #region Concurrent Access Control
+
+    /// <summary>
+    /// Whether this device is currently in an active usage session.
+    /// Determined by heartbeat within DeviceHeartbeatTimeoutMinutes.
+    /// </summary>
+    public bool IsCurrentlyActive { get; set; } = false;
+
+    /// <summary>
+    /// Current session ID for this device.
+    /// Used for concurrent session tracking.
+    /// </summary>
+    [StringLength(100)]
+    public string? CurrentSessionId { get; set; }
+
+    /// <summary>
+    /// When the current usage session started (UTC).
+    /// Reset when session ends or device goes inactive.
+    /// </summary>
+    public DateTime? SessionStartedAtUtc { get; set; }
+
+    /// <summary>
+    /// Whether this device belongs to a company admin.
+    /// Admin devices are NEVER counted in concurrent/device limits.
+    /// </summary>
+    public bool IsAdminDevice { get; set; } = false;
+
+    /// <summary>
+    /// The admin ID if this is an admin's device.
+    /// null for regular user devices.
+    /// </summary>
+    public Guid? AdminId { get; set; }
+
+    /// <summary>
+    /// Whether this device was force-disconnected due to concurrent access policy.
+    /// Used to show appropriate message on next connection attempt.
+    /// </summary>
+    public bool WasForceDisconnected { get; set; } = false;
+
+    /// <summary>
+    /// When the device was force-disconnected (UTC).
+    /// </summary>
+    public DateTime? ForceDisconnectedAtUtc { get; set; }
+
+    /// <summary>
+    /// Reason for force disconnect.
+    /// </summary>
+    [StringLength(500)]
+    public string? ForceDisconnectReason { get; set; }
+
+    #endregion
+
     // Navigation properties
     public Subscription Subscription { get; set; } = null!;
     public Company Company { get; set; } = null!;
+    public CompanyAdmin? Admin { get; set; }
+
+    // Computed properties
+
+    /// <summary>
+    /// Check if device should be considered active based on heartbeat timeout.
+    /// </summary>
+    /// <param name="heartbeatTimeoutMinutes">Timeout from plan configuration</param>
+    /// <returns>True if device is considered active</returns>
+    public bool IsActiveWithinTimeout(int heartbeatTimeoutMinutes)
+    {
+        return IsActive && 
+               IsCurrentlyActive && 
+               LastSeenAtUtc.AddMinutes(heartbeatTimeoutMinutes) > DateTime.UtcNow;
+    }
 }
