@@ -164,9 +164,6 @@ app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/authentication"), b
 app.UseAuthentication();
 app.UseMiddleware<CustomClaimsPrincipalMiddleware>();
 app.UseMiddleware<DeletedUserMiddleware>(); // Check if user is deleted/deactivated
-app.UseMiddleware<ClientAuthenticationMiddleware>();
-app.UseEntitlementsVersionHeader(); // Add X-Entitlements-Version header to client API responses
-
 // Only use caching in production to avoid development cache issues
 if (!app.Environment.IsDevelopment())
 {

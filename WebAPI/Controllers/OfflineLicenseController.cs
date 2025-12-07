@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Application.DTOs.ClientAccess;
+using Application.DTOs.Common;
 using Application.DTOs.OfflineLicense;
 using Application.DTOs.Responses;
 using Application.Services;

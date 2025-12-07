@@ -221,20 +221,7 @@ public class CompanyService : ICompanyService
             preview.Warnings.Add(string.Format(_localizer["Company.SubscriptionsWillBeDeleted"], totalSubscriptions));
         }
 
-        // Get affected Client Tokens
-        var totalTokens = await _repository.GetClientTokensCountAsync(decryptedId);
-        if (totalTokens > 0)
-        {
-            preview.AffectedItems.Add(new AffectedItemGroup
-            {
-                ItemType = _localizer["ClientTokens"],
-                Count = totalTokens,
-                ItemNames = new List<string>()
-            });
-            preview.Warnings.Add(string.Format(_localizer["Company.ClientTokensWillBeDeleted"], totalTokens));
-        }
-
-        preview.TotalAffectedCount = totalSubscriptions + totalTokens;
+        preview.TotalAffectedCount = totalSubscriptions;
         preview.CanDelete = true;
 
         return preview;
@@ -263,10 +250,7 @@ public class CompanyService : ICompanyService
         // ⭐ CASCADE 1: Soft delete all subscriptions (and their histories)
         await _repository.SoftDeleteSubscriptionsAsync(decryptedId);
 
-        // ⭐ CASCADE 2: Soft delete all client tokens
-        await _repository.SoftDeleteClientTokensAsync(decryptedId);
-
-        // ⭐ CASCADE 3: Soft delete the company itself
+        // ⭐ CASCADE 2: Soft delete the company itself
         await _repository.DeleteAsync(decryptedId);
         await _unitOfWork.SaveChangesAsync();
         
@@ -387,10 +371,7 @@ public class CompanyService : ICompanyService
                 // ⭐ CASCADE 1: Soft delete all subscriptions (and their histories)
                 await _repository.SoftDeleteSubscriptionsAsync(decryptedId);
 
-                // ⭐ CASCADE 2: Soft delete all client tokens
-                await _repository.SoftDeleteClientTokensAsync(decryptedId);
-
-                // ⭐ CASCADE 3: Soft delete the company itself
+                // ⭐ CASCADE 2: Soft delete the company itself
                 await _repository.DeleteAsync(decryptedId);
                 result.SuccessfulIds.Add(encryptedId);
                 result.SuccessCount++;

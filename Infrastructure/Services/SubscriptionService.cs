@@ -33,7 +33,6 @@ public class SubscriptionService : ISubscriptionService
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IClientTokenService _clientTokenService;
     private readonly IEmailService _emailService;
     private readonly IActivityLogService _activityLogService;
     private readonly ILogger<SubscriptionService> _logger;
@@ -49,7 +48,6 @@ public class SubscriptionService : ISubscriptionService
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IClientTokenService clientTokenService,
         IEmailService emailService,
         IActivityLogService activityLogService,
         ILogger<SubscriptionService> logger,
@@ -64,7 +62,6 @@ public class SubscriptionService : ISubscriptionService
         _localizer = localizer;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _clientTokenService = clientTokenService;
         _emailService = emailService;
         _activityLogService = activityLogService;
         _logger = logger;
@@ -232,18 +229,6 @@ public class SubscriptionService : ISubscriptionService
         var result = await _subscriptionRepo.GetWithDetailsAsync(subscription.Id);
         var subscriptionDto = _mapper.Map<SubscriptionDto>(result!);
         SetLicenseKeyIfSuperAdmin(subscriptionDto, result!);
-        
-        // Auto-generate client access token for new subscription
-        try
-        {
-            await _clientTokenService.AutoGenerateTokenForSubscriptionAsync(subscription.Id);
-            _logger.LogInformation("Auto-generated client access token for subscription {SubscriptionId}", subscription.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to auto-generate client token for subscription {SubscriptionId}", subscription.Id);
-            // Don't fail the subscription creation if token generation fails
-        }
         
         return subscriptionDto;
     }

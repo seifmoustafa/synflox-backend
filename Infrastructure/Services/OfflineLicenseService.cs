@@ -18,7 +18,6 @@ using AutoMapper;
 using Infrastructure.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Application.DTOs.ClientAccess;
 
 namespace Infrastructure.Services;
 

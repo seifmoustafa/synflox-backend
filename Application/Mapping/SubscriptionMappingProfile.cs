@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities.Subscriptions;
+using Application.DTOs.Common;
 using Application.DTOs.Subscriptions;
 using Domain.Helpers;
 using ModuleDtos = Application.DTOs.ModuleDto;
@@ -43,6 +44,15 @@ public class SubscriptionMappingProfile : Profile
         
         // Decrypt single ModuleId for operations requiring encrypted Module ID
         CreateMap<ModuleDtos.ModuleIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+        
+        // ========== Common ID Request Mappings ==========
+        // Decrypt CompanyId for operations requiring encrypted Company ID
+        CreateMap<CompanyIdRequest, Guid>()
+            .ConvertUsing<UniversalDecryptionConverter>();
+        
+        // Decrypt SubscriptionId for operations requiring encrypted Subscription ID
+        CreateMap<SubscriptionIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
 
         // ========== Module Mappings ==========

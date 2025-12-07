@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Application.Services;
 using Domain.Entities;
 using Domain.Entities.Authentication;
-using Domain.Entities.ClientAccess;
 using Domain.Entities.Common;
 using Domain.Entities.Licensing;
 using Domain.Entities.Navigation;
@@ -67,10 +66,6 @@ namespace Infrastructure.Context
         public DbSet<Domain.Entities.Navigation.MenuItems> MenuItems { get; set; }
         #endregion
 
-        #region Client Access
-        public DbSet<ClientAccessToken> ClientAccessTokens { get; set; }
-        public DbSet<ClientTokenUsageLog> ClientTokenUsageLogs { get; set; }
-        #endregion
 
         #region Activity Tracking
         public DbSet<Domain.Entities.Activity.ActivityLog> ActivityLogs { get; set; }

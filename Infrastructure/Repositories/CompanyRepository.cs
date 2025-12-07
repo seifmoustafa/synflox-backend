@@ -38,11 +38,6 @@ namespace Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<int> GetClientTokensCountAsync(Guid companyId, CancellationToken cancellationToken = default)
-        {
-            return await _context.ClientAccessTokens
-                .CountAsync(t => t.CompanyId == companyId && !t.IsDeleted, cancellationToken);
-        }
 
         public async Task<bool> HasRelatedRecordsAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
@@ -50,9 +45,7 @@ namespace Infrastructure.Repositories
                 .AnyAsync(s => s.CompanyId == companyId && !s.IsDeleted, cancellationToken);
             if (hasSubscriptions) return true;
 
-            var hasTokens = await _context.ClientAccessTokens
-                .AnyAsync(t => t.CompanyId == companyId && !t.IsDeleted, cancellationToken);
-            return hasTokens;
+            return false;
         }
 
         public async Task SoftDeleteSubscriptionsAsync(Guid companyId, CancellationToken cancellationToken = default)
@@ -84,21 +77,6 @@ namespace Infrastructure.Repositories
             }
         }
 
-        public async Task SoftDeleteClientTokensAsync(Guid companyId, CancellationToken cancellationToken = default)
-        {
-            var tokens = await _context.ClientAccessTokens
-                .Where(t => t.CompanyId == companyId && !t.IsDeleted)
-                .ToListAsync(cancellationToken);
-
-            var now = DateTime.UtcNow;
-            foreach (var token in tokens)
-            {
-                token.IsDeleted = true;
-                token.IsActive = false;
-                token.DeletedTimestamp = now;
-                token.UpdatedTimestamp = now;
-            }
-        }
 
         #endregion
     }
