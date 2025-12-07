@@ -159,6 +159,12 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.Plan.Name))
             .ForMember(d => d.PlanDescription, opt => opt.MapFrom(s => s.Plan.Description))
             .ForMember(d => d.IsLifetime, opt => opt.MapFrom(s => s.IsLifetime))
+            // Custom Pricing Override
+            .ForMember(d => d.OverridePlanPricing, opt => opt.MapFrom(s => s.OverridePlanPricing))
+            .ForMember(d => d.PlanCurrency, opt => opt.MapFrom(s => s.Plan.PlanPrices != null && s.Plan.PlanPrices.Any() 
+                ? s.Plan.PlanPrices.First().Currency : Domain.Enums.Currency.USD))
+            .ForMember(d => d.PlanAmount, opt => opt.MapFrom(s => s.Plan.PlanPrices != null && s.Plan.PlanPrices.Any() 
+                ? s.Plan.PlanPrices.First().Amount : 0m))
             // Next subscription for deferred upgrades
             .ForMember(d => d.NextSubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid?>(s => s.NextSubscriptionId))
             .ForMember(d => d.NextSubscriptionPlanName, opt => opt.MapFrom(s => s.NextSubscription != null ? s.NextSubscription.Plan.Name : null))
@@ -205,6 +211,9 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.CompanyId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.CompanyId))
             .ForMember(d => d.PlanId, opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid>(s => s.PlanId))
+            .ForMember(d => d.OverridePlanPricing, opt => opt.MapFrom(s => s.OverridePlanPricing))
+            .ForMember(d => d.Currency, opt => opt.MapFrom(s => s.Currency ?? Domain.Enums.Currency.USD))
+            .ForMember(d => d.Amount, opt => opt.MapFrom(s => s.Amount ?? 0m))
             .ForMember(d => d.Company, opt => opt.Ignore())
             .ForMember(d => d.Plan, opt => opt.Ignore())
             .ForMember(d => d.NextSubscription, opt => opt.Ignore())

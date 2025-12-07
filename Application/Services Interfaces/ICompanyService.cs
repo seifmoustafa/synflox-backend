@@ -26,9 +26,9 @@ public interface ICompanyService
         string? search = null);
 
     /// <summary>
-    /// Gets a company by ID.
+    /// Gets a company by ID with optional currency conversion for display amounts.
     /// </summary>
-    Task<CompanyDto?> GetCompanyByIdAsync(GetCompanyByIdRequest request);
+    Task<CompanyDto?> GetCompanyByIdAsync(GetCompanyByIdRequest request, string? displayCurrency = null);
 
     /// <summary>
     /// Updates a company.

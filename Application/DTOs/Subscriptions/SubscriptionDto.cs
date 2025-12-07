@@ -46,8 +46,31 @@ public class SubscriptionDto
     
     #endregion
     
+    /// <summary>
+    /// Whether custom pricing is used instead of Plan's pricing
+    /// </summary>
+    public bool OverridePlanPricing { get; set; }
+    
+    /// <summary>
+    /// Currency for this subscription (custom if OverridePlanPricing, else from Plan)
+    /// </summary>
     public Currency Currency { get; set; }
+    
+    /// <summary>
+    /// Amount for this subscription (custom if OverridePlanPricing, else from Plan)
+    /// </summary>
     public decimal Amount { get; set; }
+    
+    /// <summary>
+    /// Plan's default currency (for reference when not using custom pricing)
+    /// </summary>
+    public Currency PlanCurrency { get; set; }
+    
+    /// <summary>
+    /// Plan's default amount (for reference when not using custom pricing)
+    /// </summary>
+    public decimal PlanAmount { get; set; }
+    
     public string? StatusReason { get; set; }
     /// <summary>
     /// Scheduled next subscription ID (for deferred upgrades)

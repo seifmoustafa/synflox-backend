@@ -49,10 +49,10 @@ public class CompanyController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetCompany(Guid id)
+    public async Task<IActionResult> GetCompany(Guid id, [FromQuery] string? currency = null)
     {
         var request = new GetCompanyByIdRequest { CompanyId = id };
-        var company = await _companyService.GetCompanyByIdAsync(request);
+        var company = await _companyService.GetCompanyByIdAsync(request, currency);
         if (company == null)
         {
             return NotFound(new ApiResponse<string>(404, _localizer["Company.CompanyNotFound"]));

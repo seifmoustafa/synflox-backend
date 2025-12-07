@@ -37,6 +37,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly IEmailService _emailService;
     private readonly IActivityLogService _activityLogService;
     private readonly ILogger<SubscriptionService> _logger;
+    private readonly ICurrencyExchangeService _currencyExchangeService;
 
     public SubscriptionService(
         ISubscriptionRepository subscriptionRepo,
@@ -51,7 +52,8 @@ public class SubscriptionService : ISubscriptionService
         IClientTokenService clientTokenService,
         IEmailService emailService,
         IActivityLogService activityLogService,
-        ILogger<SubscriptionService> logger)
+        ILogger<SubscriptionService> logger,
+        ICurrencyExchangeService currencyExchangeService)
     {
         _subscriptionRepo = subscriptionRepo;
         _planRepo = planRepo;
@@ -66,6 +68,7 @@ public class SubscriptionService : ISubscriptionService
         _emailService = emailService;
         _activityLogService = activityLogService;
         _logger = logger;
+        _currencyExchangeService = currencyExchangeService;
     }
 
     public async Task<SubscriptionDto> CreateSubscriptionAsync(CreateSubscriptionDto dto)
@@ -265,13 +268,20 @@ public class SubscriptionService : ISubscriptionService
         return (dtos, pagination);
     }
 
-    public async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid id)
+    public async Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid id, string? displayCurrency = null)
     {
         var subscription = await _subscriptionRepo.GetWithDetailsAsync(id);
         if (subscription == null) return null;
         
         var dto = _mapper.Map<SubscriptionDto>(subscription);
         SetLicenseKeyIfSuperAdmin(dto, subscription);
+        
+        // Convert currency if display currency is specified
+        if (!string.IsNullOrEmpty(displayCurrency))
+        {
+            dto = await ConvertSubscriptionCurrencyAsync(dto, displayCurrency);
+        }
+        
         return dto;
     }
 
@@ -285,7 +295,7 @@ public class SubscriptionService : ISubscriptionService
         return dto;
     }
 
-    public async Task<IEnumerable<SubscriptionDto>> GetCompanySubscriptionsAsync(Guid companyId)
+    public async Task<IEnumerable<SubscriptionDto>> GetCompanySubscriptionsAsync(Guid companyId, string? displayCurrency = null)
     {
         var subscriptions = await _subscriptionRepo.GetAllByCompanyIdAsync(companyId);
         var dtos = _mapper.Map<IEnumerable<SubscriptionDto>>(subscriptions).ToList();
@@ -294,6 +304,15 @@ public class SubscriptionService : ISubscriptionService
         for (int i = 0; i < dtos.Count; i++)
         {
             SetLicenseKeyIfSuperAdmin(dtos[i], subscriptions.ElementAt(i));
+        }
+        
+        // Convert currency if display currency is specified
+        if (!string.IsNullOrEmpty(displayCurrency))
+        {
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                dtos[i] = await ConvertSubscriptionCurrencyAsync(dtos[i], displayCurrency);
+            }
         }
         
         return dtos;
@@ -1308,6 +1327,63 @@ public class SubscriptionService : ISubscriptionService
         
         var dto = _mapper.Map<SubscriptionDto>(subscription);
         SetLicenseKeyIfSuperAdmin(dto, subscription);
+        return dto;
+    }
+
+    /// <summary>
+    /// Converts subscription amount to the display currency
+    /// </summary>
+    private async Task<SubscriptionDto> ConvertSubscriptionCurrencyAsync(SubscriptionDto dto, string displayCurrency)
+    {
+        try
+        {
+            // Parse the display currency string to Currency enum
+            if (!Enum.TryParse<Currency>(displayCurrency, true, out var targetCurrency))
+            {
+                // Try parsing as integer (enum value)
+                if (int.TryParse(displayCurrency, out var currencyValue) && Enum.IsDefined(typeof(Currency), currencyValue))
+                {
+                    targetCurrency = (Currency)currencyValue;
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid display currency: {Currency}", displayCurrency);
+                    return dto;
+                }
+            }
+
+            // Get source currency from subscription
+            var sourceCurrency = dto.Currency;
+            
+            // Skip if already in target currency
+            if (sourceCurrency == targetCurrency)
+            {
+                return dto;
+            }
+
+            // Convert amount
+            var convertedAmount = await _currencyExchangeService.ConvertAsync(dto.Amount, sourceCurrency, targetCurrency);
+            
+            // Update DTO with converted values
+            dto.Amount = convertedAmount;
+            dto.Currency = targetCurrency;
+            
+            // Also convert PlanAmount if it exists
+            if (dto.PlanAmount > 0)
+            {
+                dto.PlanAmount = await _currencyExchangeService.ConvertAsync(dto.PlanAmount, dto.PlanCurrency, targetCurrency);
+                dto.PlanCurrency = targetCurrency;
+            }
+
+            _logger.LogDebug("Converted subscription {Id} amount from {SourceCurrency} {OriginalAmount} to {TargetCurrency} {ConvertedAmount}",
+                dto.Id, sourceCurrency, dto.Amount, targetCurrency, convertedAmount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to convert subscription currency to {DisplayCurrency}", displayCurrency);
+            // Return original DTO on error
+        }
+
         return dto;
     }
 

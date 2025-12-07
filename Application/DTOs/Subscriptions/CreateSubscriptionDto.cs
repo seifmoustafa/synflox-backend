@@ -13,9 +13,23 @@ public class CreateSubscriptionDto
     public Guid PlanId { get; set; }
 
     /// <summary>
-    /// Optional: If not specified, uses the first available price from the plan
+    /// Whether to use custom pricing instead of inheriting from Plan.
+    /// If true, Currency and Amount must be provided.
+    /// If false, Currency and Amount are inherited from the Plan.
+    /// </summary>
+    public bool OverridePlanPricing { get; set; }
+
+    /// <summary>
+    /// Custom currency for this subscription.
+    /// Required when OverridePlanPricing is true.
     /// </summary>
     public Currency? Currency { get; set; }
+
+    /// <summary>
+    /// Custom amount for this subscription.
+    /// Required when OverridePlanPricing is true.
+    /// </summary>
+    public decimal? Amount { get; set; }
 
     /// <summary>
     /// Whether to start with trial (if plan allows it)

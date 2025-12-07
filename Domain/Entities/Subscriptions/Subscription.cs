@@ -111,12 +111,21 @@ public class Subscription : AuditEntity<Guid>
     public string? StatusReason { get; set; }
 
     /// <summary>
-    /// Currency used for this subscription
+    /// Whether to use custom pricing (Currency/Amount) instead of inheriting from Plan.
+    /// If false, Currency and Amount are inherited from the Plan at billing time.
+    /// If true, the subscription's own Currency and Amount are used.
+    /// </summary>
+    public bool OverridePlanPricing { get; set; }
+
+    /// <summary>
+    /// Currency used for this subscription.
+    /// Only used when OverridePlanPricing is true, otherwise Plan's currency is used.
     /// </summary>
     public Currency Currency { get; set; }
 
     /// <summary>
-    /// Amount paid/billed for this subscription in the specified currency
+    /// Amount paid/billed for this subscription in the specified currency.
+    /// Only used when OverridePlanPricing is true, otherwise Plan's amount is used.
     /// </summary>
     public decimal Amount { get; set; }
 

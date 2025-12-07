@@ -80,16 +80,16 @@ public class SubscriptionsController : ControllerBase
     }
 
     /// <summary>
-    /// Get subscription by ID
+    /// Get subscription by ID with optional currency conversion
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, [FromQuery] string? currency = null)
     {
         // Decrypt subscription ID from route parameter (SYNFLOX ID encryption rule compliance)
         var subscriptionIdRequest = new SubscriptionIdRequest { SubscriptionId = id };
         var decryptedSubscriptionId = _mapper.Map<Guid>(subscriptionIdRequest);
         
-        var subscription = await _subscriptionService.GetSubscriptionByIdAsync(decryptedSubscriptionId);
+        var subscription = await _subscriptionService.GetSubscriptionByIdAsync(decryptedSubscriptionId, currency);
         if (subscription == null)
             return NotFound(new { message = _localizer["Subscription.NotFound"] });
 
@@ -114,16 +114,16 @@ public class SubscriptionsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all subscriptions for a company (active + historical)
+    /// Get all subscriptions for a company (active + historical) with optional currency conversion
     /// </summary>
     [HttpGet("company/{companyId}/all")]
-    public async Task<IActionResult> GetByCompany(Guid companyId)
+    public async Task<IActionResult> GetByCompany(Guid companyId, [FromQuery] string? currency = null)
     {
         // Decrypt company ID from route parameter (SYNFLOX ID encryption rule compliance)
         var companyIdRequest = new CompanyIdRequest { CompanyId = companyId };
         var decryptedCompanyId = _mapper.Map<Guid>(companyIdRequest);
         
-        var subscriptions = await _subscriptionService.GetCompanySubscriptionsAsync(decryptedCompanyId);
+        var subscriptions = await _subscriptionService.GetCompanySubscriptionsAsync(decryptedCompanyId, currency);
         return Ok(new { data = subscriptions });
     }
     

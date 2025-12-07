@@ -120,7 +120,7 @@ public class CompanyService : ICompanyService
         return (dtos, meta);
     }
 
-    public async Task<CompanyDto?> GetCompanyByIdAsync(GetCompanyByIdRequest request)
+    public async Task<CompanyDto?> GetCompanyByIdAsync(GetCompanyByIdRequest request, string? displayCurrency = null)
     {
         // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
@@ -128,6 +128,8 @@ public class CompanyService : ICompanyService
         var company = await _repository.GetByIdAsync(decryptedId, null);
         if (company == null) return null;
         var dto = _mapper.Map<CompanyDto>(company);
+        // Note: Company itself doesn't have currency-based amounts
+        // Currency conversion is handled at the subscription level
         return dto;
     }
 

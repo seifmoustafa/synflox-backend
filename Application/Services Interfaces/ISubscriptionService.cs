@@ -22,9 +22,9 @@ public interface ISubscriptionService
     Task<(IEnumerable<SubscriptionDto> Items, PaginationMetadata Pagination)> GetAllSubscriptionsAsync(int page, int pageSize, string? search = null);
 
     /// <summary>
-    /// Gets a subscription by ID with full details
+    /// Gets a subscription by ID with full details and optional currency conversion
     /// </summary>
-    Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid id);
+    Task<SubscriptionDto?> GetSubscriptionByIdAsync(Guid id, string? displayCurrency = null);
 
     /// <summary>
     /// Gets the active subscription for a company
@@ -33,9 +33,9 @@ public interface ISubscriptionService
     Task<SubscriptionDto?> GetActiveSubscriptionAsync(Guid companyId);
 
     /// <summary>
-    /// Gets all subscriptions for a company (active and historical)
+    /// Gets all subscriptions for a company (active and historical) with optional currency conversion
     /// </summary>
-    Task<IEnumerable<SubscriptionDto>> GetCompanySubscriptionsAsync(Guid companyId);
+    Task<IEnumerable<SubscriptionDto>> GetCompanySubscriptionsAsync(Guid companyId, string? displayCurrency = null);
     
     /// <summary>
     /// Gets paginated subscriptions for a company
