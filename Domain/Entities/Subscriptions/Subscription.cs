@@ -147,6 +147,59 @@ public class Subscription : AuditEntity<Guid>
     /// </summary>
     public int LicenseKeyVersion { get; set; } = 1;
 
+    #region Device Management Overrides
+
+    /// <summary>
+    /// Override the plan's MaxDevices for this specific subscription.
+    /// Null = use plan's MaxDevices (default behavior).
+    /// SYNFLOX admins can customize device limits per subscription.
+    /// </summary>
+    public int? MaxDevicesOverride { get; set; }
+
+    /// <summary>
+    /// Override the plan's DeviceAdmissionMode for this specific subscription.
+    /// Null = use plan's DeviceAdmissionMode (default behavior).
+    /// SYNFLOX admins can customize admission policy per subscription.
+    /// </summary>
+    public DeviceAdmissionMode? DeviceAdmissionModeOverride { get; set; }
+
+    /// <summary>
+    /// Override the plan's MaxAutoAdmitDevices for this specific subscription.
+    /// Null = use plan's MaxAutoAdmitDevices (default behavior).
+    /// Only used when DeviceAdmissionMode = HybridAutoAdmin.
+    /// </summary>
+    public int? MaxAutoAdmitDevicesOverride { get; set; }
+
+    /// <summary>
+    /// Gets the effective max devices (subscription override or plan default).
+    /// </summary>
+    public int EffectiveMaxDevices => MaxDevicesOverride ?? Plan?.MaxDevices ?? 0;
+
+    /// <summary>
+    /// Gets the effective device admission mode (subscription override or plan default).
+    /// </summary>
+    public DeviceAdmissionMode EffectiveDeviceAdmissionMode => 
+        DeviceAdmissionModeOverride ?? Plan?.DeviceAdmissionMode ?? DeviceAdmissionMode.Open;
+
+    /// <summary>
+    /// Gets the effective max auto-admit devices (subscription override or plan default).
+    /// </summary>
+    public int EffectiveMaxAutoAdmitDevices => 
+        MaxAutoAdmitDevicesOverride ?? Plan?.MaxAutoAdmitDevices ?? 0;
+
+    /// <summary>
+    /// Whether devices can self-register or require admin approval.
+    /// </summary>
+    public bool RequiresAdminApprovalForDevices => 
+        EffectiveDeviceAdmissionMode == DeviceAdmissionMode.AdminOnly;
+
+    /// <summary>
+    /// Whether there's a device limit (true) or unlimited (false).
+    /// </summary>
+    public bool HasDeviceLimit => EffectiveMaxDevices > 0;
+
+    #endregion
+
     #region Access Control (Enterprise Entitlement System)
 
     /// <summary>

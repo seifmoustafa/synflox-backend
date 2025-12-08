@@ -23,12 +23,20 @@ public class GenerateAdminTokenRequest
     public int ExpiryDays { get; set; } = 365;
     
     /// <summary>
-    /// Permissions for the token.
+    /// Offline Permissions
     /// </summary>
     public bool CanBindDevices { get; set; } = true;
     public bool CanUnbindDevices { get; set; } = true;
     public bool CanViewDevices { get; set; } = true;
     public bool CanApproveReplacements { get; set; } = true;
+    
+    /// <summary>
+    /// Online Permissions
+    /// </summary>
+    public bool CanViewOnlineTokens { get; set; } = true;
+    public bool CanManageOnlineTokens { get; set; } = true;
+    public bool CanViewOnlineDevices { get; set; } = true;
+    public bool CanUnbindOnlineDevices { get; set; } = true;
     
     /// <summary>
     /// Daily API call limit (0 = unlimited).
@@ -79,11 +87,17 @@ public class AdminTokenDto
     public int UsageCount { get; set; }
     public string? LastUsedFromIp { get; set; }
     
-    // Permissions
+    // Offline Permissions
     public bool CanBindDevices { get; set; }
     public bool CanUnbindDevices { get; set; }
     public bool CanViewDevices { get; set; }
     public bool CanApproveReplacements { get; set; }
+    
+    // Online Permissions
+    public bool CanViewOnlineTokens { get; set; }
+    public bool CanManageOnlineTokens { get; set; }
+    public bool CanViewOnlineDevices { get; set; }
+    public bool CanUnbindOnlineDevices { get; set; }
     
     public int DailyApiLimit { get; set; }
     public int TodayApiCalls { get; set; }
@@ -99,9 +113,15 @@ public class ClientAdminContext
     public Guid CompanyId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     
-    // Permissions
+    // Offline Permissions
     public bool CanBindDevices { get; set; }
     public bool CanUnbindDevices { get; set; }
     public bool CanViewDevices { get; set; }
     public bool CanApproveReplacements { get; set; }
+    
+    // Online Permissions
+    public bool CanViewOnlineTokens { get; set; }
+    public bool CanManageOnlineTokens { get; set; }
+    public bool CanViewOnlineDevices { get; set; }
+    public bool CanUnbindOnlineDevices { get; set; }
 }

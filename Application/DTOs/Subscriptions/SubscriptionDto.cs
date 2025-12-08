@@ -165,6 +165,58 @@ public class SubscriptionDto
     
     #endregion
     
+    #region Device Management Overrides
+    
+    /// <summary>
+    /// Override the plan's MaxDevices for this specific subscription.
+    /// Null = use plan's MaxDevices (default behavior).
+    /// </summary>
+    public int? MaxDevicesOverride { get; set; }
+    
+    /// <summary>
+    /// Override the plan's DeviceAdmissionMode for this specific subscription.
+    /// Null = use plan's DeviceAdmissionMode (default behavior).
+    /// </summary>
+    public DeviceAdmissionMode? DeviceAdmissionModeOverride { get; set; }
+    
+    /// <summary>
+    /// Override the plan's MaxAutoAdmitDevices for this specific subscription.
+    /// Null = use plan's MaxAutoAdmitDevices (default behavior).
+    /// </summary>
+    public int? MaxAutoAdmitDevicesOverride { get; set; }
+    
+    /// <summary>
+    /// Gets the effective max devices (subscription override or plan default).
+    /// </summary>
+    public int EffectiveMaxDevices { get; set; }
+    
+    /// <summary>
+    /// Gets the effective device admission mode (subscription override or plan default).
+    /// </summary>
+    public DeviceAdmissionMode EffectiveDeviceAdmissionMode { get; set; }
+    
+    /// <summary>
+    /// Gets the effective max auto-admit devices (subscription override or plan default).
+    /// </summary>
+    public int EffectiveMaxAutoAdmitDevices { get; set; }
+    
+    /// <summary>
+    /// Plan's default max devices (for reference).
+    /// </summary>
+    public int PlanMaxDevices { get; set; }
+    
+    /// <summary>
+    /// Plan's default device admission mode (for reference).
+    /// </summary>
+    public DeviceAdmissionMode PlanDeviceAdmissionMode { get; set; }
+    
+    /// <summary>
+    /// Whether devices can self-register or require admin approval.
+    /// </summary>
+    public bool RequiresAdminApprovalForDevices { get; set; }
+    
+    #endregion
+    
     // Computed Properties for Business Logic
     public string Status
     {

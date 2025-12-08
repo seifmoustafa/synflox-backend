@@ -112,6 +112,28 @@ public class OfflineLicenseAdminToken : AuditEntity<Guid>
     /// </summary>
     public bool CanApproveReplacements { get; set; } = true;
 
+    // ============== Online System Permissions ==============
+
+    /// <summary>
+    /// Can view online tokens for company subscriptions
+    /// </summary>
+    public bool CanViewOnlineTokens { get; set; } = true;
+
+    /// <summary>
+    /// Can generate, revoke, and regenerate online tokens
+    /// </summary>
+    public bool CanManageOnlineTokens { get; set; } = true;
+
+    /// <summary>
+    /// Can view online devices for company subscriptions
+    /// </summary>
+    public bool CanViewOnlineDevices { get; set; } = true;
+
+    /// <summary>
+    /// Can unbind online devices from subscriptions
+    /// </summary>
+    public bool CanUnbindOnlineDevices { get; set; } = true;
+
     #endregion
 
     #region Usage Limits

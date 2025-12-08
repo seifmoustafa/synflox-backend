@@ -2402,4 +2402,66 @@
     <value>تم إنهاء الجلسات بنجاح</value>
   </data>
 
+  <!-- Online Client System -->
+  <data name="OnlineToken.Required" xml:space="preserve">
+    <value>الرمز مطلوب</value>
+  </data>
+  <data name="OnlineToken.Invalid" xml:space="preserve">
+    <value>رمز غير صالح</value>
+  </data>
+  <data name="OnlineToken.NotFound" xml:space="preserve">
+    <value>الرمز غير موجود</value>
+  </data>
+  <data name="OnlineToken.Revoked" xml:space="preserve">
+    <value>تم إلغاء الرمز</value>
+  </data>
+  <data name="OnlineToken.Expired" xml:space="preserve">
+    <value>انتهت صلاحية الرمز</value>
+  </data>
+  <data name="OnlineToken.Valid" xml:space="preserve">
+    <value>الرمز صالح</value>
+  </data>
+  <data name="OnlineToken.Generated" xml:space="preserve">
+    <value>تم إنشاء رمز الوصول عبر الإنترنت بنجاح</value>
+  </data>
+  <data name="OnlineToken.NoActiveToken" xml:space="preserve">
+    <value>لا يوجد رمز نشط لهذا الاشتراك</value>
+  </data>
+  <data name="OnlineDevice.Registered" xml:space="preserve">
+    <value>تم تسجيل الجهاز بنجاح</value>
+  </data>
+  <data name="OnlineDevice.AlreadyRegistered" xml:space="preserve">
+    <value>الجهاز مسجل بالفعل</value>
+  </data>
+  <data name="OnlineDevice.LimitReached" xml:space="preserve">
+    <value>تم الوصول إلى الحد الأقصى للأجهزة</value>
+  </data>
+  <data name="OnlineDevice.NotFound" xml:space="preserve">
+    <value>الجهاز غير موجود</value>
+  </data>
+  <data name="OnlineDevice.Unregistered" xml:space="preserve">
+    <value>تم إلغاء تسجيل الجهاز بنجاح</value>
+  </data>
+  <data name="OnlineToken.Retrieved" xml:space="preserve">
+    <value>تم استرداد الرموز بنجاح</value>
+  </data>
+  <data name="OnlineDevice.Retrieved" xml:space="preserve">
+    <value>تم استرداد الأجهزة بنجاح</value>
+  </data>
+  <data name="OnlineDevice.LimitRetrieved" xml:space="preserve">
+    <value>تم استرداد حد الأجهزة بنجاح</value>
+  </data>
+  <data name="OnlineToken.PendingChangesRetrieved" xml:space="preserve">
+    <value>تم استرداد التغييرات المعلقة بنجاح</value>
+  </data>
+  <data name="OnlineDevice.Unbound" xml:space="preserve">
+    <value>تم إلغاء ربط الجهاز بنجاح</value>
+  </data>
+  <data name="OnlineDevice.AdminApprovalRequired" xml:space="preserve">
+    <value>يلزم موافقة المسؤول لتسجيل الجهاز</value>
+  </data>
+  <data name="OnlineDevice.QueuedForApproval" xml:space="preserve">
+    <value>تم وضع الجهاز في قائمة انتظار موافقة المسؤول</value>
+  </data>
+
 </root>

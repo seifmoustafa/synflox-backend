@@ -62,6 +62,12 @@ public static class InfrastructureServiceRegistration
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Online Token Settings (for online client system)
+        services.AddOptions<OnlineTokenSettings>()
+            .Bind(configuration.GetSection("OnlineTokenSettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         // Bind named schemes for file uploads/downloads (using lowercase for consistency)
         services.Configure<FileSettings>("profile", configuration.GetSection("ProfileSettings"));
         services.Configure<FileSettings>("image", configuration.GetSection("ImageSettings"));
@@ -201,6 +207,11 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IOfflineLicenseAdminService, OfflineLicenseAdminService>();
         // Company Admin Service (Device Access Control)
         services.AddScoped<ICompanyAdminService, CompanyAdminService>();
+        
+        // Online Client Services (JWT tokens, devices, entitlements)
+        services.AddScoped<IOnlineJwtService, OnlineJwtService>();
+        services.AddScoped<IOnlineClientService, OnlineClientService>();
+        
         services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
         services.AddScoped<IMenuItemsService, MenuItemsService>();
         services.AddHttpContextAccessor();
@@ -252,6 +263,10 @@ public static class InfrastructureServiceRegistration
         
         // License Expiry Reminder Job (sends 30/7/1 day reminders)
         services.AddHostedService<LicenseExpiryReminderJob>();
+        
+        // Online Client System Background Jobs
+        services.AddHostedService<OnlineTokenExpiryJob>();
+        services.AddHostedService<SubscriptionChangeProcessorJob>();
         #endregion
 
         #region Repositories Registration
@@ -295,6 +310,11 @@ public static class InfrastructureServiceRegistration
         // Activity Tracking
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         services.AddScoped<IActivityLogService, ActivityLogService>();
+        
+        // Online Client Repositories
+        services.AddScoped<IOnlineClientTokenRepository, OnlineClientTokenRepository>();
+        services.AddScoped<IOnlineDeviceBindingRepository, OnlineDeviceBindingRepository>();
+        services.AddScoped<ISubscriptionChangeLogRepository, SubscriptionChangeLogRepository>();
         
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion

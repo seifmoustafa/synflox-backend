@@ -2402,4 +2402,66 @@
     <value>Sessions terminated successfully</value>
   </data>
 
+  <!-- Online Client System -->
+  <data name="OnlineToken.Required" xml:space="preserve">
+    <value>Token is required</value>
+  </data>
+  <data name="OnlineToken.Invalid" xml:space="preserve">
+    <value>Invalid token</value>
+  </data>
+  <data name="OnlineToken.NotFound" xml:space="preserve">
+    <value>Token not found</value>
+  </data>
+  <data name="OnlineToken.Revoked" xml:space="preserve">
+    <value>Token has been revoked</value>
+  </data>
+  <data name="OnlineToken.Expired" xml:space="preserve">
+    <value>Token has expired</value>
+  </data>
+  <data name="OnlineToken.Valid" xml:space="preserve">
+    <value>Token is valid</value>
+  </data>
+  <data name="OnlineToken.Generated" xml:space="preserve">
+    <value>Online token generated successfully</value>
+  </data>
+  <data name="OnlineToken.NoActiveToken" xml:space="preserve">
+    <value>No active token found for this subscription</value>
+  </data>
+  <data name="OnlineDevice.Registered" xml:space="preserve">
+    <value>Device registered successfully</value>
+  </data>
+  <data name="OnlineDevice.AlreadyRegistered" xml:space="preserve">
+    <value>Device is already registered</value>
+  </data>
+  <data name="OnlineDevice.LimitReached" xml:space="preserve">
+    <value>Device limit reached</value>
+  </data>
+  <data name="OnlineDevice.NotFound" xml:space="preserve">
+    <value>Device not found</value>
+  </data>
+  <data name="OnlineDevice.Unregistered" xml:space="preserve">
+    <value>Device unregistered successfully</value>
+  </data>
+  <data name="OnlineToken.Retrieved" xml:space="preserve">
+    <value>Tokens retrieved successfully</value>
+  </data>
+  <data name="OnlineDevice.Retrieved" xml:space="preserve">
+    <value>Devices retrieved successfully</value>
+  </data>
+  <data name="OnlineDevice.LimitRetrieved" xml:space="preserve">
+    <value>Device limit retrieved successfully</value>
+  </data>
+  <data name="OnlineToken.PendingChangesRetrieved" xml:space="preserve">
+    <value>Pending changes retrieved successfully</value>
+  </data>
+  <data name="OnlineDevice.Unbound" xml:space="preserve">
+    <value>Device unbound successfully</value>
+  </data>
+  <data name="OnlineDevice.AdminApprovalRequired" xml:space="preserve">
+    <value>Admin approval required for device registration</value>
+  </data>
+  <data name="OnlineDevice.QueuedForApproval" xml:space="preserve">
+    <value>Device queued for admin approval</value>
+  </data>
+
 </root>

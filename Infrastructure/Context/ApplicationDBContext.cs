@@ -10,6 +10,7 @@ using Domain.Entities.Authentication;
 using Domain.Entities.Common;
 using Domain.Entities.Licensing;
 using Domain.Entities.Navigation;
+using Domain.Entities.OnlineAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -69,6 +70,12 @@ namespace Infrastructure.Context
 
         #region Activity Tracking
         public DbSet<Domain.Entities.Activity.ActivityLog> ActivityLogs { get; set; }
+        #endregion
+
+        #region Online Access (Client Tokens)
+        public DbSet<OnlineClientToken> OnlineClientTokens { get; set; }
+        public DbSet<OnlineDeviceBinding> OnlineDeviceBindings { get; set; }
+        public DbSet<SubscriptionChangeLog> SubscriptionChangeLogs { get; set; }
         #endregion
 
         #region References

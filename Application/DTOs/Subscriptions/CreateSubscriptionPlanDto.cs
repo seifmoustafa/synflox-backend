@@ -166,5 +166,22 @@ public class CreateSubscriptionPlanDto
     [Range(5, 1440)]
     public int DeviceHeartbeatTimeoutMinutes { get; set; } = 30;
     
+    /// <summary>
+    /// Controls how devices are admitted/registered for subscriptions on this plan.
+    /// Open = Any device can register freely up to limit (default)
+    /// AdminOnly = Company admin must explicitly bind each device
+    /// AutoWithQueue = Auto-register up to limit, then queue for admin approval
+    /// HybridAutoAdmin = First N auto-register, rest require admin
+    /// </summary>
+    public DeviceAdmissionMode DeviceAdmissionMode { get; set; } = DeviceAdmissionMode.Open;
+    
+    /// <summary>
+    /// For HybridAutoAdmin mode: Number of devices that auto-register before requiring admin approval.
+    /// Example: 5 = first 5 devices auto-register, device 6+ needs admin approval.
+    /// Only used when DeviceAdmissionMode = HybridAutoAdmin.
+    /// </summary>
+    [Range(0, 100)]
+    public int MaxAutoAdmitDevices { get; set; } = 0;
+    
     #endregion
 }

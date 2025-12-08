@@ -131,10 +131,16 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
                 IssuedAtUtc = issuedAt,
                 ExpiresAtUtc = expiresAt,
                 Status = ClientTokenStatus.Active,
+                // Offline permissions
                 CanBindDevices = request.CanBindDevices,
                 CanUnbindDevices = request.CanUnbindDevices,
                 CanViewDevices = request.CanViewDevices,
                 CanApproveReplacements = request.CanApproveReplacements,
+                // Online permissions (unified admin system)
+                CanViewOnlineTokens = request.CanViewOnlineTokens,
+                CanManageOnlineTokens = request.CanManageOnlineTokens,
+                CanViewOnlineDevices = request.CanViewOnlineDevices,
+                CanUnbindOnlineDevices = request.CanUnbindOnlineDevices,
                 DailyApiLimit = request.DailyApiLimit,
                 Notes = request.Notes
             };
@@ -269,10 +275,16 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
                 TokenId = tokenEntity.Id,
                 CompanyId = tokenEntity.CompanyId,
                 CompanyName = companyName,
+                // Offline permissions
                 CanBindDevices = tokenEntity.CanBindDevices,
                 CanUnbindDevices = tokenEntity.CanUnbindDevices,
                 CanViewDevices = tokenEntity.CanViewDevices,
-                CanApproveReplacements = tokenEntity.CanApproveReplacements
+                CanApproveReplacements = tokenEntity.CanApproveReplacements,
+                // Online permissions (unified admin system)
+                CanViewOnlineTokens = tokenEntity.CanViewOnlineTokens,
+                CanManageOnlineTokens = tokenEntity.CanManageOnlineTokens,
+                CanViewOnlineDevices = tokenEntity.CanViewOnlineDevices,
+                CanUnbindOnlineDevices = tokenEntity.CanUnbindOnlineDevices
             };
         }
         catch (Exception ex)
@@ -334,6 +346,9 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
         // Get current activations
         var currentActivations = await _activationRepo.GetBySubscriptionAsync(decryptedSubscriptionId);
         var machineHash = _licenseService.ComputeFingerprintHash(request.MachineFingerprint);
+        
+        // Use effective device limit from subscription (override > plan)
+        var maxDevices = subscription.EffectiveMaxDevices;
 
         // Check if already bound
         var existingActivation = currentActivations.FirstOrDefault(a => a.MachineHash == machineHash);
@@ -345,20 +360,20 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
                 Message = _localizer["OfflineLicense.DeviceAlreadyActivated"],
                 ActivationId = existingActivation.Id,
                 CurrentDeviceCount = currentActivations.Count,
-                MaxDevices = plan.MaxDevices,
-                RemainingSlots = plan.MaxDevices == 0 ? -1 : plan.MaxDevices - currentActivations.Count
+                MaxDevices = maxDevices,
+                RemainingSlots = maxDevices == 0 ? -1 : maxDevices - currentActivations.Count
             };
         }
 
         // Check device limit
-        if (plan.MaxDevices > 0 && currentActivations.Count >= plan.MaxDevices)
+        if (maxDevices > 0 && currentActivations.Count >= maxDevices)
         {
             return new DeviceBindingResponse
             {
                 Success = false,
                 Message = _localizer["OfflineLicense.MaxDevicesReached"],
                 CurrentDeviceCount = currentActivations.Count,
-                MaxDevices = plan.MaxDevices,
+                MaxDevices = maxDevices,
                 RemainingSlots = 0
             };
         }
@@ -393,8 +408,8 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
             Message = _localizer["OfflineLicense.DeviceActivated"],
             ActivationId = activation.Id,
             CurrentDeviceCount = currentActivations.Count + 1,
-            MaxDevices = plan.MaxDevices,
-            RemainingSlots = plan.MaxDevices == 0 ? -1 : plan.MaxDevices - currentActivations.Count - 1
+            MaxDevices = maxDevices,
+            RemainingSlots = maxDevices == 0 ? -1 : maxDevices - currentActivations.Count - 1
         };
     }
 
@@ -517,26 +532,32 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
             if (plan == null) continue;
 
             var activations = await _activationRepo.GetBySubscriptionAsync(sub.Id);
+            
+            // Use effective device limit from subscription (override > plan)
+            var maxDevices = sub.EffectiveMaxDevices;
 
             var subSummary = new SubscriptionDeviceSummary
             {
                 SubscriptionId = sub.Id,
                 PlanName = plan.Name,
-                MaxDevices = plan.MaxDevices,
+                MaxDevices = maxDevices,
                 BoundDevices = activations.Count,
-                RemainingSlots = plan.MaxDevices == 0 ? -1 : plan.MaxDevices - activations.Count,
+                RemainingSlots = maxDevices == 0 ? -1 : maxDevices - activations.Count,
                 RequiresMachineBinding = plan.RequireMachineBinding,
                 ExpiresAtUtc = sub.ExpiryDateUtc,
-                IsActive = sub.IsActive
+                IsActive = sub.IsActive,
+                // New fields
+                AdmissionMode = sub.EffectiveDeviceAdmissionMode.ToString(),
+                HasOverride = sub.MaxDevicesOverride.HasValue
             };
 
             summary.Subscriptions.Add(subSummary);
             summary.TotalBoundDevices += activations.Count;
 
-            if (plan.MaxDevices > 0)
+            if (maxDevices > 0)
             {
                 summary.SubscriptionsWithDeviceLimit++;
-                summary.TotalMaxDevices += plan.MaxDevices;
+                summary.TotalMaxDevices += maxDevices;
             }
         }
 
@@ -884,10 +905,16 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
             LastUsedAtUtc = token.LastUsedAtUtc,
             UsageCount = token.UsageCount,
             LastUsedFromIp = token.LastUsedFromIp,
+            // Offline permissions
             CanBindDevices = token.CanBindDevices,
             CanUnbindDevices = token.CanUnbindDevices,
             CanViewDevices = token.CanViewDevices,
             CanApproveReplacements = token.CanApproveReplacements,
+            // Online permissions (unified admin system)
+            CanViewOnlineTokens = token.CanViewOnlineTokens,
+            CanManageOnlineTokens = token.CanManageOnlineTokens,
+            CanViewOnlineDevices = token.CanViewOnlineDevices,
+            CanUnbindOnlineDevices = token.CanUnbindOnlineDevices,
             DailyApiLimit = token.DailyApiLimit,
             TodayApiCalls = token.TodayApiCalls,
             Notes = token.Notes

@@ -111,7 +111,10 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.HardwareChangeTolerance, opt => opt.MapFrom(s => s.HardwareChangeTolerance))
             .ForMember(d => d.ConcurrentAccessMode, opt => opt.MapFrom(s => s.ConcurrentAccessMode))
             .ForMember(d => d.MaxConcurrentDevices, opt => opt.MapFrom(s => s.MaxConcurrentDevices))
-            .ForMember(d => d.DeviceHeartbeatTimeoutMinutes, opt => opt.MapFrom(s => s.DeviceHeartbeatTimeoutMinutes));
+            .ForMember(d => d.DeviceHeartbeatTimeoutMinutes, opt => opt.MapFrom(s => s.DeviceHeartbeatTimeoutMinutes))
+            // Device Admission Mode (new fields)
+            .ForMember(d => d.DeviceAdmissionMode, opt => opt.MapFrom(s => s.DeviceAdmissionMode))
+            .ForMember(d => d.MaxAutoAdmitDevices, opt => opt.MapFrom(s => s.MaxAutoAdmitDevices));
 
         CreateMap<SubscriptionPlan, PlanDtos.PlanDetailsDto>()
             .ForMember(d => d.Id, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
@@ -205,7 +208,17 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.EntitlementCount, opt => opt.MapFrom(s => s.Plan.Entitlements != null ? s.Plan.Entitlements.Count(e => !e.IsDeleted) : 0))
             // Plan-level settings (for frontend display)
             .ForMember(d => d.GracePeriodDays, opt => opt.MapFrom(s => s.Plan.GracePeriodDays))
-            .ForMember(d => d.ExportGraceDays, opt => opt.MapFrom(s => s.Plan.ExportGraceDays));
+            .ForMember(d => d.ExportGraceDays, opt => opt.MapFrom(s => s.Plan.ExportGraceDays))
+            // Device Management Overrides (new fields)
+            .ForMember(d => d.MaxDevicesOverride, opt => opt.MapFrom(s => s.MaxDevicesOverride))
+            .ForMember(d => d.DeviceAdmissionModeOverride, opt => opt.MapFrom(s => s.DeviceAdmissionModeOverride))
+            .ForMember(d => d.MaxAutoAdmitDevicesOverride, opt => opt.MapFrom(s => s.MaxAutoAdmitDevicesOverride))
+            .ForMember(d => d.EffectiveMaxDevices, opt => opt.MapFrom(s => s.EffectiveMaxDevices))
+            .ForMember(d => d.EffectiveDeviceAdmissionMode, opt => opt.MapFrom(s => s.EffectiveDeviceAdmissionMode))
+            .ForMember(d => d.EffectiveMaxAutoAdmitDevices, opt => opt.MapFrom(s => s.EffectiveMaxAutoAdmitDevices))
+            .ForMember(d => d.PlanMaxDevices, opt => opt.MapFrom(s => s.Plan.MaxDevices))
+            .ForMember(d => d.PlanDeviceAdmissionMode, opt => opt.MapFrom(s => s.Plan.DeviceAdmissionMode))
+            .ForMember(d => d.RequiresAdminApprovalForDevices, opt => opt.MapFrom(s => s.RequiresAdminApprovalForDevices));
 
         CreateMap<Subscription, SubscriptionStatusDto>()
             .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))

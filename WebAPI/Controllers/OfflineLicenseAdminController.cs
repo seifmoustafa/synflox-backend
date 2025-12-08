@@ -59,10 +59,16 @@ public class OfflineLicenseAdminController : ControllerBase
                 CompanyId = decryptedCompanyId,
                 Name = request.Name,
                 ExpiryDays = request.ExpiryDays,
+                // Offline permissions
                 CanBindDevices = request.CanBindDevices,
                 CanUnbindDevices = request.CanUnbindDevices,
                 CanViewDevices = request.CanViewDevices,
                 CanApproveReplacements = request.CanApproveReplacements,
+                // Online permissions (unified admin system)
+                CanViewOnlineTokens = request.CanViewOnlineTokens,
+                CanManageOnlineTokens = request.CanManageOnlineTokens,
+                CanViewOnlineDevices = request.CanViewOnlineDevices,
+                CanUnbindOnlineDevices = request.CanUnbindOnlineDevices,
                 DailyApiLimit = request.DailyApiLimit,
                 Notes = request.Notes
             };

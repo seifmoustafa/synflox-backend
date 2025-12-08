@@ -30,4 +30,19 @@ public class SubscriptionDeviceSummary
     public bool RequiresMachineBinding { get; set; }
     public DateTime? ExpiresAtUtc { get; set; }
     public bool IsActive { get; set; }
+    
+    /// <summary>
+    /// Device admission mode (Open, AdminOnly, AutoWithQueue, HybridAutoAdmin).
+    /// </summary>
+    public string AdmissionMode { get; set; } = "Open";
+    
+    /// <summary>
+    /// Whether this subscription has a custom device limit override.
+    /// </summary>
+    public bool HasOverride { get; set; }
+    
+    /// <summary>
+    /// Whether the subscription has unlimited devices (MaxDevices = 0).
+    /// </summary>
+    public bool IsUnlimited => MaxDevices == 0;
 }

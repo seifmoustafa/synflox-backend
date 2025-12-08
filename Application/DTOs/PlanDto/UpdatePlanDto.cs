@@ -139,5 +139,16 @@ public class UpdatePlanDto
     [Range(5, 1440)]
     public int? DeviceHeartbeatTimeoutMinutes { get; set; }
     
+    /// <summary>
+    /// Controls how devices are admitted/registered for subscriptions on this plan.
+    /// </summary>
+    public DeviceAdmissionMode? DeviceAdmissionMode { get; set; }
+    
+    /// <summary>
+    /// For HybridAutoAdmin mode: Number of devices that auto-register before requiring admin approval.
+    /// </summary>
+    [Range(0, 100)]
+    public int? MaxAutoAdmitDevices { get; set; }
+    
     #endregion
 }
