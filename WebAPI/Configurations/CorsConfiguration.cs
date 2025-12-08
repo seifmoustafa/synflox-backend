@@ -13,10 +13,12 @@ namespace WebAPI.Configurations
             {
                 "http://localhost",
                 "http://localhost:3000",
+                "http://localhost:3001",  // Client Portal
                 "http://localhost:5173",
                 "http://localhost:5000",
                 "http://localhost:5001",
                 "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",  // Client Portal
                 "http://127.0.0.1:5173",
                 "https://synflox-frontend.vercel.app",
             };
