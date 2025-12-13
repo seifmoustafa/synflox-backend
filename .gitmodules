@@ -1,0 +1,6 @@
+[submodule "admin-api"]
+	path = admin-api
+	url = https://github.com/seifmoustafa/synflox-admin-api.git
+[submodule "client-api"]
+	path = client-api
+	url = https://github.com/seifmoustafa/synflox-client-api.git
