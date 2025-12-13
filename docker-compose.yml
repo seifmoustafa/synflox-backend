@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Admin API - Port 5035
+  admin-api:
+    build:
+      context: .
+      dockerfile: admin-api/Dockerfile
+    ports:
+      - "5035:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SqlServerConnection=Server=db-admin;Database=SYNFLOX_Admin;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - ConnectionStrings__RedisConnection=redis:6379
+    depends_on:
+      - db-admin
+      - redis
+    networks:
+      - synflox-network
+
+  # Client API - Port 5036
+  client-api:
+    build:
+      context: .
+      dockerfile: client-api/Dockerfile
+    ports:
+      - "5036:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SqlServerConnection=Server=db-client;Database=SYNFLOX_Client;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - ConnectionStrings__RedisConnection=redis:6379
+    depends_on:
+      - db-client
+      - redis
+    networks:
+      - synflox-network
+
+  # Admin Database (Primary)
+  db-admin:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+    volumes:
+      - db-admin-data:/var/opt/mssql
+    networks:
+      - synflox-network
+
+  # Client Database (Replica - for Option 6)
+  db-client:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1434:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+    volumes:
+      - db-client-data:/var/opt/mssql
+    networks:
+      - synflox-network
+
+  # Redis Cache (Shared)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - synflox-network
+
+networks:
+  synflox-network:
+    driver: bridge
+
+volumes:
+  db-admin-data:
+  db-client-data:
+  redis-data:
