@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SYNFLOX.Core.WebAPI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:60199;http://localhost:60202"
+    }
+  }
+}
