@@ -53,10 +53,34 @@ public class CustomEmailRequest
     public EmailPriority Priority { get; set; } = EmailPriority.Normal;
 
     /// <summary>
-    /// Custom accent color for email template (hex color)
+    /// Primary accent color for highlights and links (hex color)
     /// </summary>
     [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
     public string AccentColor { get; set; } = "#2563eb";
+
+    /// <summary>
+    /// Header background color (hex color). If null, uses AccentColor.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string? HeaderColor { get; set; }
+
+    /// <summary>
+    /// Footer background color (hex color). If null, uses AccentColor.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string? FooterColor { get; set; }
+
+    /// <summary>
+    /// Body/content background color (hex color). Default is white.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string BodyColor { get; set; } = "#ffffff";
+
+    /// <summary>
+    /// Text color for paragraphs (hex color). Default is dark gray.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string TextColor { get; set; } = "#2c3e50";
 
     /// <summary>
     /// Whether to include company branding
@@ -129,10 +153,34 @@ public class BulkCustomEmailRequest
     public EmailPriority Priority { get; set; } = EmailPriority.Normal;
 
     /// <summary>
-    /// Custom accent color for email template (hex color)
+    /// Primary accent color for highlights and links (hex color)
     /// </summary>
     [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
     public string AccentColor { get; set; } = "#2563eb";
+
+    /// <summary>
+    /// Header background color (hex color). If null, uses AccentColor.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string? HeaderColor { get; set; }
+
+    /// <summary>
+    /// Footer background color (hex color). If null, uses AccentColor.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string? FooterColor { get; set; }
+
+    /// <summary>
+    /// Body/content background color (hex color). Default is white.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string BodyColor { get; set; } = "#ffffff";
+
+    /// <summary>
+    /// Text color for paragraphs (hex color). Default is dark gray.
+    /// </summary>
+    [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid hex color format")]
+    public string TextColor { get; set; } = "#2c3e50";
 
     /// <summary>
     /// Whether to include SYNFLOX branding in email template

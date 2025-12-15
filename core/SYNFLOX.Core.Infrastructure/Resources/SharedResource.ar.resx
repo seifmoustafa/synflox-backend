@@ -2463,5 +2463,19 @@
   <data name="OnlineDevice.QueuedForApproval" xml:space="preserve">
     <value>تم وضع الجهاز في قائمة انتظار موافقة المسؤول</value>
   </data>
+  
+  <!-- Custom Email Messages -->
+  <data name="CustomEmail.SentSuccessfully" xml:space="preserve">
+    <value>تم إرسال البريد الإلكتروني بنجاح</value>
+  </data>
+  <data name="CustomEmail.BulkSentSuccessfully" xml:space="preserve">
+    <value>تم إرسال رسائل البريد الإلكتروني المجمعة بنجاح</value>
+  </data>
+  <data name="CustomEmail.NotificationSentSuccessfully" xml:space="preserve">
+    <value>تم إرسال الإشعار بنجاح</value>
+  </data>
+  <data name="CustomEmail.MaintenanceSentSuccessfully" xml:space="preserve">
+    <value>تم إرسال إشعارات الصيانة بنجاح</value>
+  </data>
 
 </root>

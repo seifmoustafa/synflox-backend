@@ -1727,7 +1727,7 @@ public class EmailService : IEmailService
             }
             else
             {
-                // Use full SYNFLOX branded template
+                // Use full SYNFLOX branded template with customizable colors
                 body = BuildCustomLocalizedEmailTemplate(
                     companyName, 
                     request.Title, 
@@ -1738,7 +1738,11 @@ public class EmailService : IEmailService
                     null, // request.CustomFooter,
                     null, // request.ButtonText,
                     null, // request.ButtonUrl,
-                    null); // request.CustomStyles);
+                    null, // request.CustomStyles,
+                    request.HeaderColor,
+                    request.FooterColor,
+                    request.BodyColor,
+                    request.TextColor);
             }
 
             await SendEmailAsync(toEmail, request.Subject, body);
@@ -1786,6 +1790,10 @@ public class EmailService : IEmailService
                     Reason = request.Reason,
                     Priority = request.Priority,
                     AccentColor = request.AccentColor,
+                    HeaderColor = request.HeaderColor,
+                    FooterColor = request.FooterColor,
+                    BodyColor = request.BodyColor,
+                    TextColor = request.TextColor,
                     IncludeBranding = request.IncludeBranding,
                     IncludeFooter = request.IncludeFooter,
                     UseMinimalTemplate = request.UseMinimalTemplate
@@ -1889,10 +1897,20 @@ public class EmailService : IEmailService
         string? customFooter = null,
         string? buttonText = null,
         string? buttonUrl = null,
-        string? customStyles = null)
+        string? customStyles = null,
+        string? headerColor = null,
+        string? footerColor = null,
+        string? bodyColor = null,
+        string? textColor = null)
     {
         _localizationHelper.SetCulture(language);
         var commonContent = _localizationHelper.GetCommonContent();
+        
+        // Use fallback colors if not specified
+        var effectiveHeaderColor = headerColor ?? accentColor;
+        var effectiveFooterColor = footerColor ?? accentColor;
+        var effectiveBodyColor = bodyColor ?? "#ffffff";
+        var effectiveTextColor = textColor ?? "#2c3e50";
         
         var logoUrl = GetLogoUrl();
         var logoStyle = GetLogoStyle();
@@ -1943,14 +1961,14 @@ public class EmailService : IEmailService
     <title>{title}</title>
     <style>
         body {{ font-family: {(language == "ar" ? "'Segoe UI', 'Tahoma', 'Arial', sans-serif" : "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")}; margin: 0; padding: 0; background-color: #f5f7fa; }}
-        .container {{ max-width: 600px; margin: 0 auto; background-color: white; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden; }}
-        .header {{ background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 40px 30px; text-align: center; }}
-        .content {{ padding: 40px 30px; }}
-        .footer {{ background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 30px; text-align: center; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: {effectiveBodyColor}; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden; }}
+        .header {{ background: linear-gradient(135deg, {effectiveHeaderColor}, {effectiveHeaderColor}dd); color: white; padding: 40px 30px; text-align: center; }}
+        .content {{ padding: 40px 30px; background-color: {effectiveBodyColor}; }}
+        .footer {{ background: linear-gradient(135deg, {effectiveFooterColor}, {effectiveFooterColor}dd); color: white; padding: 30px; text-align: center; }}
         .logo {{ {logoStyle} }}
         {rtlStyles}
         .title {{ font-size: 28px; font-weight: 700; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }}
-        .message {{ font-size: 16px; line-height: 1.6; color: #2c3e50; margin: 20px 0; }}
+        .message {{ font-size: 16px; line-height: 1.6; color: {effectiveTextColor}; margin: 20px 0; }}
         .company-name {{ color: {accentColor}; font-weight: 600; }}
         .divider {{ height: 3px; background: linear-gradient(90deg, {accentColor}, transparent); margin: 30px 0; border-radius: 2px; }}
         .synflox-brand {{ background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 800; }}

@@ -2463,5 +2463,19 @@
   <data name="OnlineDevice.QueuedForApproval" xml:space="preserve">
     <value>Device queued for admin approval</value>
   </data>
+  
+  <!-- Custom Email Messages -->
+  <data name="CustomEmail.SentSuccessfully" xml:space="preserve">
+    <value>Email sent successfully</value>
+  </data>
+  <data name="CustomEmail.BulkSentSuccessfully" xml:space="preserve">
+    <value>Bulk emails sent successfully</value>
+  </data>
+  <data name="CustomEmail.NotificationSentSuccessfully" xml:space="preserve">
+    <value>Notification sent successfully</value>
+  </data>
+  <data name="CustomEmail.MaintenanceSentSuccessfully" xml:space="preserve">
+    <value>Maintenance notifications sent successfully</value>
+  </data>
 
 </root>
