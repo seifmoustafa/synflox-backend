@@ -12,16 +12,19 @@ using Domain.Interfaces;
 
 namespace Infrastructure.Services;
 
-public class MenuItemsService : IMenuItemsService
+/// <summary>
+/// Service for managing admin portal menu items.
+/// </summary>
+public class AdminMenuItemService : IAdminMenuItemService
 {
-    private readonly IMenuItemsRepository _repository;
+    private readonly IAdminMenuItemRepository _repository;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
-    public MenuItemsService(
-        IMenuItemsRepository repository,
+    public AdminMenuItemService(
+        IAdminMenuItemRepository repository,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
@@ -34,122 +37,113 @@ public class MenuItemsService : IMenuItemsService
         _currentUserService = currentUserService;
     }
 
-    public async Task<MenuItemssResponseDto> GetMenuItemssAsync()
+    public async Task<AdminMenuItemsResponseDto> GetMenuItemsAsync()
     {
-        var MenuItems = await _repository.GetActiveMenuItemssWithChildrenAsync();
-        var MenuItemsList = MenuItems.ToList();
+        var menuItems = await _repository.GetActiveMenuItemsWithChildrenAsync();
+        var menuItemsList = menuItems.ToList();
 
         // Get current user's admin type
         var currentUserType = _currentUserService.AdminTypeName;
 
         // Filter menu items based on AllowedUserTypes
-        MenuItemsList = MenuItemsList
-            .Where(m => CanUserSeeMenuItems(m, currentUserType))
+        menuItemsList = menuItemsList
+            .Where(m => CanUserSeeMenuItem(m, currentUserType))
             .ToList();
 
         // Map to DTOs
-        var MenuItemsDtos = new List<MenuItemsDto>();
-        foreach (var item in MenuItemsList)
+        var menuItemDtos = new List<AdminMenuItemDto>();
+        foreach (var item in menuItemsList)
         {
-            var dto = MapMenuItemsWithChildren(item, currentUserType);
-            MenuItemsDtos.Add(dto);
+            var dto = MapMenuItemWithChildren(item, currentUserType);
+            menuItemDtos.Add(dto);
         }
 
         // Extract all unique pages from menu items
-        var pages = ExtractPages(MenuItemsList);
+        var pages = ExtractPages(menuItemsList);
 
-        return new MenuItemssResponseDto
+        return new AdminMenuItemsResponseDto
         {
-            MenuItems = MenuItemsDtos,
+            MenuItems = menuItemDtos,
             Pages = pages
         };
     }
 
-    public async Task<MenuItemsDto?> GetMenuItemsByIdAsync(GetMenuItemByIdRequest request)
+    public async Task<AdminMenuItemDto?> GetMenuItemByIdAsync(GetMenuItemByIdRequest request)
     {
-        // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
         
-        var MenuItems = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "ParentMenuItems" });
-        if (MenuItems == null || MenuItems.IsDeleted) return null;
+        var menuItem = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "Parent" });
+        if (menuItem == null || menuItem.IsDeleted) return null;
 
-        return MapMenuItemsWithChildren(MenuItems, _currentUserService.AdminTypeName);
+        return MapMenuItemWithChildren(menuItem, _currentUserService.AdminTypeName);
     }
 
-    public async Task<MenuItemsDto> CreateMenuItemsAsync(CreateMenuItemsDto dto)
+    public async Task<AdminMenuItemDto> CreateMenuItemAsync(CreateAdminMenuItemDto dto)
     {
-        var MenuItems = _mapper.Map<MenuItems>(dto);
+        var menuItem = _mapper.Map<AdminMenuItem>(dto);
 
-        // Parent menu item ID is handled by AutoMapper via DecryptNullableGuidConverter
-        // No manual decryption needed here
-
-        var created = await _repository.AddAsync(MenuItems);
+        var created = await _repository.AddAsync(menuItem);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapMenuItemsWithChildren(created, _currentUserService.AdminTypeName);
+        return MapMenuItemWithChildren(created, _currentUserService.AdminTypeName);
     }
 
-    public async Task<MenuItemsDto?> UpdateMenuItemsAsync(UpdateMenuItemByIdRequest request)
+    public async Task<AdminMenuItemDto?> UpdateMenuItemAsync(UpdateMenuItemByIdRequest request)
     {
-        // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
         
-        var MenuItems = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "ParentMenuItems" });
-        if (MenuItems == null || MenuItems.IsDeleted)
+        var menuItem = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "Parent" });
+        if (menuItem == null || menuItem.IsDeleted)
         {
-            throw new NotFoundException(_localizer["MenuItems.NotFound"]);
+            throw new NotFoundException(_localizer["MenuItem.NotFound"]);
         }
 
         // Parent menu item ID validation and circular reference prevention
-        if (request.UpdateData.ParentMenuItemsId.HasValue)
+        if (request.UpdateData.ParentId.HasValue)
         {
-            if (request.UpdateData.ParentMenuItemsId.Value == decryptedId)
+            if (request.UpdateData.ParentId.Value == decryptedId)
             {
-                throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
+                throw new BadRequestException(_localizer["MenuItem.CircularReference"]);
             }
 
-            // Check if the parent is a descendant (would create circular reference)
-            if (await IsDescendantAsync(MenuItems, request.UpdateData.ParentMenuItemsId.Value))
+            if (await IsDescendantAsync(menuItem, request.UpdateData.ParentId.Value))
             {
-                throw new BadRequestException(_localizer["MenuItems.CircularReference"]);
+                throw new BadRequestException(_localizer["MenuItem.CircularReference"]);
             }
 
-            var parent = await _repository.GetByIdAsync(request.UpdateData.ParentMenuItemsId.Value, null);
+            var parent = await _repository.GetByIdAsync(request.UpdateData.ParentId.Value, null);
             if (parent == null || parent.IsDeleted)
             {
-                throw new BadRequestException(_localizer["MenuItems.ParentNotFound"]);
+                throw new BadRequestException(_localizer["MenuItem.ParentNotFound"]);
             }
         }
 
-        _mapper.Map(request.UpdateData, MenuItems);
-        await _repository.UpdateAsync(MenuItems);
+        _mapper.Map(request.UpdateData, menuItem);
+        await _repository.UpdateAsync(menuItem);
         await _unitOfWork.SaveChangesAsync();
 
-        // Reload with children to get full hierarchy
-        var updated = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "ParentMenuItems" });
+        var updated = await _repository.GetByIdAsync(decryptedId, new[] { "Children", "Parent" });
         if (updated == null)
         {
-            throw new NotFoundException(_localizer["MenuItems.NotFound"]);
+            throw new NotFoundException(_localizer["MenuItem.NotFound"]);
         }
 
-        return MapMenuItemsWithChildren(updated, _currentUserService.AdminTypeName);
+        return MapMenuItemWithChildren(updated, _currentUserService.AdminTypeName);
     }
 
-    public async Task<bool> DeleteMenuItemsAsync(DeleteMenuItemRequest request)
+    public async Task<bool> DeleteMenuItemAsync(DeleteMenuItemRequest request)
     {
-        // Use AutoMapper to decrypt the ID
         var decryptedId = _mapper.Map<Guid>(request);
         
-        var MenuItems = await _repository.GetByIdAsync(decryptedId, new[] { "Children" });
-        if (MenuItems == null || MenuItems.IsDeleted)
+        var menuItem = await _repository.GetByIdAsync(decryptedId, new[] { "Children" });
+        if (menuItem == null || menuItem.IsDeleted)
         {
-            throw new NotFoundException(_localizer["MenuItems.NotFound"]);
+            throw new NotFoundException(_localizer["MenuItem.NotFound"]);
         }
 
-        // Check if menu item has children
-        if (MenuItems.Children.Any(c => !c.IsDeleted))
+        if (menuItem.Children.Any(c => !c.IsDeleted))
         {
-            throw new BadRequestException(_localizer["MenuItems.HasChildren"]);
+            throw new BadRequestException(_localizer["MenuItem.HasChildren"]);
         }
 
         await _repository.DeleteAsync(decryptedId);
@@ -157,76 +151,59 @@ public class MenuItemsService : IMenuItemsService
         return true;
     }
 
-    /// <summary>
-    /// Maps a menu item with its children recursively.
-    /// </summary>
-    private MenuItemsDto MapMenuItemsWithChildren(MenuItems item, string? currentUserType)
+    private AdminMenuItemDto MapMenuItemWithChildren(AdminMenuItem item, string? currentUserType)
     {
-        var dto = _mapper.Map<MenuItemsDto>(item);
+        var dto = _mapper.Map<AdminMenuItemDto>(item);
         
-        // Map children recursively
         if (item.Children != null && item.Children.Any())
         {
             var children = item.Children
-                .Where(c => !c.IsDeleted && c.IsActive && CanUserSeeMenuItems(c, currentUserType));
+                .Where(c => !c.IsDeleted && c.IsActive && CanUserSeeMenuItem(c, currentUserType));
             
             dto.Children = children
                 .OrderBy(c => c.Order)
-                .Select(c => MapMenuItemsWithChildren(c, currentUserType))
+                .Select(c => MapMenuItemWithChildren(c, currentUserType))
                 .ToList();
         }
 
-        // Map parent reference if exists
-        if (item.ParentMenuItems != null)
+        if (item.Parent != null)
         {
-            dto.ParentMenuItems = _mapper.Map<MenuItemsReferenceDto>(item.ParentMenuItems);
+            dto.Parent = _mapper.Map<AdminMenuItemReferenceDto>(item.Parent);
         }
 
         return dto;
     }
 
-    /// <summary>
-    /// Checks if a user with the given admin type can see the menu item.
-    /// If AllowedUserTypes is null or empty, the menu item is visible to all authenticated users.
-    /// </summary>
-    private bool CanUserSeeMenuItems(MenuItems item, string? currentUserType)
+    private bool CanUserSeeMenuItem(AdminMenuItem item, string? currentUserType)
     {
-        // If no allowed user types specified, visible to all
         if (string.IsNullOrEmpty(item.AllowedUserTypes))
         {
             return true;
         }
 
-        // If user type is not specified, they can't see restricted items
         if (string.IsNullOrEmpty(currentUserType))
         {
             return false;
         }
 
-        // Parse allowed user types from JSON
         try
         {
             var allowedTypes = JsonSerializer.Deserialize<List<string>>(item.AllowedUserTypes);
             if (allowedTypes == null || allowedTypes.Count == 0)
             {
-                return true; // Empty list means visible to all
+                return true;
             }
 
-            // Check if current user type is in the allowed list (case-insensitive)
             return allowedTypes.Any(type => 
                 string.Equals(type, currentUserType, StringComparison.OrdinalIgnoreCase));
         }
         catch
         {
-            // If JSON parsing fails, default to visible to all (fail open)
             return true;
         }
     }
 
-    /// <summary>
-    /// Extracts all unique pages (routes) from menu items recursively.
-    /// </summary>
-    private List<string> ExtractPages(IEnumerable<MenuItems> items)
+    private List<string> ExtractPages(IEnumerable<AdminMenuItem> items)
     {
         var pages = new HashSet<string>();
 
@@ -238,10 +215,7 @@ public class MenuItemsService : IMenuItemsService
         return pages.OrderBy(p => p).ToList();
     }
 
-    /// <summary>
-    /// Recursively extracts pages from a menu item and its children.
-    /// </summary>
-    private void ExtractPagesRecursive(MenuItems item, HashSet<string> pages)
+    private void ExtractPagesRecursive(AdminMenuItem item, HashSet<string> pages)
     {
         if (!string.IsNullOrEmpty(item.Href))
         {
@@ -257,18 +231,15 @@ public class MenuItemsService : IMenuItemsService
         }
     }
 
-    /// <summary>
-    /// Checks if a menu item is a descendant of another (to prevent circular references).
-    /// </summary>
-    private async Task<bool> IsDescendantAsync(MenuItems item, Guid potentialAncestorId)
+    private async Task<bool> IsDescendantAsync(AdminMenuItem item, Guid potentialAncestorId)
     {
-        if (item.ParentMenuItemsId == null)
+        if (item.ParentId == null)
         {
             return false;
         }
 
         var visited = new HashSet<Guid> { item.Id };
-        var currentId = item.ParentMenuItemsId;
+        var currentId = item.ParentId;
 
         while (currentId.HasValue)
         {
@@ -279,7 +250,6 @@ public class MenuItemsService : IMenuItemsService
 
             if (visited.Contains(currentId.Value))
             {
-                // Circular reference detected
                 break;
             }
 
@@ -291,10 +261,146 @@ public class MenuItemsService : IMenuItemsService
                 break;
             }
 
-            currentId = parent.ParentMenuItemsId;
+            currentId = parent.ParentId;
         }
 
         return false;
+    }
+}
+
+/// <summary>
+/// Service for managing client portal menu items.
+/// </summary>
+public class ClientMenuItemService : IClientMenuItemService
+{
+    private readonly IClientMenuItemRepository _repository;
+    private readonly IMapper _mapper;
+
+    public ClientMenuItemService(
+        IClientMenuItemRepository repository,
+        IMapper mapper)
+    {
+        _repository = repository;
+        _mapper = mapper;
+    }
+
+    public async Task<ClientMenuItemsResponseDto> GetMenuItemsAsync(List<string>? permissions)
+    {
+        var menuItems = await _repository.GetActiveMenuItemsWithChildrenAsync();
+        var menuItemsList = menuItems.ToList();
+
+        // Filter menu items based on permissions
+        menuItemsList = menuItemsList
+            .Where(m => CanUserSeeMenuItem(m, permissions))
+            .ToList();
+
+        // Map to DTOs
+        var menuItemDtos = new List<ClientMenuItemDto>();
+        foreach (var item in menuItemsList)
+        {
+            var dto = MapMenuItemWithChildren(item, permissions);
+            menuItemDtos.Add(dto);
+        }
+
+        // Extract all unique pages from menu items
+        var pages = ExtractPages(menuItemsList);
+
+        return new ClientMenuItemsResponseDto
+        {
+            MenuItems = menuItemDtos,
+            Pages = pages
+        };
+    }
+
+    public async Task<ClientMenuItemDto?> GetMenuItemByIdAsync(Guid id)
+    {
+        var menuItem = await _repository.GetByIdAsync(id, new[] { "Children", "Parent" });
+        if (menuItem == null || menuItem.IsDeleted) return null;
+
+        return MapMenuItemWithChildren(menuItem, null);
+    }
+
+    private ClientMenuItemDto MapMenuItemWithChildren(ClientMenuItem item, List<string>? permissions)
+    {
+        var dto = _mapper.Map<ClientMenuItemDto>(item);
+        
+        if (item.Children != null && item.Children.Any())
+        {
+            var children = item.Children
+                .Where(c => !c.IsDeleted && c.IsActive && CanUserSeeMenuItem(c, permissions));
+            
+            dto.Children = children
+                .OrderBy(c => c.Order)
+                .Select(c => MapMenuItemWithChildren(c, permissions))
+                .ToList();
+        }
+
+        if (item.Parent != null)
+        {
+            dto.Parent = _mapper.Map<ClientMenuItemReferenceDto>(item.Parent);
+        }
+
+        return dto;
+    }
+
+    private bool CanUserSeeMenuItem(ClientMenuItem item, List<string>? permissions)
+    {
+        // If no required permissions, visible to all
+        if (string.IsNullOrEmpty(item.RequiredPermissions))
+        {
+            return true;
+        }
+
+        // If no permissions provided, user can't see restricted items
+        if (permissions == null || permissions.Count == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            var requiredPermissions = JsonSerializer.Deserialize<List<string>>(item.RequiredPermissions);
+            if (requiredPermissions == null || requiredPermissions.Count == 0)
+            {
+                return true;
+            }
+
+            // User must have at least one of the required permissions
+            return requiredPermissions.Any(required => 
+                permissions.Any(p => string.Equals(p, required, StringComparison.OrdinalIgnoreCase)));
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    private List<string> ExtractPages(IEnumerable<ClientMenuItem> items)
+    {
+        var pages = new HashSet<string>();
+
+        foreach (var item in items)
+        {
+            ExtractPagesRecursive(item, pages);
+        }
+
+        return pages.OrderBy(p => p).ToList();
+    }
+
+    private void ExtractPagesRecursive(ClientMenuItem item, HashSet<string> pages)
+    {
+        if (!string.IsNullOrEmpty(item.Href))
+        {
+            pages.Add(item.Href);
+        }
+
+        if (item.Children != null)
+        {
+            foreach (var child in item.Children.Where(c => !c.IsDeleted && c.IsActive))
+            {
+                ExtractPagesRecursive(child, pages);
+            }
+        }
     }
 }
 

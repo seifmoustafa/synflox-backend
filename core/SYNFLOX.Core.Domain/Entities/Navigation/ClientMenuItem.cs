@@ -5,17 +5,18 @@ using Domain.Entities.Common;
 namespace Domain.Entities.Navigation
 {
     /// <summary>
-    /// Represents a menu item in the navigation system.
+    /// Represents a menu item in the client portal navigation system.
     /// Supports hierarchical menu structure with parent-child relationships.
+    /// This is separate from AdminMenuItem to allow independent menu configurations.
     /// </summary>
-    public class MenuItems : AuditEntity<Guid>
+    public class ClientMenuItem : AuditEntity<Guid>
     {
         [Required]
         [StringLength(200)]
         public required string Name { get; set; }
 
         /// <summary>
-        /// Route path (e.g., "/dashboard", "/companies").
+        /// Route path (e.g., "/dashboard", "/devices", "/subscription").
         /// Null for parent-only items that don't have a direct route.
         /// </summary>
         [StringLength(500)]
@@ -37,25 +38,25 @@ namespace Domain.Entities.Navigation
         /// Parent menu item ID (for nested menu items).
         /// Null for top-level items.
         /// </summary>
-        public Guid? ParentMenuItemsId { get; set; }
+        public Guid? ParentId { get; set; }
 
         /// <summary>
         /// Navigation property for parent menu item.
         /// </summary>
-        public MenuItems? ParentMenuItems { get; set; }
+        public ClientMenuItem? Parent { get; set; }
 
         /// <summary>
         /// Navigation property for child menu items.
         /// </summary>
-        public ICollection<MenuItems> Children { get; set; } = new List<MenuItems>();
+        public ICollection<ClientMenuItem> Children { get; set; } = new List<ClientMenuItem>();
 
         /// <summary>
-        /// JSON array of user types that can see this menu item.
-        /// Example: ["SuperAdmin", "Admin"] or ["SuperAdmin"] or null (visible to all).
-        /// If null or empty, the menu item is visible to all authenticated users.
+        /// JSON array of required permissions to see this menu item.
+        /// Based on CompanyAdmin permission flags: CanViewSubscriptions, CanManageDevices, etc.
+        /// Example: ["CanManageDevices"] or ["CanViewSubscriptions", "CanViewBilling"]
+        /// If null or empty, visible to all authenticated company admins.
         /// </summary>
         [StringLength(500)]
-        public string? AllowedUserTypes { get; set; }
+        public string? RequiredPermissions { get; set; }
     }
 }
-

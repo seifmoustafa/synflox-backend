@@ -64,7 +64,8 @@ namespace Infrastructure.Context
         #endregion
 
         #region Navigation
-        public DbSet<Domain.Entities.Navigation.MenuItems> MenuItems { get; set; }
+        public DbSet<Domain.Entities.Navigation.AdminMenuItem> AdminMenuItems { get; set; }
+        public DbSet<Domain.Entities.Navigation.ClientMenuItem> ClientMenuItems { get; set; }
         #endregion
 
 

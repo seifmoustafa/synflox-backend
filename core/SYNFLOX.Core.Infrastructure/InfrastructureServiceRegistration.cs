@@ -122,7 +122,7 @@ public static class InfrastructureServiceRegistration
         #region Services
         // register AutoMapper using profiles defined in the Application layer
         services.AddAutoMapper(typeof(AdminMappingProfile).Assembly);
-        services.AddAutoMapper(typeof(MenuItemsMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(MenuItemMappingProfile).Assembly);
         services.AddAutoMapper(typeof(SubscriptionMappingProfile).Assembly);
         services.AddAutoMapper(typeof(CompanyMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -213,7 +213,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IOnlineClientService, OnlineClientService>();
         
         services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
-        services.AddScoped<IMenuItemsService, MenuItemsService>();
+        services.AddScoped<IAdminMenuItemService, AdminMenuItemService>();
+        services.AddScoped<IClientMenuItemService, ClientMenuItemService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IFileService, FileService>();
@@ -276,7 +277,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IAdminTypeRepository, AdminTypeRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
-        services.AddScoped<IMenuItemsRepository, MenuItemsRepository>();
+        services.AddScoped<IAdminMenuItemRepository, AdminMenuItemRepository>();
+        services.AddScoped<IClientMenuItemRepository, ClientMenuItemRepository>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();

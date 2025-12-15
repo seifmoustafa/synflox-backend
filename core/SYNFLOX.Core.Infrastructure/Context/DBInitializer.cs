@@ -13,8 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Infrastructure.Context
 {
     /// <summary>
-    /// Seeds the database with an initial SuperAdmin user. Adjust this logic to
-    /// match your application's startup requirements.
+    /// Seeds the database with initial data for the admin portal.
     /// </summary>
     public class DBInitializer
     {
@@ -26,7 +25,7 @@ namespace Infrastructure.Context
             var dbContext = services.GetRequiredService<ApplicationDBContext>();
             await dbContext.Database.MigrateAsync();
 
-
+            // Seed Admin Types
             var superAdminUserType = await dbContext.UserTypes
                 .FirstOrDefaultAsync(u => u.AdminTypeName == "SuperAdmin");
 
@@ -47,7 +46,8 @@ namespace Infrastructure.Context
                 await dbContext.SaveChangesAsync();
             }
 
-            if (dbContext.Admins.Count() == 0)
+            // Seed Default Super Admin
+            if (!dbContext.Admins.Any())
             {
                 var user = new Admin
                 {
@@ -63,242 +63,346 @@ namespace Infrastructure.Context
                 await dbContext.SaveChangesAsync();
             }
 
-            // Seed Menu Items - Parent Structure with Dashboard First
-            if (dbContext.MenuItems.Count() == 0)
+            // Seed Admin Portal Menu Items
+            await SeedAdminMenuItemsAsync(dbContext);
+
+            // Seed Client Portal Menu Items
+            await SeedClientMenuItemsAsync(dbContext);
+        }
+
+        /// <summary>
+        /// Seeds admin portal navigation menu items.
+        /// </summary>
+        private static async Task SeedAdminMenuItemsAsync(ApplicationDBContext dbContext)
+        {
+            if (dbContext.AdminMenuItems.Any()) return;
+
+            // Parent Menu Items
+            var parentMenuItems = new List<AdminMenuItem>
             {
-                // Parent Menu Items - Dashboard is Order 1 (first)
-                var parentMenuItems = new List<MenuItems>
+                // Dashboard Parent - Analytics & Insights (Order 1)
+                new AdminMenuItem
                 {
-                    // Dashboard Parent - Analytics & Insights (Order 1 - FIRST)
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.dashboard",
-                        Href = null,
-                        Icon = "layout-dashboard",
-                        Order = 1,
-                        ParentMenuItemsId = null,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                        IsActive = true,
-                    },
-                    // System Parent - Admin Management & Core Data (Order 2)
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.system",
-                        Href = null,
-                        Icon = "settings",
-                        Order = 2,
-                        ParentMenuItemsId = null,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    // Product Catalog Parent - Projects, Modules, Plans (Order 3)
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.productCatalog",
-                        Href = null,
-                        Icon = "package",
-                        Order = 3,
-                        ParentMenuItemsId = null,
-                        AllowedUserTypes = null, // Visible to ALL user types
-                        IsActive = true,
-                    },
-                    // License Management Parent - Subscriptions, License Keys (Order 4)
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.licenseManagement",
-                        Href = null,
-                        Icon = "file-key",
-                        Order = 4,
-                        ParentMenuItemsId = null,
-                        AllowedUserTypes = null, // Visible to ALL user types
-                        IsActive = true,
-                    },
-                };
-
-                await dbContext.MenuItems.AddRangeAsync(parentMenuItems);
-                await dbContext.SaveChangesAsync();
-
-                // Get parent references
-                var dashboardParent = parentMenuItems.First(m => m.Name == "nav.dashboard");
-                var systemParent = parentMenuItems.First(m => m.Name == "nav.system");
-                var productCatalogParent = parentMenuItems.First(m => m.Name == "nav.productCatalog");
-                var licenseManagementParent = parentMenuItems.First(m => m.Name == "nav.licenseManagement");
-
-                // Dashboard Children - Analytics & Insights Pages
-                var dashboardChildren = new List<MenuItems>
+                    Id = Guid.NewGuid(),
+                    Name = "nav.dashboard",
+                    Href = null,
+                    Icon = "layout-dashboard",
+                    Order = 1,
+                    ParentId = null,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
+                    IsActive = true,
+                },
+                // System Parent - Admin Management & Core Data (Order 2)
+                new AdminMenuItem
                 {
-                    // new MenuItems
-                    // {
-                    //     Id = Guid.NewGuid(),
-                    //     Name = "nav.overview",
-                    //     Href = "/",
-                    //     Icon = "home",
-                    //     Order = 1,
-                    //     ParentMenuItemsId = dashboardParent.Id,
-                    //     AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                    //     IsActive = true,
-                    // },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.companiesDashboard",
-                        Href = "/dashboard/companies",
-                        Icon = "building-2",
-                        Order = 2,
-                        ParentMenuItemsId = dashboardParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.subscriptionsDashboard",
-                        Href = "/dashboard/subscriptions",
-                        Icon = "calendar-check",
-                        Order = 3,
-                        ParentMenuItemsId = dashboardParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.revenueDashboard",
-                        Href = "/dashboard/revenue",
-                        Icon = "dollar-sign",
-                        Order = 4,
-                        ParentMenuItemsId = dashboardParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }), // SuperAdmin only
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.activityDashboard",
-                        Href = "/dashboard/activity",
-                        Icon = "activity",
-                        Order = 5,
-                        ParentMenuItemsId = dashboardParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.alertsDashboard",
-                        Href = "/dashboard/alerts",
-                        Icon = "bell",
-                        Order = 6,
-                        ParentMenuItemsId = dashboardParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                        IsActive = true,
-                    },
-                };
-
-                // System Children - Admin Management & Core Data
-                var systemChildren = new List<MenuItems>
+                    Id = Guid.NewGuid(),
+                    Name = "nav.system",
+                    Href = null,
+                    Icon = "settings",
+                    Order = 2,
+                    ParentId = null,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+                // Product Catalog Parent - Projects, Modules, Plans (Order 3)
+                new AdminMenuItem
                 {
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.admins",
-                        Href = "/admins",
-                        Icon = "users",
-                        Order = 1,
-                        ParentMenuItemsId = systemParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.adminTypes",
-                        Href = "/admin-types",
-                        Icon = "shield-check",
-                        Order = 2,
-                        ParentMenuItemsId = systemParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.companies",
-                        Href = "/companies",
-                        Icon = "building-2",
-                        Order = 3,
-                        ParentMenuItemsId = systemParent.Id,
-                        AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
-                        IsActive = true,
-                    },
-                };
-
-                // Product Catalog Children - Projects, Modules & Plans
-                var productCatalogChildren = new List<MenuItems>
+                    Id = Guid.NewGuid(),
+                    Name = "nav.productCatalog",
+                    Href = null,
+                    Icon = "package",
+                    Order = 3,
+                    ParentId = null,
+                    AllowedUserTypes = null, // Visible to ALL admin types
+                    IsActive = true,
+                },
+                // License Management Parent - Subscriptions, License Keys (Order 4)
+                new AdminMenuItem
                 {
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.projects",
-                        Href = "/projects",
-                        Icon = "folder-kanban",
-                        Order = 1,
-                        ParentMenuItemsId = productCatalogParent.Id,
-                        AllowedUserTypes = null, // Visible to ALL user types
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.modules",
-                        Href = "/modules",
-                        Icon = "boxes",
-                        Order = 2,
-                        ParentMenuItemsId = productCatalogParent.Id,
-                        AllowedUserTypes = null, // Visible to ALL user types
-                        IsActive = true,
-                    },
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.plans",
-                        Href = "/plans",
-                        Icon = "tag",
-                        Order = 3,
-                        ParentMenuItemsId = productCatalogParent.Id,
-                        AllowedUserTypes = null, // Visible to ALL user types
-                        IsActive = true,
-                    },
-                };
-
-                // License Management Children - Subscriptions & License Keys
-                var licenseManagementChildren = new List<MenuItems>
+                    Id = Guid.NewGuid(),
+                    Name = "nav.licenseManagement",
+                    Href = null,
+                    Icon = "file-key",
+                    Order = 4,
+                    ParentId = null,
+                    AllowedUserTypes = null, // Visible to ALL admin types
+                    IsActive = true,
+                },
+                // Communications Parent - Email & Notifications (Order 5)
+                new AdminMenuItem
                 {
-                    new MenuItems
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "nav.subscriptions",
-                        Href = "/subscriptions",
-                        Icon = "calendar-check",
-                        Order = 1,
-                        ParentMenuItemsId = licenseManagementParent.Id,
-                        AllowedUserTypes = null, // Visible to ALL user types
-                        IsActive = true,
-                    },
-                    // NOTE: License Keys will be added in Phase 4
-                };
+                    Id = Guid.NewGuid(),
+                    Name = "nav.communications",
+                    Href = null,
+                    Icon = "mail",
+                    Order = 5,
+                    ParentId = null,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+            };
 
-                // Add all child menu items
-                await dbContext.MenuItems.AddRangeAsync(dashboardChildren);
-                await dbContext.MenuItems.AddRangeAsync(systemChildren);
-                await dbContext.MenuItems.AddRangeAsync(productCatalogChildren);
-                await dbContext.MenuItems.AddRangeAsync(licenseManagementChildren);
-                await dbContext.SaveChangesAsync();
-            }
+            await dbContext.AdminMenuItems.AddRangeAsync(parentMenuItems);
+            await dbContext.SaveChangesAsync();
+
+            // Get parent references
+            var dashboardParent = parentMenuItems.First(m => m.Name == "nav.dashboard");
+            var systemParent = parentMenuItems.First(m => m.Name == "nav.system");
+            var productCatalogParent = parentMenuItems.First(m => m.Name == "nav.productCatalog");
+            var licenseManagementParent = parentMenuItems.First(m => m.Name == "nav.licenseManagement");
+            var communicationsParent = parentMenuItems.First(m => m.Name == "nav.communications");
+
+            // Dashboard Children
+            var dashboardChildren = new List<AdminMenuItem>
+            {
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.companiesDashboard",
+                    Href = "/dashboard/companies",
+                    Icon = "building-2",
+                    Order = 1,
+                    ParentId = dashboardParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.subscriptionsDashboard",
+                    Href = "/dashboard/subscriptions",
+                    Icon = "calendar-check",
+                    Order = 2,
+                    ParentId = dashboardParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.revenueDashboard",
+                    Href = "/dashboard/revenue",
+                    Icon = "dollar-sign",
+                    Order = 3,
+                    ParentId = dashboardParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.activityDashboard",
+                    Href = "/dashboard/activity",
+                    Icon = "activity",
+                    Order = 4,
+                    ParentId = dashboardParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.alertsDashboard",
+                    Href = "/dashboard/alerts",
+                    Icon = "bell",
+                    Order = 5,
+                    ParentId = dashboardParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
+                    IsActive = true,
+                },
+            };
+
+            // System Children
+            var systemChildren = new List<AdminMenuItem>
+            {
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.admins",
+                    Href = "/admins",
+                    Icon = "users",
+                    Order = 1,
+                    ParentId = systemParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.adminTypes",
+                    Href = "/admin-types",
+                    Icon = "shield-check",
+                    Order = 2,
+                    ParentId = systemParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.companies",
+                    Href = "/companies",
+                    Icon = "building-2",
+                    Order = 3,
+                    ParentId = systemParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+            };
+
+            // Product Catalog Children
+            var productCatalogChildren = new List<AdminMenuItem>
+            {
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.projects",
+                    Href = "/projects",
+                    Icon = "folder-kanban",
+                    Order = 1,
+                    ParentId = productCatalogParent.Id,
+                    AllowedUserTypes = null,
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.modules",
+                    Href = "/modules",
+                    Icon = "boxes",
+                    Order = 2,
+                    ParentId = productCatalogParent.Id,
+                    AllowedUserTypes = null,
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.plans",
+                    Href = "/plans",
+                    Icon = "tag",
+                    Order = 3,
+                    ParentId = productCatalogParent.Id,
+                    AllowedUserTypes = null,
+                    IsActive = true,
+                },
+            };
+
+            // License Management Children
+            var licenseManagementChildren = new List<AdminMenuItem>
+            {
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.subscriptions",
+                    Href = "/subscriptions",
+                    Icon = "calendar-check",
+                    Order = 1,
+                    ParentId = licenseManagementParent.Id,
+                    AllowedUserTypes = null,
+                    IsActive = true,
+                },
+            };
+
+            // Communications Children - Including Custom Email
+            var communicationsChildren = new List<AdminMenuItem>
+            {
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.customEmail",
+                    Href = "/communications/custom-email",
+                    Icon = "send",
+                    Order = 1,
+                    ParentId = communicationsParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+            };
+
+            // Add all child menu items
+            await dbContext.AdminMenuItems.AddRangeAsync(dashboardChildren);
+            await dbContext.AdminMenuItems.AddRangeAsync(systemChildren);
+            await dbContext.AdminMenuItems.AddRangeAsync(productCatalogChildren);
+            await dbContext.AdminMenuItems.AddRangeAsync(licenseManagementChildren);
+            await dbContext.AdminMenuItems.AddRangeAsync(communicationsChildren);
+            await dbContext.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Seeds client portal navigation menu items.
+        /// </summary>
+        private static async Task SeedClientMenuItemsAsync(ApplicationDBContext dbContext)
+        {
+            if (dbContext.ClientMenuItems.Any()) return;
+
+            // Client Portal Menu Items - Flat structure (simpler than admin)
+            var clientMenuItems = new List<ClientMenuItem>
+            {
+                // Dashboard - Overview
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.dashboard",
+                    Href = "/dashboard",
+                    Icon = "layout-dashboard",
+                    Order = 1,
+                    ParentId = null,
+                    RequiredPermissions = null, // Visible to all
+                    IsActive = true,
+                },
+                // Subscriptions - View company subscriptions
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.subscriptions",
+                    Href = "/subscription",
+                    Icon = "calendar-check",
+                    Order = 2,
+                    ParentId = null,
+                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanViewSubscriptions" }),
+                    IsActive = true,
+                },
+                // Devices - Device Management
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.devices",
+                    Href = "/devices",
+                    Icon = "monitor",
+                    Order = 3,
+                    ParentId = null,
+                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanManageDevices" }),
+                    IsActive = true,
+                },
+                // Licenses - License Keys
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.licenses",
+                    Href = "/licenses",
+                    Icon = "key",
+                    Order = 4,
+                    ParentId = null,
+                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanViewSubscriptions" }),
+                    IsActive = true,
+                },
+                // Settings - Account settings
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.settings",
+                    Href = "/settings",
+                    Icon = "settings",
+                    Order = 5,
+                    ParentId = null,
+                    RequiredPermissions = null, // Visible to all
+                    IsActive = true,
+                },
+            };
+
+            await dbContext.ClientMenuItems.AddRangeAsync(clientMenuItems);
+            await dbContext.SaveChangesAsync();
         }
     }
 }

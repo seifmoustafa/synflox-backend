@@ -4,32 +4,34 @@ using Domain.Entities.Navigation;
 
 namespace Infrastructure.Configurations
 {
-    public class MenuItemsConfiguration : IEntityTypeConfiguration<MenuItems>
+    public class ClientMenuItemConfiguration : IEntityTypeConfiguration<ClientMenuItem>
     {
-        public void Configure(EntityTypeBuilder<MenuItems> builder)
+        public void Configure(EntityTypeBuilder<ClientMenuItem> builder)
         {
+            builder.ToTable("ClientMenuItems");
+
             // Self-referencing relationship for parent-child hierarchy
-            builder.HasOne(m => m.ParentMenuItems)
+            builder.HasOne(m => m.Parent)
                 .WithMany(m => m.Children)
-                .HasForeignKey(m => m.ParentMenuItemsId)
+                .HasForeignKey(m => m.ParentId)
                 .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete
 
             // Index for parent menu item lookups
-            builder.HasIndex(m => m.ParentMenuItemsId)
-                .HasDatabaseName("IX_MenuItemss_ParentMenuItemsId")
-                .HasFilter("[ParentMenuItemsId] IS NOT NULL");
+            builder.HasIndex(m => m.ParentId)
+                .HasDatabaseName("IX_ClientMenuItems_ParentId")
+                .HasFilter("[ParentId] IS NOT NULL");
 
             // Index for ordering
             builder.HasIndex(m => new { m.Order, m.IsActive, m.IsDeleted })
-                .HasDatabaseName("IX_MenuItemss_Order_Active_Deleted");
+                .HasDatabaseName("IX_ClientMenuItems_Order_Active_Deleted");
 
             // Index for active menu items
             builder.HasIndex(m => new { m.IsActive, m.IsDeleted })
-                .HasDatabaseName("IX_MenuItemss_Active_Deleted");
+                .HasDatabaseName("IX_ClientMenuItems_Active_Deleted");
 
             // Index for href lookups
             builder.HasIndex(m => m.Href)
-                .HasDatabaseName("IX_MenuItemss_Href")
+                .HasDatabaseName("IX_ClientMenuItems_Href")
                 .HasFilter("[Href] IS NOT NULL");
 
             // Configure string lengths
@@ -44,9 +46,8 @@ namespace Infrastructure.Configurations
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.Property(m => m.AllowedUserTypes)
+            builder.Property(m => m.RequiredPermissions)
                 .HasMaxLength(500);
         }
     }
 }
-

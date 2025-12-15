@@ -7,29 +7,30 @@ using System.Text.Json;
 
 namespace Application.Mapping;
 
-public class MenuItemsMappingProfile : Profile
+public class MenuItemMappingProfile : Profile
 {
-    public MenuItemsMappingProfile()
+    public MenuItemMappingProfile()
     {
-        CreateMap<MenuItems, MenuItemsDto>()
+        // ===== Admin Menu Item Mappings =====
+        CreateMap<AdminMenuItem, AdminMenuItemDto>()
             .ForMember(d => d.Id,
                 opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
             .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children.OrderBy(c => c.Order)))
-            .ForMember(d => d.ParentMenuItems, opt => opt.MapFrom(s => s.ParentMenuItems))
+            .ForMember(d => d.Parent, opt => opt.MapFrom(s => s.Parent))
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom(s => 
                 string.IsNullOrEmpty(s.AllowedUserTypes) 
                     ? new List<string>() 
                     : JsonSerializer.Deserialize<List<string>>(s.AllowedUserTypes, (JsonSerializerOptions)null!) ?? new List<string>()));
 
-        CreateMap<MenuItems, MenuItemsReferenceDto>()
+        CreateMap<AdminMenuItem, AdminMenuItemReferenceDto>()
             .ForMember(d => d.Id,
                 opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
 
-        CreateMap<CreateMenuItemsDto, MenuItems>()
+        CreateMap<CreateAdminMenuItemDto, AdminMenuItem>()
             .ForMember(d => d.Id, opt => opt.Ignore())
-            .ForMember(d => d.ParentMenuItemsId, 
-                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.ParentMenuItemsId))
-            .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
+            .ForMember(d => d.ParentId, 
+                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.ParentId))
+            .ForMember(d => d.Parent, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.IsActive, opt => opt.MapFrom(s => true))
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom(s => 
@@ -41,10 +42,10 @@ public class MenuItemsMappingProfile : Profile
             .ForMember(d => d.DeletedTimestamp, opt => opt.Ignore())
             .ForMember(d => d.IsDeleted, opt => opt.Ignore());
 
-        CreateMap<UpdateMenuItemsDto, MenuItems>()
-            .ForMember(d => d.ParentMenuItemsId, 
-                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.ParentMenuItemsId))
-            .ForMember(d => d.ParentMenuItems, opt => opt.Ignore())
+        CreateMap<UpdateAdminMenuItemDto, AdminMenuItem>()
+            .ForMember(d => d.ParentId, 
+                opt => opt.ConvertUsing<UniversalDecryptionConverter, Guid?>(s => s.ParentId))
+            .ForMember(d => d.Parent, opt => opt.Ignore())
             .ForMember(d => d.Children, opt => opt.Ignore())
             .ForMember(d => d.AllowedUserTypes, opt => opt.MapFrom((src, dest) => 
                 src.AllowedUserTypes == null 
@@ -52,7 +53,22 @@ public class MenuItemsMappingProfile : Profile
                     : (src.AllowedUserTypes.Count == 0 ? null : JsonSerializer.Serialize(src.AllowedUserTypes, (JsonSerializerOptions)null!))))
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-        // MenuItem request DTOs - decrypt MenuItemId (using universal converter)
+        // ===== Client Menu Item Mappings =====
+        CreateMap<ClientMenuItem, ClientMenuItemDto>()
+            .ForMember(d => d.Id,
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))
+            .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children.OrderBy(c => c.Order)))
+            .ForMember(d => d.Parent, opt => opt.MapFrom(s => s.Parent))
+            .ForMember(d => d.RequiredPermissions, opt => opt.MapFrom(s => 
+                string.IsNullOrEmpty(s.RequiredPermissions) 
+                    ? new List<string>() 
+                    : JsonSerializer.Deserialize<List<string>>(s.RequiredPermissions, (JsonSerializerOptions)null!) ?? new List<string>()));
+
+        CreateMap<ClientMenuItem, ClientMenuItemReferenceDto>()
+            .ForMember(d => d.Id,
+                opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id));
+
+        // ===== Request DTO Mappings - decrypt MenuItemId =====
         CreateMap<GetMenuItemByIdRequest, Guid>()
             .ConvertUsing<UniversalDecryptionConverter>();
 
