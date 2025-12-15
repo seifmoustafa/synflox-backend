@@ -2478,4 +2478,51 @@
     <value>Maintenance notifications sent successfully</value>
   </data>
 
+  <!-- Client Portal Auth Messages -->
+  <data name="Common.InvalidRequest" xml:space="preserve">
+    <value>Invalid request data</value>
+  </data>
+  <data name="Common.InternalError" xml:space="preserve">
+    <value>Internal server error</value>
+  </data>
+  <data name="Auth.LoginSuccess" xml:space="preserve">
+    <value>Login successful</value>
+  </data>
+  <data name="Auth.LoginFailed" xml:space="preserve">
+    <value>Login failed</value>
+  </data>
+  <data name="Auth.LogoutSuccess" xml:space="preserve">
+    <value>Logged out successfully</value>
+  </data>
+  <data name="Auth.SessionIdRequired" xml:space="preserve">
+    <value>Session ID is required</value>
+  </data>
+  <data name="Auth.SessionNotFound" xml:space="preserve">
+    <value>Session not found</value>
+  </data>
+  <data name="Auth.InvalidSession" xml:space="preserve">
+    <value>Invalid or expired session</value>
+  </data>
+  <data name="Auth.SessionValid" xml:space="preserve">
+    <value>Session valid</value>
+  </data>
+  <data name="Auth.SessionRefreshed" xml:space="preserve">
+    <value>Session refreshed</value>
+  </data>
+  <data name="Auth.PasswordChanged" xml:space="preserve">
+    <value>Password changed successfully</value>
+  </data>
+  <data name="Auth.SessionSettingsUpdated" xml:space="preserve">
+    <value>Session settings updated</value>
+  </data>
+  <data name="Auth.SessionsRetrieved" xml:space="preserve">
+    <value>Sessions retrieved</value>
+  </data>
+  <data name="Auth.SessionTerminated" xml:space="preserve">
+    <value>Session terminated</value>
+  </data>
+  <data name="Auth.SessionHistoryRetrieved" xml:space="preserve">
+    <value>Session history retrieved</value>
+  </data>
+
 </root>

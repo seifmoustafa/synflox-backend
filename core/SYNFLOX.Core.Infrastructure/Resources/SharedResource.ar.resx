@@ -2478,4 +2478,51 @@
     <value>تم إرسال إشعارات الصيانة بنجاح</value>
   </data>
 
+  <!-- Client Portal Auth Messages -->
+  <data name="Common.InvalidRequest" xml:space="preserve">
+    <value>بيانات الطلب غير صالحة</value>
+  </data>
+  <data name="Common.InternalError" xml:space="preserve">
+    <value>خطأ في الخادم</value>
+  </data>
+  <data name="Auth.LoginSuccess" xml:space="preserve">
+    <value>تم تسجيل الدخول بنجاح</value>
+  </data>
+  <data name="Auth.LoginFailed" xml:space="preserve">
+    <value>فشل تسجيل الدخول</value>
+  </data>
+  <data name="Auth.LogoutSuccess" xml:space="preserve">
+    <value>تم تسجيل الخروج بنجاح</value>
+  </data>
+  <data name="Auth.SessionIdRequired" xml:space="preserve">
+    <value>معرف الجلسة مطلوب</value>
+  </data>
+  <data name="Auth.SessionNotFound" xml:space="preserve">
+    <value>الجلسة غير موجودة</value>
+  </data>
+  <data name="Auth.InvalidSession" xml:space="preserve">
+    <value>جلسة غير صالحة أو منتهية الصلاحية</value>
+  </data>
+  <data name="Auth.SessionValid" xml:space="preserve">
+    <value>الجلسة صالحة</value>
+  </data>
+  <data name="Auth.SessionRefreshed" xml:space="preserve">
+    <value>تم تحديث الجلسة</value>
+  </data>
+  <data name="Auth.PasswordChanged" xml:space="preserve">
+    <value>تم تغيير كلمة المرور بنجاح</value>
+  </data>
+  <data name="Auth.SessionSettingsUpdated" xml:space="preserve">
+    <value>تم تحديث إعدادات الجلسة</value>
+  </data>
+  <data name="Auth.SessionsRetrieved" xml:space="preserve">
+    <value>تم استرداد الجلسات</value>
+  </data>
+  <data name="Auth.SessionTerminated" xml:space="preserve">
+    <value>تم إنهاء الجلسة</value>
+  </data>
+  <data name="Auth.SessionHistoryRetrieved" xml:space="preserve">
+    <value>تم استرداد سجل الجلسات</value>
+  </data>
+
 </root>
