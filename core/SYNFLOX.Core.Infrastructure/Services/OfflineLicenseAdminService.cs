@@ -317,13 +317,10 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
             };
         }
 
-        // Decrypt subscription ID (client sends encrypted IDs)
-        var decryptedSubscriptionId = _idEncryption.Decrypt(request.SubscriptionId);
-        _logger.LogInformation("Binding device: encrypted={Encrypted}, decrypted={Decrypted}", 
-            request.SubscriptionId, decryptedSubscriptionId);
+        _logger.LogInformation("Binding device to subscription: {SubscriptionId}", request.SubscriptionId);
 
         // Get subscription and verify it belongs to this company
-        var subscription = await _subscriptionRepo.GetWithDetailsAsync(decryptedSubscriptionId);
+        var subscription = await _subscriptionRepo.GetWithDetailsAsync(request.SubscriptionId);
         if (subscription == null || subscription.CompanyId != context.CompanyId)
         {
             return new DeviceBindingResponse
@@ -344,7 +341,7 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
         }
 
         // Get current activations
-        var currentActivations = await _activationRepo.GetBySubscriptionAsync(decryptedSubscriptionId);
+        var currentActivations = await _activationRepo.GetBySubscriptionAsync(request.SubscriptionId);
         var machineHash = _licenseService.ComputeFingerprintHash(request.MachineFingerprint);
         
         // Use effective device limit from subscription (override > plan)
@@ -382,7 +379,7 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
         var activation = new LicenseActivation
         {
             Id = Guid.NewGuid(),
-            SubscriptionId = decryptedSubscriptionId,
+            SubscriptionId = request.SubscriptionId,
             CompanyId = context.CompanyId,
             MachineHash = machineHash,
             DeviceName = request.DeviceName ?? "Unknown Device",
