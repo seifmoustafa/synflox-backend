@@ -33,4 +33,10 @@
     <ProjectReference Include="..\SYNFLOX.Core.Domain\SYNFLOX.Core.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="appsettings.Shared.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

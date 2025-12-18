@@ -217,6 +217,35 @@ public class SubscriptionDto
     
     #endregion
     
+    #region Audit Statistics (for Admin Portal)
+    
+    /// <summary>
+    /// Number of offline devices currently bound to this subscription.
+    /// </summary>
+    public int BoundOfflineDeviceCount { get; set; }
+    
+    /// <summary>
+    /// Number of active online tokens for this subscription.
+    /// </summary>
+    public int ActiveOnlineTokenCount { get; set; }
+    
+    /// <summary>
+    /// Number of online devices currently connected to this subscription.
+    /// </summary>
+    public int OnlineDeviceCount { get; set; }
+    
+    /// <summary>
+    /// Number of pending device replacement requests for this subscription.
+    /// </summary>
+    public int PendingReplacementRequestCount { get; set; }
+    
+    /// <summary>
+    /// Last device activity timestamp.
+    /// </summary>
+    public DateTime? LastDeviceActivity { get; set; }
+    
+    #endregion
+    
     // Computed Properties for Business Logic
     public string Status
     {

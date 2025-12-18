@@ -29,6 +29,9 @@ public class SubscriptionService : ISubscriptionService
     private readonly ICompanyRepository _companyRepo;
     private readonly IOutboxEventRepository _outboxRepo;
     private readonly ISubscriptionHistoryRepository _historyRepo;
+    private readonly ILicenseActivationRepository _licenseActivationRepo;
+    private readonly IOnlineClientTokenRepository _onlineTokenRepo;
+    private readonly IDeviceReplacementRequestRepository _replacementRepo;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
     private readonly IUnitOfWork _unitOfWork;
@@ -44,6 +47,9 @@ public class SubscriptionService : ISubscriptionService
         ICompanyRepository companyRepo,
         IOutboxEventRepository outboxRepo,
         ISubscriptionHistoryRepository historyRepo,
+        ILicenseActivationRepository licenseActivationRepo,
+        IOnlineClientTokenRepository onlineTokenRepo,
+        IDeviceReplacementRequestRepository replacementRepo,
         IMapper mapper,
         ILocalizationService localizer,
         IUnitOfWork unitOfWork,
@@ -58,6 +64,9 @@ public class SubscriptionService : ISubscriptionService
         _companyRepo = companyRepo;
         _outboxRepo = outboxRepo;
         _historyRepo = historyRepo;
+        _licenseActivationRepo = licenseActivationRepo;
+        _onlineTokenRepo = onlineTokenRepo;
+        _replacementRepo = replacementRepo;
         _mapper = mapper;
         _localizer = localizer;
         _unitOfWork = unitOfWork;
@@ -260,6 +269,9 @@ public class SubscriptionService : ISubscriptionService
         
         var dto = _mapper.Map<SubscriptionDto>(subscription);
         SetLicenseKeyIfSuperAdmin(dto, subscription);
+        
+        // Populate audit statistics
+        await PopulateAuditStatisticsAsync(dto, id);
         
         // Convert currency if display currency is specified
         if (!string.IsNullOrEmpty(displayCurrency))
@@ -1372,5 +1384,50 @@ public class SubscriptionService : ISubscriptionService
         return dto;
     }
 
+    #endregion
+    
+    #region Audit Statistics
+    
+    /// <summary>
+    /// Populates audit statistics for a subscription DTO from related repositories.
+    /// </summary>
+    private async Task PopulateAuditStatisticsAsync(SubscriptionDto dto, Guid subscriptionId)
+    {
+        try
+        {
+            // Get offline device count
+            var activations = await _licenseActivationRepo.GetBySubscriptionAsync(subscriptionId, includeDeactivated: false);
+            dto.BoundOfflineDeviceCount = activations.Count;
+            dto.LastDeviceActivity = activations
+                .OrderByDescending(a => a.LastSeenAtUtc)
+                .FirstOrDefault()?.LastSeenAtUtc;
+
+            // Get online token count  
+            var onlineTokens = await _onlineTokenRepo.GetBySubscriptionIdAsync(subscriptionId, includeRevoked: false);
+            dto.ActiveOnlineTokenCount = onlineTokens.Count();
+            
+            // Get online device count (devices connected via online tokens)
+            var onlineDeviceCount = 0;
+            foreach (var token in onlineTokens)
+            {
+                var tokenWithDevices = await _onlineTokenRepo.GetWithDevicesAsync(token.Id);
+                if (tokenWithDevices?.BoundDevices != null)
+                {
+                    onlineDeviceCount += tokenWithDevices.BoundDevices.Count(d => d.IsActive);
+                }
+            }
+            dto.OnlineDeviceCount = onlineDeviceCount;
+
+            // Get pending replacement requests
+            var pendingReplacements = await _replacementRepo.GetPendingBySubscriptionAsync(subscriptionId);
+            dto.PendingReplacementRequestCount = pendingReplacements.Count;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to populate audit statistics for subscription {SubscriptionId}", subscriptionId);
+            // Don't fail the main request, just leave counts at 0
+        }
+    }
+    
     #endregion
 }

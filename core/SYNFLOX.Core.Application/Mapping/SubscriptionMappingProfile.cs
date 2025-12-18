@@ -218,7 +218,13 @@ public class SubscriptionMappingProfile : Profile
             .ForMember(d => d.EffectiveMaxAutoAdmitDevices, opt => opt.MapFrom(s => s.EffectiveMaxAutoAdmitDevices))
             .ForMember(d => d.PlanMaxDevices, opt => opt.MapFrom(s => s.Plan.MaxDevices))
             .ForMember(d => d.PlanDeviceAdmissionMode, opt => opt.MapFrom(s => s.Plan.DeviceAdmissionMode))
-            .ForMember(d => d.RequiresAdminApprovalForDevices, opt => opt.MapFrom(s => s.RequiresAdminApprovalForDevices));
+            .ForMember(d => d.RequiresAdminApprovalForDevices, opt => opt.MapFrom(s => s.RequiresAdminApprovalForDevices))
+            // Audit Statistics - populated by service from related tables
+            .ForMember(d => d.BoundOfflineDeviceCount, opt => opt.Ignore())
+            .ForMember(d => d.ActiveOnlineTokenCount, opt => opt.Ignore())
+            .ForMember(d => d.OnlineDeviceCount, opt => opt.Ignore())
+            .ForMember(d => d.PendingReplacementRequestCount, opt => opt.Ignore())
+            .ForMember(d => d.LastDeviceActivity, opt => opt.Ignore());
 
         CreateMap<Subscription, SubscriptionStatusDto>()
             .ForMember(d => d.SubscriptionId, opt => opt.ConvertUsing<UniversalEncryptionConverter, Guid>(s => s.Id))

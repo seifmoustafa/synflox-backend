@@ -96,6 +96,17 @@ public static class InfrastructureServiceRegistration
             }
         });
 
+        // Register MasterDbContext for client-api to write directly to Master DB
+        // This allows client writes (device bindings, tokens) to be visible to admin immediately
+        var masterDbConnection = configuration.GetConnectionString("MasterDbConnection");
+        if (!string.IsNullOrEmpty(masterDbConnection))
+        {
+            services.AddDbContext<MasterDbContext>(options =>
+            {
+                options.UseSqlServer(masterDbConnection);
+            });
+        }
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -205,6 +216,9 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IOfflineLicenseService, OfflineLicenseService>();
         // Offline License Admin Service (Client Admin Token Management)
         services.AddScoped<IOfflineLicenseAdminService, OfflineLicenseAdminService>();
+        
+        // Master DB Writer for client-api to write to Master DB (optional - only when MasterDbConnection is configured)
+        services.AddScoped<IMasterDbWriter, MasterDbWriter>();
         // Company Admin Service (Device Access Control)
         services.AddScoped<ICompanyAdminService, CompanyAdminService>();
         
