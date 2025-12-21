@@ -29,6 +29,7 @@ public class CompanyAdminDto
     public int TotalLogins { get; set; }
     public bool HasActiveSession { get; set; }
     public DateTime CreatedTimestamp { get; set; }
+    public bool IsOffline { get; set; }
 }
 
 /// <summary>

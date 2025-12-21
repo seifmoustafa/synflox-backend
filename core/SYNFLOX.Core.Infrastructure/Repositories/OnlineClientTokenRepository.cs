@@ -47,6 +47,7 @@ public class OnlineClientTokenRepository : BaseRepository<Guid, OnlineClientToke
     {
         var query = _dbSet
             .Include(t => t.Company)
+            .Include(t => t.BoundDevices.Where(d => !d.IsDeleted))
             .Where(t => t.SubscriptionId == subscriptionId);
 
         if (!includeRevoked)

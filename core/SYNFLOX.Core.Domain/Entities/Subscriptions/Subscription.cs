@@ -51,6 +51,14 @@ public class Subscription : AuditEntity<Guid>
     public bool IsExpired { get; set; }
 
     /// <summary>
+    /// Whether this subscription is for offline use only.
+    /// If true: Only offline licensing (license keys, local device activation) is available.
+    /// If false: Only online access (API tokens, online device registration) is available.
+    /// This is mutually exclusive - a subscription cannot use both modes simultaneously.
+    /// </summary>
+    public bool IsOffline { get; set; }
+
+    /// <summary>
     /// Indicates if this is a lifetime/permanent subscription
     /// Lifetime subscriptions have ExpiryDateUtc = DateTime.MaxValue
     /// </summary>

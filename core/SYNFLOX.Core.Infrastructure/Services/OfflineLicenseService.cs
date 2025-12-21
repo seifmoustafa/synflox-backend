@@ -103,6 +103,9 @@ public class OfflineLicenseService : IOfflineLicenseService
         if (!subscription.IsActive && !subscription.IsTrial)
             throw new BadRequestException(_localizer["OfflineLicense.CannotGenerateForInactive"]);
 
+        if (!subscription.IsOffline)
+            throw new BadRequestException(_localizer["Subscription.OfflineOnly"]);
+
         // Check if already has a key and not forcing regeneration
         if (!string.IsNullOrEmpty(subscription.OfflineLicenseKey) && !request.ForceRegenerate)
             throw new BadRequestException(_localizer["OfflineLicense.KeyAlreadyExists"]);
@@ -434,6 +437,12 @@ public class OfflineLicenseService : IOfflineLicenseService
                 {
                     return FailValidation(response, OfflineLicenseValidationStatus.SubscriptionNotFound,
                         _localizer["Subscription.NotFound"]);
+                }
+
+                if (!onlineSubscription.IsOffline)
+                {
+                    return FailValidation(response, OfflineLicenseValidationStatus.SubscriptionNotFound,
+                        _localizer["Subscription.OfflineOnly"]);
                 }
 
                 // Check company status
@@ -1086,6 +1095,12 @@ public class OfflineLicenseService : IOfflineLicenseService
         if (subscription == null)
         {
             response.Message = _localizer["Subscription.NotFound"];
+            return response;
+        }
+
+        if (!subscription.IsOffline)
+        {
+            response.Message = _localizer["Subscription.OfflineOnly"];
             return response;
         }
 

@@ -26,6 +26,7 @@ public class CompanyAdminService : ICompanyAdminService
     private readonly ICompanyAdminRepository _adminRepo;
     private readonly ICompanyAdminSessionRepository _sessionRepo;
     private readonly ICompanyRepository _companyRepo;
+    private readonly ISubscriptionRepository _subscriptionRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ILocalizationService _localizer;
@@ -35,6 +36,7 @@ public class CompanyAdminService : ICompanyAdminService
         ICompanyAdminRepository adminRepo,
         ICompanyAdminSessionRepository sessionRepo,
         ICompanyRepository companyRepo,
+        ISubscriptionRepository subscriptionRepo,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ILocalizationService localizer,
@@ -43,6 +45,7 @@ public class CompanyAdminService : ICompanyAdminService
         _adminRepo = adminRepo;
         _sessionRepo = sessionRepo;
         _companyRepo = companyRepo;
+        _subscriptionRepo = subscriptionRepo;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _localizer = localizer;
@@ -100,25 +103,34 @@ public class CompanyAdminService : ICompanyAdminService
         _logger.LogInformation("Created company admin {Username} for company {CompanyId}", 
             request.Username, request.CompanyId);
 
-        return MapToDto(admin, company.Name);
+        var activeSub = await _subscriptionRepo.GetActiveByCompanyIdAsync(companyId, cancellationToken);
+        var isOffline = activeSub?.IsOffline ?? false;
+
+        return MapToDto(admin, company.Name, isOffline);
     }
 
     public async Task<CompanyAdminDetailsDto?> GetByIdAsync(GetCompanyAdminByIdRequest request, CancellationToken cancellationToken = default)
     {
-        // Decrypt ID using AutoMapper
         var adminId = _mapper.Map<Guid>(request);
         var admin = await _adminRepo.GetByIdAsync(adminId, new[] { "Company" }, cancellationToken);
         if (admin == null) return null;
-        return _mapper.Map<CompanyAdminDetailsDto>(admin);
+
+        var activeSub = await _subscriptionRepo.GetActiveByCompanyIdAsync(admin.CompanyId, cancellationToken);
+        var isOffline = activeSub?.IsOffline ?? false;
+
+        return MapToDetailsDto(admin, isOffline);
     }
 
     public async Task<CompanyAdminDetailsDto?> GetByCompanyIdAsync(GetCompanyAdminByCompanyIdRequest request, CancellationToken cancellationToken = default)
     {
-        // Decrypt ID using AutoMapper
         var companyId = _mapper.Map<Guid>(request);
         var admin = await _adminRepo.GetByCompanyIdAsync(companyId, cancellationToken);
         if (admin == null) return null;
-        return _mapper.Map<CompanyAdminDetailsDto>(admin);
+
+        var activeSub = await _subscriptionRepo.GetActiveByCompanyIdAsync(companyId, cancellationToken);
+        var isOffline = activeSub?.IsOffline ?? false;
+
+        return MapToDetailsDto(admin, isOffline);
     }
 
     public async Task<(List<CompanyAdminDto> Items, int TotalCount)> GetAllAsync(
@@ -195,7 +207,10 @@ public class CompanyAdminService : ICompanyAdminService
 
         _logger.LogInformation("Updated company admin {AdminId}", adminId);
 
-        return MapToDto(admin, admin.Company.Name);
+        var activeSub = await _subscriptionRepo.GetActiveByCompanyIdAsync(admin.CompanyId, cancellationToken);
+        var isOffline = activeSub?.IsOffline ?? false;
+
+        return MapToDto(admin, admin.Company.Name, isOffline);
     }
 
     public async Task<bool> DeleteAsync(DeleteCompanyAdminRequest request, CancellationToken cancellationToken = default)
@@ -367,7 +382,10 @@ public class CompanyAdminService : ICompanyAdminService
         response.MustChangePassword = admin.MustChangePassword || admin.IsPasswordExpired;
         response.HasOtherActiveSessions = admin.SessionPolicy == AdminSessionPolicy.MultipleWithWarning && existingSessions.Any();
         response.OtherActiveSessionCount = existingSessions.Count;
-        response.Admin = MapToDto(admin, admin.Company?.Name ?? "");
+        var activeSub = await _subscriptionRepo.GetActiveByCompanyIdAsync(admin.CompanyId, cancellationToken);
+        var isOffline = activeSub?.IsOffline ?? false;
+
+        response.Admin = MapToDto(admin, admin.Company?.Name ?? "", isOffline);
 
         return response;
     }
@@ -408,7 +426,10 @@ public class CompanyAdminService : ICompanyAdminService
             return null;
         }
 
-        return MapToDetailsDto(admin);
+        var activeSub = await _subscriptionRepo.GetActiveByCompanyIdAsync(admin.CompanyId, cancellationToken);
+        var isOffline = activeSub?.IsOffline ?? false;
+
+        return MapToDetailsDto(admin, isOffline);
     }
 
     public async Task<bool> RefreshSessionAsync(string sessionId, CancellationToken cancellationToken = default)
@@ -549,7 +570,7 @@ public class CompanyAdminService : ICompanyAdminService
         return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
     }
 
-    private CompanyAdminDto MapToDto(CompanyAdmin admin, string companyName)
+    private CompanyAdminDto MapToDto(CompanyAdmin admin, string companyName, bool isOffline = false)
     {
         return new CompanyAdminDto
         {
@@ -569,11 +590,12 @@ public class CompanyAdminService : ICompanyAdminService
             LastLoginAtUtc = admin.LastLoginAtUtc,
             TotalLogins = admin.TotalLogins,
             HasActiveSession = admin.HasActiveSession,
-            CreatedTimestamp = admin.CreatedTimestamp
+            CreatedTimestamp = admin.CreatedTimestamp,
+            IsOffline = isOffline
         };
     }
 
-    private CompanyAdminDetailsDto MapToDetailsDto(CompanyAdmin admin)
+    private CompanyAdminDetailsDto MapToDetailsDto(CompanyAdmin admin, bool isOffline = false)
     {
         return new CompanyAdminDetailsDto
         {
@@ -601,6 +623,7 @@ public class CompanyAdminService : ICompanyAdminService
             CanGenerateLicenses = admin.CanGenerateLicenses,
             CanViewUsageReports = admin.CanViewUsageReports,
             CanModifySessionSettings = admin.CanModifySessionSettings,
+            IsOffline = isOffline,
             // Session Configuration
             AutoLogoutOnInactivity = admin.AutoLogoutOnInactivity,
             InactivityTimeoutMinutes = admin.InactivityTimeoutMinutes,

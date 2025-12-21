@@ -78,6 +78,15 @@ public class OnlineClientService : IOnlineClientService
             };
         }
 
+        if (subscription.IsOffline)
+        {
+            return new GenerateOnlineTokenResponse
+            {
+                Success = false,
+                Message = _localizer["Subscription.OnlineOnly"]
+            };
+        }
+
         // Calculate expiry
         var expiryDays = request.ExpiryDays ?? _settings.DefaultExpiryDays;
         if (expiryDays > _settings.MaxExpiryDays)
@@ -163,9 +172,15 @@ public class OnlineClientService : IOnlineClientService
             return new OnlineTokenValidationDto
             {
                 IsValid = false,
-                Message = _localizer["OnlineToken.Expired"]
+                Message = _localizer["OnlineToken.Expired"],
+                SubscriptionStatus = GetSubscriptionStatus(tokenEntity.Subscription),
+                IsSubscriptionUsable = IsSubscriptionUsable(tokenEntity.Subscription)
             };
         }
+
+        // Compute subscription status for all responses
+        var subscriptionStatus = GetSubscriptionStatus(tokenEntity.Subscription);
+        var isSubscriptionUsable = IsSubscriptionUsable(tokenEntity.Subscription);
 
         // Verify subscription is still active
         if (!tokenEntity.Subscription.IsActive && !tokenEntity.Subscription.IsTrial && !tokenEntity.Subscription.IsPaused)
@@ -173,7 +188,20 @@ public class OnlineClientService : IOnlineClientService
             return new OnlineTokenValidationDto
             {
                 IsValid = false,
-                Message = _localizer["Subscription.NotActive"]
+                Message = _localizer["Subscription.NotActive"],
+                SubscriptionStatus = subscriptionStatus,
+                IsSubscriptionUsable = isSubscriptionUsable
+            };
+        }
+
+        if (tokenEntity.Subscription.IsOffline)
+        {
+            return new OnlineTokenValidationDto
+            {
+                IsValid = false,
+                Message = _localizer["Subscription.OnlineOnly"],
+                SubscriptionStatus = subscriptionStatus,
+                IsSubscriptionUsable = isSubscriptionUsable
             };
         }
 
@@ -186,11 +214,33 @@ public class OnlineClientService : IOnlineClientService
             SubscriptionId = tokenEntity.SubscriptionId,
             CompanyName = tokenEntity.Company?.Name,
             PlanName = tokenEntity.Subscription?.Plan?.Name,
-            ExpiresAtUtc = tokenEntity.ExpiresAtUtc
+            ExpiresAtUtc = tokenEntity.ExpiresAtUtc,
+            SubscriptionStatus = subscriptionStatus,
+            IsSubscriptionUsable = isSubscriptionUsable
         };
         
         // Encrypt IDs in response
         return _mapper.Map<OnlineTokenValidationDto, OnlineTokenValidationDto>(validationResult);
+    }
+
+    /// <summary>
+    /// Returns a human-readable subscription status string.
+    /// </summary>
+    private static string GetSubscriptionStatus(Domain.Entities.Subscription subscription)
+    {
+        if (subscription.IsExpired) return "Expired";
+        if (!subscription.IsActive && subscription.IsTrial) return "Trial";
+        if (subscription.IsPaused) return "Paused";
+        if (!subscription.IsActive) return "Suspended";
+        return "Active";
+    }
+
+    /// <summary>
+    /// Returns true if the subscription allows token/license usage.
+    /// </summary>
+    private static bool IsSubscriptionUsable(Domain.Entities.Subscription subscription)
+    {
+        return subscription.IsActive || subscription.IsTrial || subscription.IsPaused;
     }
 
     public async Task<IEnumerable<OnlineClientTokenDto>> GetTokensByCompanyAsync(Guid companyId, bool includeRevoked = false, CancellationToken cancellationToken = default)
@@ -293,6 +343,15 @@ public class OnlineClientService : IOnlineClientService
             {
                 Success = false,
                 Message = _localizer["Subscription.NotFound"]
+            };
+        }
+
+        if (subscription.IsOffline)
+        {
+            return new RegisterDeviceResponse
+            {
+                Success = false,
+                Message = _localizer["Subscription.OnlineOnly"]
             };
         }
 

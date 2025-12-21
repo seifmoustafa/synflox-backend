@@ -40,4 +40,12 @@ public class CreateSubscriptionDto
     /// Override default AutoRenew from plan
     /// </summary>
     public bool? AutoRenew { get; set; }
+
+    /// <summary>
+    /// Whether this subscription is for offline use only (vs online API access).
+    /// If true: Only offline licensing (license keys, local device activation) is available.
+    /// If false: Only online access (API tokens, online device registration) is available.
+    /// Default is false (online mode).
+    /// </summary>
+    public bool IsOffline { get; set; }
 }

@@ -21,6 +21,12 @@ public class SubscriptionDto
     public bool IsExpired { get; set; }
     
     /// <summary>
+    /// Whether this subscription is for offline use only (vs online API access).
+    /// Determines which licensing features are available.
+    /// </summary>
+    public bool IsOffline { get; set; }
+    
+    /// <summary>
     /// Indicates if this is a lifetime/permanent subscription
     /// </summary>
     public bool IsLifetime { get; set; }

@@ -795,6 +795,12 @@
   <data name="Password.TooManyRequests" xml:space="preserve">
     <value>Too many password reset requests. Please try again later.</value>
   </data>
+  <data name="Subscription.OnlineOnly" xml:space="preserve">
+    <value>Online tokens and devices are not available for offline subscriptions</value>
+  </data>
+  <data name="Subscription.OfflineOnly" xml:space="preserve">
+    <value>Offline licenses and activations are not available for online subscriptions</value>
+  </data>
   <data name="Password.TooManyAttempts" xml:space="preserve">
     <value>Too many failed attempts. Please request a new code.</value>
   </data>
@@ -2533,4 +2539,155 @@
     <value>Session history retrieved</value>
   </data>
 
+  <!-- ================== SUBSCRIPTION STATUSES ================== -->
+  <data name="Subscription.NotFound" xml:space="preserve">
+    <value>Subscription not found</value>
+  </data>
+  <data name="Subscription.NotActive" xml:space="preserve">
+    <value>Subscription is not active</value>
+  </data>
+  <data name="Subscription.Expired" xml:space="preserve">
+    <value>Subscription has expired</value>
+  </data>
+  <data name="Subscription.Suspended" xml:space="preserve">
+    <value>Subscription is suspended</value>
+  </data>
+  <data name="Subscription.Cancelled" xml:space="preserve">
+    <value>Subscription has been cancelled</value>
+  </data>
+  <data name="Subscription.Paused" xml:space="preserve">
+    <value>Subscription is paused</value>
+  </data>
+  <data name="Subscription.Trial" xml:space="preserve">
+    <value>Subscription is in trial period</value>
+  </data>
+  <data name="Subscription.Active" xml:space="preserve">
+    <value>Subscription is active</value>
+  </data>
+  <data name="Subscription.OnlineOnly" xml:space="preserve">
+    <value>This subscription is for online use only. Offline licenses cannot be generated.</value>
+  </data>
+  <data name="Subscription.OfflineOnly" xml:space="preserve">
+    <value>This subscription is for offline use only. Online tokens cannot be generated.</value>
+  </data>
+  <data name="Subscription.StatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Subscription.StatusTrial" xml:space="preserve">
+    <value>Trial</value>
+  </data>
+  <data name="Subscription.StatusExpired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="Subscription.StatusSuspended" xml:space="preserve">
+    <value>Suspended</value>
+  </data>
+  <data name="Subscription.StatusCancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="Subscription.StatusPaused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="Subscription.StatusInactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+
+  <!-- ================== ONLINE TOKEN MESSAGES ================== -->
+  <data name="OnlineToken.Required" xml:space="preserve">
+    <value>Token is required</value>
+  </data>
+  <data name="OnlineToken.Invalid" xml:space="preserve">
+    <value>Invalid token format or signature</value>
+  </data>
+  <data name="OnlineToken.NotFound" xml:space="preserve">
+    <value>Token not found or has been deleted</value>
+  </data>
+  <data name="OnlineToken.Revoked" xml:space="preserve">
+    <value>Token has been revoked</value>
+  </data>
+  <data name="OnlineToken.Expired" xml:space="preserve">
+    <value>Token has expired</value>
+  </data>
+  <data name="OnlineToken.Valid" xml:space="preserve">
+    <value>Token is valid</value>
+  </data>
+  <data name="OnlineToken.Generated" xml:space="preserve">
+    <value>Token generated successfully</value>
+  </data>
+  <data name="OnlineToken.Regenerated" xml:space="preserve">
+    <value>Token regenerated successfully</value>
+  </data>
+  <data name="OnlineToken.RevokedSuccess" xml:space="preserve">
+    <value>Token revoked successfully</value>
+  </data>
+  <data name="OnlineToken.DeviceLimitReached" xml:space="preserve">
+    <value>Maximum device limit reached for this token</value>
+  </data>
+  <data name="OnlineToken.DeviceRegistered" xml:space="preserve">
+    <value>Device registered successfully</value>
+  </data>
+  <data name="OnlineToken.DeviceUnregistered" xml:space="preserve">
+    <value>Device unregistered successfully</value>
+  </data>
+  <data name="OnlineToken.DeviceNotFound" xml:space="preserve">
+    <value>Device not found</value>
+  </data>
+  <data name="OnlineToken.SubscriptionExpired" xml:space="preserve">
+    <value>The subscription associated with this token has expired</value>
+  </data>
+  <data name="OnlineToken.SubscriptionSuspended" xml:space="preserve">
+    <value>The subscription associated with this token is suspended</value>
+  </data>
+  <data name="OnlineToken.SubscriptionCancelled" xml:space="preserve">
+    <value>The subscription associated with this token has been cancelled</value>
+  </data>
+  <data name="OnlineToken.SubscriptionPaused" xml:space="preserve">
+    <value>The subscription is paused. Token validation is still allowed.</value>
+  </data>
+
+  <!-- ================== OFFLINE LICENSE MESSAGES ================== -->
+  <data name="OfflineLicense.Generated" xml:space="preserve">
+    <value>Offline license generated successfully</value>
+  </data>
+  <data name="OfflineLicense.Regenerated" xml:space="preserve">
+    <value>Offline license regenerated successfully</value>
+  </data>
+  <data name="OfflineLicense.NotFound" xml:space="preserve">
+    <value>Offline license not found</value>
+  </data>
+  <data name="OfflineLicense.Invalid" xml:space="preserve">
+    <value>Invalid offline license</value>
+  </data>
+  <data name="OfflineLicense.Expired" xml:space="preserve">
+    <value>Offline license has expired</value>
+  </data>
+  <data name="OfflineLicense.MachineMismatch" xml:space="preserve">
+    <value>License machine fingerprint does not match this device</value>
+  </data>
+  <data name="OfflineLicense.KeyAlreadyExists" xml:space="preserve">
+    <value>An offline license key already exists. Use force regenerate to create a new one.</value>
+  </data>
+  <data name="OfflineLicense.CannotGenerateForInactive" xml:space="preserve">
+    <value>Cannot generate license for inactive subscription</value>
+  </data>
+  <data name="OfflineLicense.InsufficientFingerprint" xml:space="preserve">
+    <value>Machine fingerprint does not have enough identifiers for binding</value>
+  </data>
+  <data name="OfflineLicense.SubscriptionExpired" xml:space="preserve">
+    <value>The subscription for this license has expired</value>
+  </data>
+  <data name="OfflineLicense.SubscriptionSuspended" xml:space="preserve">
+    <value>The subscription for this license is suspended. Cannot regenerate license.</value>
+  </data>
+  <data name="OfflineLicense.DeviceLimitReached" xml:space="preserve">
+    <value>Maximum device limit reached for this subscription</value>
+  </data>
+  <data name="OfflineLicense.DeviceBound" xml:space="preserve">
+    <value>Device bound successfully</value>
+  </data>
+  <data name="OfflineLicense.DeviceUnbound" xml:space="preserve">
+    <value>Device unbound successfully</value>
+  </data>
+
 </root>
+

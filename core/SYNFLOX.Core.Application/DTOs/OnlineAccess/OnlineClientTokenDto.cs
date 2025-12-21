@@ -103,4 +103,15 @@ public class OnlineTokenValidationDto
     public string? CompanyName { get; set; }
     public string? PlanName { get; set; }
     public DateTime? ExpiresAtUtc { get; set; }
+    
+    /// <summary>
+    /// The current subscription status (Active, Trial, Expired, Suspended, Cancelled, Paused, Inactive).
+    /// Helps clients understand WHY validation failed.
+    /// </summary>
+    public string? SubscriptionStatus { get; set; }
+    
+    /// <summary>
+    /// Whether the subscription allows token usage (Active or Trial or Paused).
+    /// </summary>
+    public bool? IsSubscriptionUsable { get; set; }
 }

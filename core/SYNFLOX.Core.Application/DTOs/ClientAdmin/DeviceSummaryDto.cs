@@ -32,6 +32,11 @@ public class SubscriptionDeviceSummary
     public bool IsActive { get; set; }
     
     /// <summary>
+    /// Whether this is an offline-only subscription.
+    /// </summary>
+    public bool IsOffline { get; set; }
+    
+    /// <summary>
     /// Device admission mode (Open, AdminOnly, AutoWithQueue, HybridAutoAdmin).
     /// </summary>
     public string AdmissionMode { get; set; } = "Open";

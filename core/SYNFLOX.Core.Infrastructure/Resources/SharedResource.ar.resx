@@ -2533,4 +2533,135 @@
     <value>تم استرداد سجل الجلسات</value>
   </data>
 
+  <data name="Subscription.OnlineOnly" xml:space="preserve">
+    <value>هذا الاشتراك للاستخدام عبر الإنترنت فقط. لا يمكن إنشاء تراخيص غير متصلة.</value>
+  </data>
+  <data name="Subscription.OfflineOnly" xml:space="preserve">
+    <value>هذا الاشتراك للاستخدام غير المتصل فقط. لا يمكن إنشاء رموز عبر الإنترنت.</value>
+  </data>
+
+  <!-- ================== SUBSCRIPTION STATUSES ================== -->
+  <data name="Subscription.NotFound" xml:space="preserve">
+    <value>الاشتراك غير موجود</value>
+  </data>
+  <data name="Subscription.NotActive" xml:space="preserve">
+    <value>الاشتراك غير نشط</value>
+  </data>
+  <data name="Subscription.Expired" xml:space="preserve">
+    <value>انتهت صلاحية الاشتراك</value>
+  </data>
+  <data name="Subscription.Suspended" xml:space="preserve">
+    <value>الاشتراك معلق</value>
+  </data>
+  <data name="Subscription.Cancelled" xml:space="preserve">
+    <value>تم إلغاء الاشتراك</value>
+  </data>
+  <data name="Subscription.Paused" xml:space="preserve">
+    <value>الاشتراك متوقف مؤقتاً</value>
+  </data>
+  <data name="Subscription.Trial" xml:space="preserve">
+    <value>الاشتراك في فترة تجريبية</value>
+  </data>
+  <data name="Subscription.Active" xml:space="preserve">
+    <value>الاشتراك نشط</value>
+  </data>
+  <data name="Subscription.StatusActive" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Subscription.StatusTrial" xml:space="preserve">
+    <value>تجريبي</value>
+  </data>
+  <data name="Subscription.StatusExpired" xml:space="preserve">
+    <value>منتهي الصلاحية</value>
+  </data>
+  <data name="Subscription.StatusSuspended" xml:space="preserve">
+    <value>معلق</value>
+  </data>
+  <data name="Subscription.StatusCancelled" xml:space="preserve">
+    <value>ملغي</value>
+  </data>
+  <data name="Subscription.StatusPaused" xml:space="preserve">
+    <value>متوقف</value>
+  </data>
+  <data name="Subscription.StatusInactive" xml:space="preserve">
+    <value>غير نشط</value>
+  </data>
+
+  <!-- ================== ADDITIONAL ONLINE TOKEN MESSAGES ================== -->
+  <data name="OnlineToken.Regenerated" xml:space="preserve">
+    <value>تم إعادة إنشاء الرمز بنجاح</value>
+  </data>
+  <data name="OnlineToken.RevokedSuccess" xml:space="preserve">
+    <value>تم إلغاء الرمز بنجاح</value>
+  </data>
+  <data name="OnlineToken.DeviceLimitReached" xml:space="preserve">
+    <value>تم الوصول إلى الحد الأقصى للأجهزة لهذا الرمز</value>
+  </data>
+  <data name="OnlineToken.DeviceRegistered" xml:space="preserve">
+    <value>تم تسجيل الجهاز بنجاح</value>
+  </data>
+  <data name="OnlineToken.DeviceUnregistered" xml:space="preserve">
+    <value>تم إلغاء تسجيل الجهاز بنجاح</value>
+  </data>
+  <data name="OnlineToken.DeviceNotFound" xml:space="preserve">
+    <value>الجهاز غير موجود</value>
+  </data>
+  <data name="OnlineToken.SubscriptionExpired" xml:space="preserve">
+    <value>انتهت صلاحية الاشتراك المرتبط بهذا الرمز</value>
+  </data>
+  <data name="OnlineToken.SubscriptionSuspended" xml:space="preserve">
+    <value>الاشتراك المرتبط بهذا الرمز معلق</value>
+  </data>
+  <data name="OnlineToken.SubscriptionCancelled" xml:space="preserve">
+    <value>تم إلغاء الاشتراك المرتبط بهذا الرمز</value>
+  </data>
+  <data name="OnlineToken.SubscriptionPaused" xml:space="preserve">
+    <value>الاشتراك متوقف مؤقتاً. التحقق من الرمز لا يزال مسموحاً.</value>
+  </data>
+
+  <!-- ================== OFFLINE LICENSE MESSAGES ================== -->
+  <data name="OfflineLicense.Generated" xml:space="preserve">
+    <value>تم إنشاء الترخيص غير المتصل بنجاح</value>
+  </data>
+  <data name="OfflineLicense.Regenerated" xml:space="preserve">
+    <value>تم إعادة إنشاء الترخيص غير المتصل بنجاح</value>
+  </data>
+  <data name="OfflineLicense.NotFound" xml:space="preserve">
+    <value>الترخيص غير المتصل غير موجود</value>
+  </data>
+  <data name="OfflineLicense.Invalid" xml:space="preserve">
+    <value>ترخيص غير متصل غير صالح</value>
+  </data>
+  <data name="OfflineLicense.Expired" xml:space="preserve">
+    <value>انتهت صلاحية الترخيص غير المتصل</value>
+  </data>
+  <data name="OfflineLicense.MachineMismatch" xml:space="preserve">
+    <value>بصمة الجهاز لا تتطابق مع هذا الجهاز</value>
+  </data>
+  <data name="OfflineLicense.KeyAlreadyExists" xml:space="preserve">
+    <value>مفتاح الترخيص موجود بالفعل. استخدم إعادة الإنشاء الإجباري لإنشاء مفتاح جديد.</value>
+  </data>
+  <data name="OfflineLicense.CannotGenerateForInactive" xml:space="preserve">
+    <value>لا يمكن إنشاء ترخيص لاشتراك غير نشط</value>
+  </data>
+  <data name="OfflineLicense.InsufficientFingerprint" xml:space="preserve">
+    <value>بصمة الجهاز لا تحتوي على معرفات كافية للربط</value>
+  </data>
+  <data name="OfflineLicense.SubscriptionExpired" xml:space="preserve">
+    <value>انتهت صلاحية الاشتراك لهذا الترخيص</value>
+  </data>
+  <data name="OfflineLicense.SubscriptionSuspended" xml:space="preserve">
+    <value>الاشتراك لهذا الترخيص معلق. لا يمكن إعادة إنشاء الترخيص.</value>
+  </data>
+  <data name="OfflineLicense.DeviceLimitReached" xml:space="preserve">
+    <value>تم الوصول إلى الحد الأقصى للأجهزة لهذا الاشتراك</value>
+  </data>
+  <data name="OfflineLicense.DeviceBound" xml:space="preserve">
+    <value>تم ربط الجهاز بنجاح</value>
+  </data>
+  <data name="OfflineLicense.DeviceUnbound" xml:space="preserve">
+    <value>تم إلغاء ربط الجهاز بنجاح</value>
+  </data>
+
 </root>
+

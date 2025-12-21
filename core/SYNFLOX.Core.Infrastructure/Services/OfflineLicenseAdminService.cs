@@ -543,6 +543,7 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
                 RequiresMachineBinding = plan.RequireMachineBinding,
                 ExpiresAtUtc = sub.ExpiryDateUtc,
                 IsActive = sub.IsActive,
+                IsOffline = sub.IsOffline,
                 // New fields
                 AdmissionMode = sub.EffectiveDeviceAdmissionMode.ToString(),
                 HasOverride = sub.MaxDevicesOverride.HasValue
