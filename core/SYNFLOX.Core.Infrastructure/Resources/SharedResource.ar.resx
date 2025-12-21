@@ -686,6 +686,14 @@
     <value>تم تعطيل حسابك. يرجى الاتصال بالمسؤول.</value>
   </data>
 
+  <!-- رسائل المصادقة -->
+  <data name="Auth.MustChangePassword" xml:space="preserve">
+    <value>يجب تغيير كلمة المرور قبل الوصول إلى هذا المورد.</value>
+  </data>
+  <data name="Auth.PasswordChangedSuccess" xml:space="preserve">
+    <value>تم تغيير كلمة المرور بنجاح.</value>
+  </data>
+
   <!-- المسؤول ونوع المسؤول -->
   <data name="Admin.NotFound" xml:space="preserve">
     <value>المسؤول غير موجود</value>

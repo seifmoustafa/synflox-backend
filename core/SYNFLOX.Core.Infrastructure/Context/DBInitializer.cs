@@ -336,67 +336,43 @@ namespace Infrastructure.Context
         {
             if (dbContext.ClientMenuItems.Any()) return;
 
-            // Client Portal Menu Items - Flat structure (simpler than admin)
+            // Client Portal Menu Items - Only functional pages
             var clientMenuItems = new List<ClientMenuItem>
             {
-                // Dashboard - Overview
-                new ClientMenuItem
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "nav.dashboard",
-                    Href = "/dashboard",
-                    Icon = "layout-dashboard",
-                    Order = 1,
-                    ParentId = null,
-                    RequiredPermissions = null, // Visible to all
-                    IsActive = true,
-                },
-                // Subscriptions - View company subscriptions
-                new ClientMenuItem
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "nav.subscriptions",
-                    Href = "/subscription",
-                    Icon = "calendar-check",
-                    Order = 2,
-                    ParentId = null,
-                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanViewSubscriptions" }),
-                    IsActive = true,
-                },
                 // Devices - Device Management
                 new ClientMenuItem
                 {
                     Id = Guid.NewGuid(),
                     Name = "nav.devices",
                     Href = "/devices",
-                    Icon = "monitor",
-                    Order = 3,
+                    Icon = "Monitor",
+                    Order = 1,
                     ParentId = null,
                     RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanManageDevices" }),
                     IsActive = true,
                 },
-                // Licenses - License Keys
+                // Online Tokens
                 new ClientMenuItem
                 {
                     Id = Guid.NewGuid(),
-                    Name = "nav.licenses",
-                    Href = "/licenses",
-                    Icon = "key",
-                    Order = 4,
+                    Name = "nav.tokens",
+                    Href = "/tokens",
+                    Icon = "Key",
+                    Order = 2,
                     ParentId = null,
                     RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanViewSubscriptions" }),
                     IsActive = true,
                 },
-                // Settings - Account settings
+                // Device Replacements
                 new ClientMenuItem
                 {
                     Id = Guid.NewGuid(),
-                    Name = "nav.settings",
-                    Href = "/settings",
-                    Icon = "settings",
-                    Order = 5,
+                    Name = "nav.replacements",
+                    Href = "/replacements",
+                    Icon = "RefreshCw",
+                    Order = 3,
                     ParentId = null,
-                    RequiredPermissions = null, // Visible to all
+                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanApproveReplacements" }),
                     IsActive = true,
                 },
             };

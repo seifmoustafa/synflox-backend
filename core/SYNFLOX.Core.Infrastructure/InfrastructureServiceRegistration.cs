@@ -231,6 +231,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IClientMenuItemService, ClientMenuItemService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IClientCurrentAdminService, ClientCurrentAdminService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<ISearchService, SearchService>();
         // Dashboard Service

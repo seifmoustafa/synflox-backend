@@ -686,6 +686,14 @@
     <value>Your account has been deactivated. Please contact administrator.</value>
   </data>
 
+  <!-- Auth Messages -->
+  <data name="Auth.MustChangePassword" xml:space="preserve">
+    <value>You must change your password before accessing this resource.</value>
+  </data>
+  <data name="Auth.PasswordChangedSuccess" xml:space="preserve">
+    <value>Password changed successfully.</value>
+  </data>
+
   <!-- Admin & AdminType -->
   <data name="Admin.NotFound" xml:space="preserve">
     <value>Admin not found</value>

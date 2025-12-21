@@ -44,9 +44,9 @@ namespace Application.Services
     {
         /// <summary>
         /// Gets all active client menu items with their children, ordered by Order field.
-        /// Filters by company admin permissions.
+        /// Returns menu items and allowed pages array for navigation.
         /// </summary>
-        Task<ClientMenuItemsResponseDto> GetMenuItemsAsync(List<string>? permissions);
+        Task<ClientMenuItemsResponseDto> GetMenuItemsAsync();
 
         /// <summary>
         /// Gets a menu item by ID.
@@ -54,4 +54,3 @@ namespace Application.Services
         Task<ClientMenuItemDto?> GetMenuItemByIdAsync(Guid id);
     }
 }
-

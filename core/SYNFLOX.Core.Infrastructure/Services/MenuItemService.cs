@@ -275,19 +275,28 @@ public class ClientMenuItemService : IClientMenuItemService
 {
     private readonly IClientMenuItemRepository _repository;
     private readonly IMapper _mapper;
+    private readonly ILocalizationService _localizer;
+    private readonly IClientCurrentAdminService _currentAdmin;
 
     public ClientMenuItemService(
         IClientMenuItemRepository repository,
-        IMapper mapper)
+        IMapper mapper,
+        ILocalizationService localizer,
+        IClientCurrentAdminService currentAdmin)
     {
         _repository = repository;
         _mapper = mapper;
+        _localizer = localizer;
+        _currentAdmin = currentAdmin;
     }
 
-    public async Task<ClientMenuItemsResponseDto> GetMenuItemsAsync(List<string>? permissions)
+    public async Task<ClientMenuItemsResponseDto> GetMenuItemsAsync()
     {
         var menuItems = await _repository.GetActiveMenuItemsWithChildrenAsync();
         var menuItemsList = menuItems.ToList();
+
+        // Get current user's permissions
+        var permissions = _currentAdmin.Permissions;
 
         // Filter menu items based on permissions
         menuItemsList = menuItemsList
@@ -317,10 +326,10 @@ public class ClientMenuItemService : IClientMenuItemService
         var menuItem = await _repository.GetByIdAsync(id, new[] { "Children", "Parent" });
         if (menuItem == null || menuItem.IsDeleted) return null;
 
-        return MapMenuItemWithChildren(menuItem, null);
+        return MapMenuItemWithChildren(menuItem, _currentAdmin.Permissions);
     }
 
-    private ClientMenuItemDto MapMenuItemWithChildren(ClientMenuItem item, List<string>? permissions)
+    private ClientMenuItemDto MapMenuItemWithChildren(ClientMenuItem item, List<string> permissions)
     {
         var dto = _mapper.Map<ClientMenuItemDto>(item);
         
@@ -351,7 +360,7 @@ public class ClientMenuItemService : IClientMenuItemService
             return true;
         }
 
-        // If no permissions provided, user can't see restricted items
+        // If no permissions provided (not logged in), user can't see restricted items
         if (permissions == null || permissions.Count == 0)
         {
             return false;
