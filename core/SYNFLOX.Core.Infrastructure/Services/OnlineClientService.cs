@@ -78,12 +78,13 @@ public class OnlineClientService : IOnlineClientService
             };
         }
 
+        // Validate subscription is online (not offline-only)
         if (subscription.IsOffline)
         {
             return new GenerateOnlineTokenResponse
             {
                 Success = false,
-                Message = _localizer["Subscription.OnlineOnly"]
+                Message = _localizer["Subscription.OfflineOnly"] ?? "This is an offline subscription. Online tokens can only be generated for online subscriptions."
             };
         }
 
@@ -226,7 +227,7 @@ public class OnlineClientService : IOnlineClientService
     /// <summary>
     /// Returns a human-readable subscription status string.
     /// </summary>
-    private static string GetSubscriptionStatus(Domain.Entities.Subscription subscription)
+    private static string GetSubscriptionStatus(Domain.Entities.Subscriptions.Subscription subscription)
     {
         if (subscription.IsExpired) return "Expired";
         if (!subscription.IsActive && subscription.IsTrial) return "Trial";
@@ -238,7 +239,7 @@ public class OnlineClientService : IOnlineClientService
     /// <summary>
     /// Returns true if the subscription allows token/license usage.
     /// </summary>
-    private static bool IsSubscriptionUsable(Domain.Entities.Subscription subscription)
+    private static bool IsSubscriptionUsable(Domain.Entities.Subscriptions.Subscription subscription)
     {
         return subscription.IsActive || subscription.IsTrial || subscription.IsPaused;
     }

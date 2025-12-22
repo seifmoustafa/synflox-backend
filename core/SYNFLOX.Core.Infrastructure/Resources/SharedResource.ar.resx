@@ -597,6 +597,12 @@
   <data name="Subscription.LifetimeCannotPause" xml:space="preserve">
     <value>لا يمكن إيقاف الاشتراكات مدى الحياة مؤقتاً</value>
   </data>
+  <data name="Subscription.OfflineOnly" xml:space="preserve">
+    <value>هذا اشتراك غير متصل. يمكن إنشاء الرموز عبر الإنترنت فقط للاشتراكات المتصلة.</value>
+  </data>
+  <data name="Subscription.OnlineOnly" xml:space="preserve">
+    <value>هذا اشتراك متصل عبر الإنترنت. ربط الأجهزة متاح فقط للاشتراكات غير المتصلة.</value>
+  </data>
   
   <!-- Subscription Action Success Messages -->
   <data name="Subscription.Suspended" xml:space="preserve">

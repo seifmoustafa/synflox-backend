@@ -336,34 +336,34 @@ namespace Infrastructure.Context
         {
             if (dbContext.ClientMenuItems.Any()) return;
 
-            // Client Portal Menu Items - Only functional pages
+            // Client Portal Menu Items - Nested Subscriptions Navigation
             var clientMenuItems = new List<ClientMenuItem>
             {
-                // Devices - Device Management
+                // Dashboard - Home page
                 new ClientMenuItem
                 {
                     Id = Guid.NewGuid(),
-                    Name = "nav.devices",
-                    Href = "/devices",
-                    Icon = "Monitor",
+                    Name = "nav.dashboard",
+                    Href = "/",
+                    Icon = "LayoutDashboard",
                     Order = 1,
                     ParentId = null,
-                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanManageDevices" }),
+                    RequiredPermissions = null, // Visible to all authenticated users
                     IsActive = true,
                 },
-                // Online Tokens
+                // My Subscriptions - Main subscriptions list and management
                 new ClientMenuItem
                 {
                     Id = Guid.NewGuid(),
-                    Name = "nav.tokens",
-                    Href = "/tokens",
-                    Icon = "Key",
+                    Name = "nav.subscriptions",
+                    Href = "/subscriptions",
+                    Icon = "Package",
                     Order = 2,
                     ParentId = null,
-                    RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanViewSubscriptions" }),
+                    RequiredPermissions = null, // Visible to all authenticated users
                     IsActive = true,
                 },
-                // Device Replacements
+                // Device Replacements - Replacement requests management
                 new ClientMenuItem
                 {
                     Id = Guid.NewGuid(),
@@ -373,6 +373,18 @@ namespace Infrastructure.Context
                     Order = 3,
                     ParentId = null,
                     RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanApproveReplacements" }),
+                    IsActive = true,
+                },
+                // Settings - User preferences
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.settings",
+                    Href = "/settings",
+                    Icon = "Settings",
+                    Order = 4,
+                    ParentId = null,
+                    RequiredPermissions = null, // Visible to all authenticated users
                     IsActive = true,
                 },
             };

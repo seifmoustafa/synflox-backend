@@ -597,6 +597,12 @@
   <data name="Subscription.LifetimeCannotPause" xml:space="preserve">
     <value>Lifetime subscriptions cannot be paused</value>
   </data>
+  <data name="Subscription.OfflineOnly" xml:space="preserve">
+    <value>This is an offline subscription. Online tokens can only be generated for online subscriptions.</value>
+  </data>
+  <data name="Subscription.OnlineOnly" xml:space="preserve">
+    <value>This is an online subscription. Device binding is only available for offline subscriptions.</value>
+  </data>
   
   <!-- Subscription Action Success Messages -->
   <data name="Subscription.Suspended" xml:space="preserve">

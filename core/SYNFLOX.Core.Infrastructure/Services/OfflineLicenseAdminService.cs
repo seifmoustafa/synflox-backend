@@ -330,6 +330,16 @@ public class OfflineLicenseAdminService : IOfflineLicenseAdminService
             };
         }
 
+        // Validate subscription is offline (not online-only)
+        if (!subscription.IsOffline)
+        {
+            return new DeviceBindingResponse
+            {
+                Success = false,
+                Message = _localizer["Subscription.OnlineOnly"] ?? "This is an online subscription. Device binding is only available for offline subscriptions."
+            };
+        }
+
         var plan = subscription.Plan;
         if (plan == null)
         {
