@@ -59,9 +59,15 @@ public class UpdatePlanEntitlementRequest
     public bool? IsActive { get; set; }
     
     /// <summary>
+    /// For modules under a project: explicitly set override status.
+    /// true = Custom permissions, false = Inherit from parent project
+    /// </summary>
+    public bool? IsOverride { get; set; }
+    
+    /// <summary>
     /// When updating a PROJECT entitlement, if true, will reset all child module overrides
     /// and cascade the new permission to all modules under this project.
-    /// If false and there are child overrides, an error will be returned.
+    /// If false and there are child overrides, a conflict response will be returned.
     /// </summary>
     public bool ResetChildOverrides { get; set; } = false;
 }

@@ -27,9 +27,10 @@ public interface IPlanEntitlementService
     Task<PlanEntitlementDto> CreateAsync(CreatePlanEntitlementRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Update an existing plan entitlement
+    /// Update an existing plan entitlement.
+    /// Returns response with conflict info if project has child overrides.
     /// </summary>
-    Task<PlanEntitlementDto> UpdateAsync(UpdatePlanEntitlementRequest request, CancellationToken cancellationToken = default);
+    Task<UpdatePlanEntitlementResponse> UpdateAsync(UpdatePlanEntitlementRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Delete a plan entitlement (soft delete)

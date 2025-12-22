@@ -138,7 +138,7 @@ public class PlanEntitlementService : IPlanEntitlementService
     }
 
     /// <inheritdoc />
-    public async Task<PlanEntitlementDto> UpdateAsync(UpdatePlanEntitlementRequest request, CancellationToken cancellationToken = default)
+    public async Task<UpdatePlanEntitlementResponse> UpdateAsync(UpdatePlanEntitlementRequest request, CancellationToken cancellationToken = default)
     {
         var entitlement = await _entitlementRepo.GetByIdAsync(request.Id, new[] { "Plan", "Project", "Module", "ParentProject" });
         if (entitlement == null || entitlement.IsDeleted)
@@ -156,11 +156,18 @@ public class PlanEntitlementService : IPlanEntitlementService
             
             var overriddenChildren = childEntitlements.Where(e => e.IsOverride).ToList();
             
-            // If there are overrides and user hasn't confirmed reset
+            // If there are overrides and user hasn't confirmed reset - return conflict instead of throwing
             if (overriddenChildren.Any() && !request.ResetChildOverrides)
             {
-                throw new BadRequestException(
-                    $"{_localizer["PlanEntitlement.HasOverrides"]} ({overriddenChildren.Count} {_localizer["PlanEntitlement.ModulesWithOverrides"]})");
+                var moduleNames = overriddenChildren
+                    .Select(e => e.Module?.Name ?? "Unknown")
+                    .ToList();
+                
+                return UpdatePlanEntitlementResponse.Conflict(
+                    overriddenChildren.Count,
+                    moduleNames,
+                    _localizer["PlanEntitlement.HasOverrides"]
+                );
             }
             
             // Apply changes to project
@@ -177,14 +184,43 @@ public class PlanEntitlementService : IPlanEntitlementService
         // If this is a MODULE entitlement
         else if (entitlement.ModuleId.HasValue)
         {
-            // If this module has a parent project, mark it as override
-            if (entitlement.ParentProjectId.HasValue)
+            // Check if switching from Override to Inherit (Custom -> Inherit toggle)
+            if (entitlement.ParentProjectId.HasValue && request.IsOverride.HasValue && !request.IsOverride.Value && entitlement.IsOverride)
             {
-                entitlement.IsOverride = true;
+                // User wants to inherit from parent - get parent's permissions and apply
+                var parentEntitlement = (await _entitlementRepo.GetByPlanIdAsync(entitlement.PlanId, cancellationToken))
+                    .FirstOrDefault(e => e.ProjectId == entitlement.ParentProjectId && !e.IsDeleted);
+                
+                if (parentEntitlement != null)
+                {
+                    // Copy parent's permissions to this module
+                    entitlement.AccessLevel = parentEntitlement.AccessLevel;
+                    entitlement.CanCreate = parentEntitlement.CanCreate;
+                    entitlement.CanRead = parentEntitlement.CanRead;
+                    entitlement.CanUpdate = parentEntitlement.CanUpdate;
+                    entitlement.CanDelete = parentEntitlement.CanDelete;
+                    entitlement.CanExport = parentEntitlement.CanExport;
+                    entitlement.DisplayInMenu = parentEntitlement.DisplayInMenu;
+                }
+                entitlement.IsOverride = false;
+                entitlement.UpdatedTimestamp = now;
+                await _entitlementRepo.UpdateAsync(entitlement);
             }
-            
-            ApplyUpdateToEntitlement(entitlement, request, now);
-            await _entitlementRepo.UpdateAsync(entitlement);
+            else
+            {
+                // Normal update - if module has parent, mark as override
+                if (entitlement.ParentProjectId.HasValue && !request.IsOverride.HasValue)
+                {
+                    entitlement.IsOverride = true;
+                }
+                else if (request.IsOverride.HasValue)
+                {
+                    entitlement.IsOverride = request.IsOverride.Value;
+                }
+                
+                ApplyUpdateToEntitlement(entitlement, request, now);
+                await _entitlementRepo.UpdateAsync(entitlement);
+            }
         }
         
         // Increment plan's entitlement version
@@ -197,7 +233,8 @@ public class PlanEntitlementService : IPlanEntitlementService
         
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<PlanEntitlementDto>(entitlement);
+        var dto = _mapper.Map<PlanEntitlementDto>(entitlement);
+        return UpdatePlanEntitlementResponse.Succeeded(dto);
     }
     
     /// <summary>
