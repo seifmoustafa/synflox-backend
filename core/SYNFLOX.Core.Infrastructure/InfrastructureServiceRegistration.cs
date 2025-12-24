@@ -125,6 +125,27 @@ public static class InfrastructureServiceRegistration
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(jwtoptions.SecretKey))
             };
+
+            // SignalR sends JWT tokens in the query string for WebSocket connections
+            // We need to extract it and set it as the token for authentication
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+
+                    // If the request is for our SignalR hubs, extract the token from query string
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) &&
+                        (path.StartsWithSegments("/hubs/notifications") ||
+                         path.StartsWithSegments("/hubs/security")))
+                    {
+                        // Read the token from the query string
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
         })
 ;
         #endregion
@@ -332,6 +353,14 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IOnlineClientTokenRepository, OnlineClientTokenRepository>();
         services.AddScoped<IOnlineDeviceBindingRepository, OnlineDeviceBindingRepository>();
         services.AddScoped<ISubscriptionChangeLogRepository, SubscriptionChangeLogRepository>();
+        
+        // Notification System Repositories
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
+        services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
+        
+        // Notification Service
+        services.AddScoped<INotificationService, NotificationService>();
         
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion

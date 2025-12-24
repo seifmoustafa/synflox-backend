@@ -128,7 +128,7 @@ namespace Infrastructure.Context
                     AllowedUserTypes = null, // Visible to ALL admin types
                     IsActive = true,
                 },
-                // Communications Parent - Email & Notifications (Order 5)
+                // Communications Parent - Email & Messaging (Order 5)
                 new AdminMenuItem
                 {
                     Id = Guid.NewGuid(),
@@ -138,6 +138,18 @@ namespace Infrastructure.Context
                     Order = 5,
                     ParentId = null,
                     AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+                // Notifications - Root level item (Order 6)
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.notifications",
+                    Href = "/notifications",
+                    Icon = "bell",
+                    Order = 6,
+                    ParentId = null,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
                     IsActive = true,
                 },
             };
@@ -304,7 +316,7 @@ namespace Infrastructure.Context
                 },
             };
 
-            // Communications Children - Including Custom Email
+            // Communications Children - Custom Email only (Notifications moved to root level)
             var communicationsChildren = new List<AdminMenuItem>
             {
                 new AdminMenuItem
@@ -375,6 +387,18 @@ namespace Infrastructure.Context
                     RequiredPermissions = JsonSerializer.Serialize(new List<string> { "CanApproveReplacements" }),
                     IsActive = true,
                 },
+                // Notifications - In-app notifications
+                new ClientMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.notifications",
+                    Href = "/notifications",
+                    Icon = "Bell",
+                    Order = 4,
+                    ParentId = null,
+                    RequiredPermissions = null, // Visible to all authenticated users
+                    IsActive = true,
+                },
                 // Settings - User preferences
                 new ClientMenuItem
                 {
@@ -382,7 +406,7 @@ namespace Infrastructure.Context
                     Name = "nav.settings",
                     Href = "/settings",
                     Icon = "Settings",
-                    Order = 4,
+                    Order = 5,
                     ParentId = null,
                     RequiredPermissions = null, // Visible to all authenticated users
                     IsActive = true,

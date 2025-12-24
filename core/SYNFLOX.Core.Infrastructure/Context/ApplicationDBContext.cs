@@ -79,6 +79,12 @@ namespace Infrastructure.Context
         public DbSet<SubscriptionChangeLog> SubscriptionChangeLogs { get; set; }
         #endregion
 
+        #region Notifications
+        public DbSet<Domain.Entities.Notifications.Notification> Notifications { get; set; }
+        public DbSet<Domain.Entities.Notifications.NotificationPreference> NotificationPreferences { get; set; }
+        public DbSet<Domain.Entities.Notifications.PushSubscription> PushSubscriptions { get; set; }
+        #endregion
+
         #region References
         //public DbSet<EntityBaseModelClass> Entity { get; set; }
         #endregion
