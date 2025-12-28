@@ -32,6 +32,7 @@ public class NotificationAppService : INotificationAppService
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly ILogger<NotificationAppService> _logger;
     private readonly IEmailService? _emailService;
+    private readonly INotificationPushService _pushService;
 
     public NotificationAppService(
         INotificationRepository notificationRepo,
@@ -43,6 +44,7 @@ public class NotificationAppService : INotificationAppService
         IMapper mapper,
         IStringLocalizer<SharedResource> localizer,
         ILogger<NotificationAppService> logger,
+        INotificationPushService pushService,
         IEmailService? emailService = null
     )
     {
@@ -55,6 +57,7 @@ public class NotificationAppService : INotificationAppService
         _mapper = mapper;
         _localizer = localizer;
         _logger = logger;
+        _pushService = pushService;
         _emailService = emailService;
     }
 
@@ -147,6 +150,21 @@ public class NotificationAppService : INotificationAppService
                             admin.Id,
                             companyId
                         );
+
+                        // Push via SignalR for real-time update
+                        try
+                        {
+                            var notificationDto = _mapper.Map<NotificationDto>(notification);
+                            await _pushService.PushToUserAsync(
+                                admin.Id,
+                                "CompanyAdmin",
+                                notificationDto
+                            );
+                        }
+                        catch (Exception pushEx)
+                        {
+                            _logger.LogWarning(pushEx, "Failed to push notification via SignalR");
+                        }
                     }
                     else
                     {

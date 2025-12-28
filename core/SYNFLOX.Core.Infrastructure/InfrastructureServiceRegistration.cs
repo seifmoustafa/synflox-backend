@@ -389,6 +389,9 @@ public static class InfrastructureServiceRegistration
         // Notification Service
         services.AddScoped<INotificationAppService, NotificationAppService>();
 
+        // Default push service (no-op) - can be overridden by WebAPI projects with SignalR implementation
+        services.AddScoped<INotificationPushService, NullNotificationPushService>();
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion
 
