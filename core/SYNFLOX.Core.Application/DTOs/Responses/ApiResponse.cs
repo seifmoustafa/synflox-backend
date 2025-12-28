@@ -32,5 +32,13 @@ namespace Application.DTOs.Responses
         {
             return new ApiResponse<T>(statusCode, message, default(T), new[] { message });
         }
+
+        /// <summary>
+        /// Creates an error API response with data (for detailed error info)
+        /// </summary>
+        public static ApiResponse<T> Error(string message, int statusCode, T data)
+        {
+            return new ApiResponse<T>(statusCode, message, data, new[] { message });
+        }
     }
 }

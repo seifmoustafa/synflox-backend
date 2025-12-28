@@ -140,18 +140,7 @@ namespace Infrastructure.Context
                     AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
                     IsActive = true,
                 },
-                // Notifications - Root level item (Order 6)
-                new AdminMenuItem
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "nav.notifications",
-                    Href = "/notifications",
-                    Icon = "bell",
-                    Order = 6,
-                    ParentId = null,
-                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
-                    IsActive = true,
-                },
+
             };
 
             await dbContext.AdminMenuItems.AddRangeAsync(parentMenuItems);
@@ -316,7 +305,15 @@ namespace Infrastructure.Context
                 },
             };
 
-            // Communications Children - Custom Email only (Notifications moved to root level)
+            // Cleanup: Remove legacy Notifications item if incorrectly placed at root (Fix duplication)
+            var legacyNotification = await dbContext.AdminMenuItems.FirstOrDefaultAsync(x => x.Name == "nav.notifications" && x.ParentId == null);
+            if (legacyNotification != null)
+            {
+                dbContext.AdminMenuItems.Remove(legacyNotification);
+                await dbContext.SaveChangesAsync(); // Commit removal
+            }
+
+            // Communications Children
             var communicationsChildren = new List<AdminMenuItem>
             {
                 new AdminMenuItem
@@ -328,6 +325,28 @@ namespace Infrastructure.Context
                     Order = 1,
                     ParentId = communicationsParent.Id,
                     AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.notifications",
+                    Href = "/notifications",
+                    Icon = "bell",
+                    Order = 2,
+                    ParentId = communicationsParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
+                    IsActive = true,
+                },
+                new AdminMenuItem
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "nav.sendMessage",
+                    Href = "/communications/send-message",
+                    Icon = "message-square",
+                    Order = 3,
+                    ParentId = communicationsParent.Id,
+                    AllowedUserTypes = JsonSerializer.Serialize(new List<string> { "SuperAdmin", "Admin" }),
                     IsActive = true,
                 },
             };

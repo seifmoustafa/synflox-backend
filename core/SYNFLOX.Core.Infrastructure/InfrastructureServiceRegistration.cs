@@ -1,69 +1,74 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Resources;
+using System.Text;
+using System.Threading.Tasks;
+using Application.Mapping;
 using Application.Services;
+using Application.Services_Interfaces;
 using Domain.Interfaces;
 using Domain.Interfaces.Repositories;
 using Infrastructure.Authentication;
-using Infrastructure.Resources;
-using System.Globalization;
-using System.Resources;
+using Infrastructure.Background;
+using Infrastructure.BackgroundJobs;
+using Infrastructure.Configurations;
 using Infrastructure.Context;
 using Infrastructure.Repositories;
+using Infrastructure.Resources;
 using Infrastructure.Services;
-using Infrastructure.Configurations;
 using Infrastructure.Settings;
-using Infrastructure.Background;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Hosting;
 using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Application.Services_Interfaces;
-using Infrastructure.BackgroundJobs;
-using Application.Mapping;
 
 namespace Infrastructure;
 
 public static class InfrastructureServiceRegistration
 {
-
     /// <summary>
     /// Registers persistence and authentication services.
     /// <para>Requires <c>SqlServerConnection</c> or <c>OracleConnection</c> connection string and
     /// a <c>JwtSettings</c> section in <c>appsettings.json</c>.</para>
     /// </summary>
-    public static IServiceCollection AddInfrastructureService(this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddInfrastructureService(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-
         #region Database and Authentication configuration
         var resourceManager = new ResourceManager(typeof(SharedResource));
         var culture = CultureInfo.CurrentCulture;
-        var jwtoptions = configuration.GetSection("JwtSettings").Get<JwtOptions>()
+        var jwtoptions =
+            configuration.GetSection("JwtSettings").Get<JwtOptions>()
             ?? throw new InvalidOperationException(
                 resourceManager.GetString("JwtSettingsMissing", culture)
-                ?? "JwtSettings section is missing");
+                    ?? "JwtSettings section is missing"
+            );
 
         services.Configure<JwtOptions>(configuration.GetSection("JwtSettings"));
-        services.AddOptions<EncryptionSettings>()
+        services
+            .AddOptions<EncryptionSettings>()
             .Bind(configuration.GetSection("Encryption"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
         // Offline License Settings (Enterprise-grade)
-        services.AddOptions<OfflineLicenseSettings>()
+        services
+            .AddOptions<OfflineLicenseSettings>()
             .Bind(configuration.GetSection("OfflineLicenseSettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         // Online Token Settings (for online client system)
-        services.AddOptions<OnlineTokenSettings>()
+        services
+            .AddOptions<OnlineTokenSettings>()
             .Bind(configuration.GetSection("OnlineTokenSettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
@@ -90,7 +95,8 @@ public static class InfrastructureServiceRegistration
                 {
                     throw new InvalidOperationException(
                         resourceManager.GetString("DbConnectionMissing", culture)
-                        ?? "Database connection string is missing");
+                            ?? "Database connection string is missing"
+                    );
                 }
                 options.UseOracle(oracle);
             }
@@ -107,47 +113,56 @@ public static class InfrastructureServiceRegistration
             });
         }
 
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-        {
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
+        services
+            .AddAuthentication(options =>
             {
-                ValidateIssuer = true,
-                ValidIssuer = jwtoptions.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwtoptions.Audience,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtoptions.SecretKey))
-            };
-
-            // SignalR sends JWT tokens in the query string for WebSocket connections
-            // We need to extract it and set it as the token for authentication
-            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
-            {
-                OnMessageReceived = context =>
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(
+                JwtBearerDefaults.AuthenticationScheme,
+                options =>
                 {
-                    var accessToken = context.Request.Query["access_token"];
-
-                    // If the request is for our SignalR hubs, extract the token from query string
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) &&
-                        (path.StartsWithSegments("/hubs/notifications") ||
-                         path.StartsWithSegments("/hubs/security")))
+                    options.SaveToken = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        // Read the token from the query string
-                        context.Token = accessToken;
-                    }
-                    return Task.CompletedTask;
+                        ValidateIssuer = true,
+                        ValidIssuer = jwtoptions.Issuer,
+                        ValidateAudience = true,
+                        ValidAudience = jwtoptions.Audience,
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(jwtoptions.SecretKey)
+                        ),
+                    };
+
+                    // SignalR sends JWT tokens in the query string for WebSocket connections
+                    // We need to extract it and set it as the token for authentication
+                    options.Events =
+                        new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                var accessToken = context.Request.Query["access_token"];
+
+                                // If the request is for our SignalR hubs, extract the token from query string
+                                var path = context.HttpContext.Request.Path;
+                                if (
+                                    !string.IsNullOrEmpty(accessToken)
+                                    && (
+                                        path.StartsWithSegments("/hubs/notifications")
+                                        || path.StartsWithSegments("/hubs/security")
+                                    )
+                                )
+                                {
+                                    // Read the token from the query string
+                                    context.Token = accessToken;
+                                }
+                                return Task.CompletedTask;
+                            },
+                        };
                 }
-            };
-        })
-;
+            );
         #endregion
 
 
@@ -157,6 +172,7 @@ public static class InfrastructureServiceRegistration
         services.AddAutoMapper(typeof(MenuItemMappingProfile).Assembly);
         services.AddAutoMapper(typeof(SubscriptionMappingProfile).Assembly);
         services.AddAutoMapper(typeof(CompanyMappingProfile).Assembly);
+        services.AddAutoMapper(typeof(NotificationMappingProfile).Assembly);
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -167,27 +183,27 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAdvancedSecurityAnalyticsService, AdvancedSecurityAnalyticsService>();
         services.AddScoped<ISecurityReportService, SecurityReportService>();
         services.AddScoped<IIdEncryptionService, IdEncryptionService>();
-        
+
         // HttpClient for IP Geolocation API calls
         services.AddHttpClient();
-        
+
         // Currency Exchange Service (real-time rates from Frankfurter API)
         services.AddHttpClient<ICurrencyExchangeService, CurrencyExchangeService>();
-        
+
         // IP Geolocation & User-Agent Parser (for real analytics)
         services.AddSingleton<IIpGeolocationService, IpGeolocationService>();
         services.AddSingleton<IUserAgentParserService, UserAgentParserService>();
-        
+
         // FileHost Export Service (30-minute auto-cleanup)
         services.AddScoped<IFileHostExportService, FileHostExportService>();
-        
+
         // Background job for cleaning expired export files
         services.AddHostedService<Infrastructure.BackgroundJobs.ExportFilesCleanupJob>();
         // Configure distributed cache (Redis) if connection string provided and Redis is available
         // Otherwise, fallback to in-memory distributed cache
         var cacheConnectionString = configuration.GetConnectionString("RedisConnection");
         var useRedis = configuration.GetValue<bool>("CacheSettings:UseRedis", false);
-        
+
         if (!string.IsNullOrEmpty(cacheConnectionString) && useRedis)
         {
             try
@@ -221,32 +237,32 @@ public static class InfrastructureServiceRegistration
             // Also register IMemoryCache for other services that might need it
             services.AddMemoryCache();
         }
-        
+
         // Remove path-based localization so embedded resources from the
         // Infrastructure assembly are found correctly
         services.AddLocalization();
         services.AddScoped<ILocalizationService, LocalizationService>();
-        
+
         // Admin services - Split for Single Responsibility Principle
-        services.AddScoped<IAdminService, AdminCrudService>();         // CRUD operations (SuperAdmin only)
+        services.AddScoped<IAdminService, AdminCrudService>(); // CRUD operations (SuperAdmin only)
         services.AddScoped<IAdminProfileService, AdminProfileService>(); // Profile operations (current user)
-        
+
         services.AddScoped<IAdminTypeService, AdminTypeService>();
         services.AddScoped<ICompanyService, CompanyService>();
         // Offline License Service (Enterprise-grade with AES-256-GCM)
         services.AddScoped<IOfflineLicenseService, OfflineLicenseService>();
         // Offline License Admin Service (Client Admin Token Management)
         services.AddScoped<IOfflineLicenseAdminService, OfflineLicenseAdminService>();
-        
+
         // Master DB Writer for client-api to write to Master DB (optional - only when MasterDbConnection is configured)
         services.AddScoped<IMasterDbWriter, MasterDbWriter>();
         // Company Admin Service (Device Access Control)
         services.AddScoped<ICompanyAdminService, CompanyAdminService>();
-        
+
         // Online Client Services (JWT tokens, devices, entitlements)
         services.AddScoped<IOnlineJwtService, OnlineJwtService>();
         services.AddScoped<IOnlineClientService, OnlineClientService>();
-        
+
         services.AddScoped<IPlanEntitlementService, PlanEntitlementService>();
         services.AddScoped<IAdminMenuItemService, AdminMenuItemService>();
         services.AddScoped<IClientMenuItemService, ClientMenuItemService>();
@@ -257,18 +273,21 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISearchService, SearchService>();
         // Dashboard Service
         services.AddScoped<IDashboardService, DashboardService>();
-        
+
         // Subscription Engine Services (Phase 1)
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IModuleService, ModuleService>();
         services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddScoped<IEmailService, EmailService>();
-        
+
         // Download service with shared dictionary
-        var downloadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<string, DownloadSession>();
+        var downloadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<
+            string,
+            DownloadSession
+        >();
         services.AddSingleton(downloadsDictionary);
-        services.AddScoped<IDownloadService>(sp => 
+        services.AddScoped<IDownloadService>(sp =>
         {
             var config = sp.GetRequiredService<IConfiguration>();
             var env = sp.GetRequiredService<IWebHostEnvironment>();
@@ -276,11 +295,14 @@ public static class InfrastructureServiceRegistration
             var configs = sp.GetRequiredService<IOptionsMonitor<FileSettings>>();
             return new DownloadService(config, env, downloadsDictionary, logger, configs);
         });
-        
+
         // Upload service with shared dictionary for cleanup worker
-        var uploadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<string, UploadInfo>();
+        var uploadsDictionary = new System.Collections.Concurrent.ConcurrentDictionary<
+            string,
+            UploadInfo
+        >();
         services.AddSingleton(uploadsDictionary);
-        services.AddSingleton<IUploadService>(sp => 
+        services.AddSingleton<IUploadService>(sp =>
         {
             var config = sp.GetRequiredService<IConfiguration>();
             var env = sp.GetRequiredService<IWebHostEnvironment>();
@@ -288,19 +310,19 @@ public static class InfrastructureServiceRegistration
             var configs = sp.GetRequiredService<IOptionsMonitor<FileSettings>>();
             return new UploadService(config, env, uploadsDictionary, logger, configs);
         });
-        
+
         services.AddHostedService<UploadCleanupWorker>();
-        
+
         // Subscription Engine Background Jobs (Phase 1)
         services.AddHostedService<SubscriptionStatusBackgroundJob>();
         services.AddHostedService<OutboxProcessorBackgroundJob>();
-        
+
         // Entitlement System Background Job (Phase 7)
         services.AddHostedService<AccessModeTransitionJob>();
-        
+
         // License Expiry Reminder Job (sends 30/7/1 day reminders)
         services.AddHostedService<LicenseExpiryReminderJob>();
-        
+
         // Online Client System Background Jobs
         services.AddHostedService<OnlineTokenExpiryJob>();
         services.AddHostedService<SubscriptionChangeProcessorJob>();
@@ -320,7 +342,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IBackupCodeRepository, BackupCodeRepository>();
         services.AddScoped<ISecurityAuditLogRepository, SecurityAuditLogRepository>();
-        
+
         // Subscription Engine Repositories (Phase 1)
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IModuleRepository, ModuleRepository>();
@@ -329,46 +351,48 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ISubscriptionHistoryRepository, SubscriptionHistoryRepository>();
         services.AddScoped<IOutboxEventRepository, OutboxEventRepository>();
         services.AddScoped<IPlanEntitlementRepository, PlanEntitlementRepository>();
-        
-        
+
         // License Activation Repository
         services.AddScoped<ILicenseActivationRepository, LicenseActivationRepository>();
-        
+
         // Offline License Admin Token Repository
-        services.AddScoped<IOfflineLicenseAdminTokenRepository, OfflineLicenseAdminTokenRepository>();
-        
+        services.AddScoped<
+            IOfflineLicenseAdminTokenRepository,
+            OfflineLicenseAdminTokenRepository
+        >();
+
         // Device Replacement Request Repository
-        services.AddScoped<IDeviceReplacementRequestRepository, DeviceReplacementRequestRepository>();
-        
+        services.AddScoped<
+            IDeviceReplacementRequestRepository,
+            DeviceReplacementRequestRepository
+        >();
+
         // Company Admin & Session Repositories (Device Access Control)
         services.AddScoped<ICompanyAdminRepository, CompanyAdminRepository>();
         services.AddScoped<ICompanyAdminSessionRepository, CompanyAdminSessionRepository>();
         services.AddScoped<IAccessTimeWindowRepository, AccessTimeWindowRepository>();
-        
+
         // Activity Tracking
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         services.AddScoped<IActivityLogService, ActivityLogService>();
-        
+
         // Online Client Repositories
         services.AddScoped<IOnlineClientTokenRepository, OnlineClientTokenRepository>();
         services.AddScoped<IOnlineDeviceBindingRepository, OnlineDeviceBindingRepository>();
         services.AddScoped<ISubscriptionChangeLogRepository, SubscriptionChangeLogRepository>();
-        
+
         // Notification System Repositories
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
         services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
-        
+
         // Notification Service
-        services.AddScoped<INotificationService, NotificationService>();
-        
+        services.AddScoped<INotificationAppService, NotificationAppService>();
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         #endregion
-
-
 
 
         return services;
     }
 }
-

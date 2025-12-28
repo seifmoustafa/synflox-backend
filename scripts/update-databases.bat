@@ -11,7 +11,7 @@ echo ============================================================
 echo.
 
 REM Navigate to Infrastructure project
-cd /d "e:\Proj\SYNFLOX-Project\synflox-backend\core\SYNFLOX.Core.Infrastructure"
+cd /d "e:\SYNFLOX-Project\synflox-backend\core\SYNFLOX.Core.Infrastructure"
 
 echo [1/2] Updating Master Database (SYNFLOX)...
 echo.

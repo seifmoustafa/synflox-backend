@@ -44,14 +44,14 @@ public class CompanyAdminDetailsDto : CompanyAdminDto
     public bool CanGenerateLicenses { get; set; }
     public bool CanViewUsageReports { get; set; }
     public bool CanModifySessionSettings { get; set; }
-    
+
     // Session Configuration
     public bool AutoLogoutOnInactivity { get; set; }
     public int InactivityTimeoutMinutes { get; set; }
     public int MaxFailedAttempts { get; set; }
     public int LockoutDurationMinutes { get; set; }
     public int PasswordExpiryDays { get; set; }
-    
+
     // Current Session Info
     public string CurrentDeviceName { get; set; } = string.Empty;
     public string CurrentSessionIp { get; set; } = string.Empty;
@@ -91,28 +91,28 @@ public class CreateCompanyAdminRequest
 {
     [Required]
     public Guid CompanyId { get; set; }
-    
+
     [Required]
     [StringLength(100, MinimumLength = 3)]
     public required string Username { get; set; }
-    
+
     [Required]
     [StringLength(100, MinimumLength = 8)]
     public required string Password { get; set; }
-    
+
     [Required]
     [StringLength(150)]
     public required string DisplayName { get; set; }
-    
+
     [Required]
     [EmailAddress]
     [StringLength(200)]
     public required string Email { get; set; }
-    
+
     [Required]
     [StringLength(50)]
     public required string Phone { get; set; }
-    
+
     // Permissions
     public bool CanManageDevices { get; set; } = true;
     public bool CanViewSubscriptions { get; set; } = true;
@@ -129,50 +129,61 @@ public class UpdateCompanyAdminRequest
     [Required]
     [StringLength(150)]
     public required string DisplayName { get; set; }
-    
+
     [Required]
     [EmailAddress]
     [StringLength(200)]
     public required string Email { get; set; }
-    
+
     [Required]
     [StringLength(50)]
     public required string Phone { get; set; }
-    
+
     [Required]
     public bool IsActive { get; set; }
-    
+
     // Permissions
     [Required]
     public bool CanManageDevices { get; set; }
+
     [Required]
     public bool CanViewSubscriptions { get; set; }
+
     [Required]
     public bool CanApproveReplacements { get; set; }
+
     [Required]
     public bool CanGenerateLicenses { get; set; }
+
     [Required]
     public bool CanViewUsageReports { get; set; }
+
     [Required]
     public bool CanModifySessionSettings { get; set; }
-    
+
     // Session Configuration
     [Required]
     public AdminSessionPolicy SessionPolicy { get; set; }
+
     [Required]
     [Range(15, 1440)]
     public int SessionTimeoutMinutes { get; set; }
+
     [Required]
     public bool AutoLogoutOnInactivity { get; set; }
+
     [Required]
     [Range(5, 480)]
     public int InactivityTimeoutMinutes { get; set; }
+
     [Required]
     [Range(0, 20)]
     public int MaxFailedAttempts { get; set; }
+
     [Required]
     [Range(5, 1440)]
     public int LockoutDurationMinutes { get; set; }
+
     [Required]
     [Range(0, 365)]
     public int PasswordExpiryDays { get; set; }
@@ -186,7 +197,7 @@ public class ResetAdminPasswordRequest
     [Required]
     [StringLength(100, MinimumLength = 8)]
     public required string NewPassword { get; set; }
-    
+
     public bool MustChangeOnFirstLogin { get; set; } = true;
 }
 
@@ -197,17 +208,19 @@ public class AdminLoginRequest
 {
     [Required]
     public required string Username { get; set; }
-    
+
     [Required]
     public required string Password { get; set; }
-    
+
     /// <summary>
     /// Device information for session tracking.
     /// </summary>
     [Required]
     public required string DeviceName { get; set; }
+
     [Required]
     public required string OperatingSystem { get; set; }
+
     [Required]
     public required string DeviceHash { get; set; }
 }
@@ -219,13 +232,51 @@ public class AdminLoginResponse
 {
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
-    public string Token { get; set; } = string.Empty;
+
+    /// <summary>
+    /// JWT Access Token for API authorization
+    /// </summary>
+    public string AccessToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// JWT Refresh Token for obtaining new access tokens
+    /// </summary>
+    public string RefreshToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Access token expiry time in UTC
+    /// </summary>
     public DateTime ExpiresAtUtc { get; set; }
+
+    /// <summary>
+    /// Refresh token expiry time in UTC
+    /// </summary>
+    public DateTime RefreshTokenExpiresAtUtc { get; set; }
+
+    /// <summary>
+    /// Token lifetime in seconds
+    /// </summary>
+    public int ExpiresIn { get; set; }
+
+    [Obsolete("Use AccessToken instead. SessionId is for legacy session-based auth.")]
     public string SessionId { get; set; } = string.Empty;
+
+    [Obsolete("Use AccessToken instead. Token is for legacy compatibility.")]
+    public string Token { get; set; } = string.Empty;
+
     public bool MustChangePassword { get; set; }
     public bool HasOtherActiveSessions { get; set; }
     public int OtherActiveSessionCount { get; set; }
     public CompanyAdminDto Admin { get; set; } = new();
+}
+
+/// <summary>
+/// DTO for refreshing JWT access token.
+/// </summary>
+public class RefreshTokenRequest
+{
+    [Required]
+    public required string RefreshToken { get; set; }
 }
 
 /// <summary>
@@ -235,11 +286,11 @@ public class CompanyAdminChangePasswordRequest
 {
     [Required]
     public required string CurrentPassword { get; set; }
-    
+
     [Required]
     [StringLength(100, MinimumLength = 8)]
     public required string NewPassword { get; set; }
-    
+
     [Required]
     [Compare(nameof(NewPassword))]
     public required string ConfirmPassword { get; set; }
@@ -252,14 +303,14 @@ public class UpdateSessionSettingsRequest
 {
     [Required]
     public AdminSessionPolicy SessionPolicy { get; set; }
-    
+
     [Required]
     [Range(15, 1440)]
     public int SessionTimeoutMinutes { get; set; }
-    
+
     [Required]
     public bool AutoLogoutOnInactivity { get; set; }
-    
+
     [Required]
     [Range(5, 480)]
     public int InactivityTimeoutMinutes { get; set; }

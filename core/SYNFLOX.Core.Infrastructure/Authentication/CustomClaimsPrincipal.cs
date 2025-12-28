@@ -10,11 +10,10 @@ namespace Infrastructure.Authentication
 {
     public class CustomClaimsPrincipal : ClaimsPrincipal
     {
-        public CustomClaimsPrincipal(ClaimsPrincipal principal) : base(principal)
-        {
+        public CustomClaimsPrincipal(ClaimsPrincipal principal)
+            : base(principal) { }
 
-        }
-
+        #region Admin (SYNFLOX) Claims
 
         public Guid UserId
         {
@@ -29,7 +28,8 @@ namespace Infrastructure.Authentication
         public string? FirstName => FindFirst(JwtClaimTypes.FirstName)?.Value;
         public string? MiddleName => FindFirst(JwtClaimTypes.MiddleName)?.Value;
         public string? LastName => FindFirst(JwtClaimTypes.LastName)?.Value;
-        public DateTime? BirthDate => DateTime.TryParse(FindFirst(JwtClaimTypes.BirthDate)?.Value, out var d) ? d : null;
+        public DateTime? BirthDate =>
+            DateTime.TryParse(FindFirst(JwtClaimTypes.BirthDate)?.Value, out var d) ? d : null;
         public string? Email => FindFirst(JwtClaimTypes.Email)?.Value;
         public string? PhoneNumber => FindFirst(JwtClaimTypes.PhoneNumber)?.Value;
         public string? NationalId => FindFirst(JwtClaimTypes.NationalId)?.Value;
@@ -76,5 +76,45 @@ namespace Infrastructure.Authentication
             }
         }
 
+        #endregion
+
+        #region CompanyAdmin (Client Portal) Claims
+
+        public Guid CompanyAdminId
+        {
+            get
+            {
+                return Guid.TryParse(FindFirst(JwtClaimTypes.CompanyAdminId)?.Value, out var id)
+                    ? id
+                    : Guid.Empty;
+            }
+        }
+
+        public Guid CompanyId
+        {
+            get
+            {
+                return Guid.TryParse(FindFirst(JwtClaimTypes.CompanyId)?.Value, out var id)
+                    ? id
+                    : Guid.Empty;
+            }
+        }
+
+        public string? DisplayName => FindFirst(JwtClaimTypes.DisplayName)?.Value;
+
+        /// <summary>
+        /// Returns true if this is a CompanyAdmin token (Client Portal).
+        /// Determined by role claim = "CompanyAdmin" or presence of CompanyAdminId claim.
+        /// </summary>
+        public bool IsCompanyAdmin
+        {
+            get
+            {
+                var role = FindFirst(ClaimTypes.Role)?.Value;
+                return role == "CompanyAdmin" || CompanyAdminId != Guid.Empty;
+            }
+        }
+
+        #endregion
     }
 }

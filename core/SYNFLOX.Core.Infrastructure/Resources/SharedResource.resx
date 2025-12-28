@@ -2695,5 +2695,150 @@
     <value>Device unbound successfully</value>
   </data>
 
+  <!-- SendMessage Feature -->
+  <data name="SendMessage.NoCompaniesSelected" xml:space="preserve">
+    <value>No companies selected</value>
+  </data>
+  <data name="SendMessage.NoDeliveryMethod" xml:space="preserve">
+    <value>At least one delivery method (notification or email) must be selected</value>
+  </data>
+  <data name="SendMessage.CompanyNotFound" xml:space="preserve">
+    <value>Company not found</value>
+  </data>
+  <data name="SendMessage.CompanyNotFoundWithId" xml:space="preserve">
+    <value>Company {0} not found</value>
+  </data>
+  <data name="SendMessage.NoMessagesSent" xml:space="preserve">
+    <value>No messages were sent. Please check that selected companies have registered administrators.</value>
+  </data>
+  <data name="SendMessage.Success" xml:space="preserve">
+    <value>Successfully sent {0} notification(s) and {1} email(s)</value>
+  </data>
+  <data name="SendMessage.Failed" xml:space="preserve">
+    <value>Failed to send messages</value>
+  </data>
+  <data name="SendMessage.SuccessWithDetails" xml:space="preserve">
+    <value>Successfully sent {0} notification(s) and {1} email(s) to {2} company(ies)</value>
+  </data>
+
+  <!-- Notification Endpoints -->
+  <data name="Notification.UserNotAuthenticated" xml:space="preserve">
+    <value>User not authenticated</value>
+  </data>
+  <data name="Notification.FailedToGet" xml:space="preserve">
+    <value>Failed to get notifications</value>
+  </data>
+  <data name="Notification.FailedToGetCount" xml:space="preserve">
+    <value>Failed to get notification count</value>
+  </data>
+  <data name="Notification.FailedToMarkRead" xml:space="preserve">
+    <value>Failed to mark notification as read</value>
+  </data>
+  <data name="Notification.FailedToMarkAllRead" xml:space="preserve">
+    <value>Failed to mark all notifications as read</value>
+  </data>
+  <data name="Notification.FailedToDelete" xml:space="preserve">
+    <value>Failed to delete notification</value>
+  </data>
+  <data name="Notification.FailedToGetPreferences" xml:space="preserve">
+    <value>Failed to get notification preferences</value>
+  </data>
+  <data name="Notification.FailedToUpdatePreferences" xml:space="preserve">
+    <value>Failed to update notification preferences</value>
+  </data>
+  <data name="Notification.FailedToRegisterPush" xml:space="preserve">
+    <value>Failed to register push subscription</value>
+  </data>
+  <data name="Notification.FailedToUnregisterPush" xml:space="preserve">
+    <value>Failed to unregister push subscription</value>
+  </data>
+  <data name="Notification.NoCompaniesSelected" xml:space="preserve">
+    <value>No companies selected</value>
+  </data>
+  <data name="Notification.InvalidCompanyId" xml:space="preserve">
+    <value>Invalid company ID</value>
+  </data>
+  <data name="Notification.CompanyNotFound" xml:space="preserve">
+    <value>Company not found</value>
+  </data>
+  <data name="Notification.CompanyNotFoundWithId" xml:space="preserve">
+    <value>Company not found: {0}</value>
+  </data>
+  <data name="Notification.SendSuccess" xml:space="preserve">
+    <value>Sent {0} notification(s) and {1} email(s) to {2} company(ies)</value>
+  </data>
+  <data name="Notification.NoMessagesSent" xml:space="preserve">
+    <value>No messages sent. Check that companies have administrators.</value>
+  </data>
+  <data name="Notification.SendFailed" xml:space="preserve">
+    <value>Failed to send notifications</value>
+  </data>
+
+  <!-- Auth Resources (JWT) -->
+  <data name="Auth.InvalidRefreshToken" xml:space="preserve">
+    <value>Invalid or expired refresh token</value>
+  </data>
+  <data name="Auth.RefreshTokenExpired" xml:space="preserve">
+    <value>Refresh token has expired. Please login again.</value>
+  </data>
+  <data name="Auth.RefreshTokenRequired" xml:space="preserve">
+    <value>Refresh token is required</value>
+  </data>
+  <data name="Auth.RefreshTokenFailed" xml:space="preserve">
+    <value>Failed to refresh token</value>
+  </data>
+  <data name="Auth.TokenRefreshed" xml:space="preserve">
+    <value>Token refreshed successfully</value>
+  </data>
+  <data name="Auth.Unauthorized" xml:space="preserve">
+    <value>Unauthorized. Please login again.</value>
+  </data>
+  <data name="Auth.LoginSuccess" xml:space="preserve">
+    <value>Login successful</value>
+  </data>
+  <data name="Auth.LoginFailed" xml:space="preserve">
+    <value>Login failed</value>
+  </data>
+  <data name="Auth.LogoutSuccess" xml:space="preserve">
+    <value>Logged out successfully</value>
+  </data>
+  <data name="Auth.SessionNotFound" xml:space="preserve">
+    <value>Session not found</value>
+  </data>
+  <data name="Auth.SessionIdRequired" xml:space="preserve">
+    <value>Session ID is required</value>
+  </data>
+
+  <!-- CompanyAdmin Resources -->
+  <data name="CompanyAdmin.InvalidCredentials" xml:space="preserve">
+    <value>Invalid username or password</value>
+  </data>
+  <data name="CompanyAdmin.AccountInactive" xml:space="preserve">
+    <value>Account is inactive. Please contact your administrator.</value>
+  </data>
+  <data name="CompanyAdmin.AccountLocked" xml:space="preserve">
+    <value>Account is locked due to too many failed attempts. Please try again later or contact your administrator.</value>
+  </data>
+  <data name="CompanyAdmin.LoginSuccess" xml:space="preserve">
+    <value>Login successful</value>
+  </data>
+  <data name="CompanyAdmin.NotFound" xml:space="preserve">
+    <value>Company administrator not found</value>
+  </data>
+  <data name="CompanyAdmin.AlreadyExists" xml:space="preserve">
+    <value>This company already has an administrator</value>
+  </data>
+  <data name="CompanyAdmin.UsernameExists" xml:space="preserve">
+    <value>Username already exists</value>
+  </data>
+  <data name="CompanyAdmin.InvalidCurrentPassword" xml:space="preserve">
+    <value>Current password is incorrect</value>
+  </data>
+  <data name="CompanyAdmin.CannotModifySettings" xml:space="preserve">
+    <value>You do not have permission to modify session settings</value>
+  </data>
+
 </root>
+
+
 

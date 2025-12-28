@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Domain.Entities.Common;
-
+using Domain.Entities.Licensing;
 
 namespace Domain.Entities.Authentication
 {
@@ -33,8 +33,18 @@ namespace Domain.Entities.Authentication
         [StringLength(50)]
         public string? RevokedReason { get; set; }
 
+        /// <summary>
+        /// Admin ID for SYNFLOX admin tokens
+        /// </summary>
         public Guid? AdminId { get; set; }
 
+        /// <summary>
+        /// CompanyAdmin ID for Client Portal tokens
+        /// </summary>
+        public Guid? CompanyAdminId { get; set; }
+
+        // Navigation properties
         public virtual Admin? Admin { get; set; }
+        public virtual CompanyAdmin? CompanyAdmin { get; set; }
     }
 }

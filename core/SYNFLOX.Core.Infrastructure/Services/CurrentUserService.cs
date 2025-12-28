@@ -11,17 +11,20 @@ namespace Infrastructure.Services
 {
     public class CurrentUserService : ICurrentUserService
     {
-
         private readonly IHttpContextAccessor _httpContextAccessor;
+
         public CurrentUserService(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
         }
 
+        private CustomClaimsPrincipal Principal =>
+            new CustomClaimsPrincipal(
+                _httpContextAccessor.HttpContext?.User
+                    ?? new System.Security.Claims.ClaimsPrincipal()
+            );
 
-
-        private CustomClaimsPrincipal Principal => new CustomClaimsPrincipal(_httpContextAccessor.HttpContext?.User ?? new System.Security.Claims.ClaimsPrincipal());
-
+        // Admin (SYNFLOX) properties
         public Guid UserId => Principal.UserId;
         public string Username => Principal.Username;
         public string? FirstName => Principal.FirstName;
@@ -41,5 +44,11 @@ namespace Infrastructure.Services
         public bool? IsPhoneVerified => Principal.IsPhoneVerified;
         public bool? IsVerified => Principal.IsVerified;
         public bool? IsActive => Principal.IsActive;
+
+        // CompanyAdmin (Client Portal) properties
+        public Guid CompanyAdminId => Principal.CompanyAdminId;
+        public Guid CompanyId => Principal.CompanyId;
+        public string? DisplayName => Principal.DisplayName;
+        public bool IsCompanyAdmin => Principal.IsCompanyAdmin;
     }
 }

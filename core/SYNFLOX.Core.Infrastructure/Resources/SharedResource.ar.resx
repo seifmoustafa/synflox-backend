@@ -2669,5 +2669,150 @@
     <value>تم إلغاء ربط الجهاز بنجاح</value>
   </data>
 
+  <!-- ميزة إرسال الرسائل -->
+  <data name="SendMessage.NoCompaniesSelected" xml:space="preserve">
+    <value>لم يتم اختيار أي شركات</value>
+  </data>
+  <data name="SendMessage.NoDeliveryMethod" xml:space="preserve">
+    <value>يجب اختيار طريقة تسليم واحدة على الأقل (إشعار أو بريد إلكتروني)</value>
+  </data>
+  <data name="SendMessage.CompanyNotFound" xml:space="preserve">
+    <value>الشركة غير موجودة</value>
+  </data>
+  <data name="SendMessage.CompanyNotFoundWithId" xml:space="preserve">
+    <value>الشركة {0} غير موجودة</value>
+  </data>
+  <data name="SendMessage.NoMessagesSent" xml:space="preserve">
+    <value>لم يتم إرسال أي رسائل. يرجى التحقق من أن الشركات المحددة لديها مسؤولين مسجلين.</value>
+  </data>
+  <data name="SendMessage.Success" xml:space="preserve">
+    <value>تم إرسال {0} إشعار(ات) و {1} بريد(إلكتروني) بنجاح</value>
+  </data>
+  <data name="SendMessage.Failed" xml:space="preserve">
+    <value>فشل إرسال الرسائل</value>
+  </data>
+  <data name="SendMessage.SuccessWithDetails" xml:space="preserve">
+    <value>تم إرسال {0} إشعار(ات) و {1} بريد(إلكتروني) بنجاح إلى {2} شركة(ات)</value>
+  </data>
+
+  <!-- نقاط نهاية الإشعارات -->
+  <data name="Notification.UserNotAuthenticated" xml:space="preserve">
+    <value>المستخدم غير مصادق عليه</value>
+  </data>
+  <data name="Notification.FailedToGet" xml:space="preserve">
+    <value>فشل في جلب الإشعارات</value>
+  </data>
+  <data name="Notification.FailedToGetCount" xml:space="preserve">
+    <value>فشل في جلب عدد الإشعارات</value>
+  </data>
+  <data name="Notification.FailedToMarkRead" xml:space="preserve">
+    <value>فشل في تحديد الإشعار كمقروء</value>
+  </data>
+  <data name="Notification.FailedToMarkAllRead" xml:space="preserve">
+    <value>فشل في تحديد جميع الإشعارات كمقروءة</value>
+  </data>
+  <data name="Notification.FailedToDelete" xml:space="preserve">
+    <value>فشل في حذف الإشعار</value>
+  </data>
+  <data name="Notification.FailedToGetPreferences" xml:space="preserve">
+    <value>فشل في جلب تفضيلات الإشعارات</value>
+  </data>
+  <data name="Notification.FailedToUpdatePreferences" xml:space="preserve">
+    <value>فشل في تحديث تفضيلات الإشعارات</value>
+  </data>
+  <data name="Notification.FailedToRegisterPush" xml:space="preserve">
+    <value>فشل في تسجيل اشتراك الإشعارات الفورية</value>
+  </data>
+  <data name="Notification.FailedToUnregisterPush" xml:space="preserve">
+    <value>فشل في إلغاء تسجيل اشتراك الإشعارات الفورية</value>
+  </data>
+  <data name="Notification.NoCompaniesSelected" xml:space="preserve">
+    <value>لم يتم تحديد أي شركات</value>
+  </data>
+  <data name="Notification.InvalidCompanyId" xml:space="preserve">
+    <value>معرف الشركة غير صالح</value>
+  </data>
+  <data name="Notification.CompanyNotFound" xml:space="preserve">
+    <value>الشركة غير موجودة</value>
+  </data>
+  <data name="Notification.CompanyNotFoundWithId" xml:space="preserve">
+    <value>الشركة غير موجودة: {0}</value>
+  </data>
+  <data name="Notification.SendSuccess" xml:space="preserve">
+    <value>تم إرسال {0} إشعار و {1} بريد إلكتروني إلى {2} شركة</value>
+  </data>
+  <data name="Notification.NoMessagesSent" xml:space="preserve">
+    <value>لم يتم إرسال أي رسائل. تحقق من وجود مسؤولين للشركات.</value>
+  </data>
+  <data name="Notification.SendFailed" xml:space="preserve">
+    <value>فشل في إرسال الإشعارات</value>
+  </data>
+
+  <!-- Auth Resources (JWT) -->
+  <data name="Auth.InvalidRefreshToken" xml:space="preserve">
+    <value>رمز التحديث غير صالح أو منتهي الصلاحية</value>
+  </data>
+  <data name="Auth.RefreshTokenExpired" xml:space="preserve">
+    <value>انتهت صلاحية رمز التحديث. يرجى تسجيل الدخول مرة أخرى.</value>
+  </data>
+  <data name="Auth.RefreshTokenRequired" xml:space="preserve">
+    <value>رمز التحديث مطلوب</value>
+  </data>
+  <data name="Auth.RefreshTokenFailed" xml:space="preserve">
+    <value>فشل في تحديث الرمز</value>
+  </data>
+  <data name="Auth.TokenRefreshed" xml:space="preserve">
+    <value>تم تحديث الرمز بنجاح</value>
+  </data>
+  <data name="Auth.Unauthorized" xml:space="preserve">
+    <value>غير مصرح. يرجى تسجيل الدخول مرة أخرى.</value>
+  </data>
+  <data name="Auth.LoginSuccess" xml:space="preserve">
+    <value>تم تسجيل الدخول بنجاح</value>
+  </data>
+  <data name="Auth.LoginFailed" xml:space="preserve">
+    <value>فشل تسجيل الدخول</value>
+  </data>
+  <data name="Auth.LogoutSuccess" xml:space="preserve">
+    <value>تم تسجيل الخروج بنجاح</value>
+  </data>
+  <data name="Auth.SessionNotFound" xml:space="preserve">
+    <value>الجلسة غير موجودة</value>
+  </data>
+  <data name="Auth.SessionIdRequired" xml:space="preserve">
+    <value>معرف الجلسة مطلوب</value>
+  </data>
+
+  <!-- CompanyAdmin Resources -->
+  <data name="CompanyAdmin.InvalidCredentials" xml:space="preserve">
+    <value>اسم المستخدم أو كلمة المرور غير صحيحة</value>
+  </data>
+  <data name="CompanyAdmin.AccountInactive" xml:space="preserve">
+    <value>الحساب غير نشط. يرجى التواصل مع المسؤول.</value>
+  </data>
+  <data name="CompanyAdmin.AccountLocked" xml:space="preserve">
+    <value>الحساب مقفل بسبب كثرة محاولات الدخول الفاشلة. يرجى المحاولة لاحقاً أو التواصل مع المسؤول.</value>
+  </data>
+  <data name="CompanyAdmin.LoginSuccess" xml:space="preserve">
+    <value>تم تسجيل الدخول بنجاح</value>
+  </data>
+  <data name="CompanyAdmin.NotFound" xml:space="preserve">
+    <value>مسؤول الشركة غير موجود</value>
+  </data>
+  <data name="CompanyAdmin.AlreadyExists" xml:space="preserve">
+    <value>هذه الشركة لديها مسؤول بالفعل</value>
+  </data>
+  <data name="CompanyAdmin.UsernameExists" xml:space="preserve">
+    <value>اسم المستخدم موجود بالفعل</value>
+  </data>
+  <data name="CompanyAdmin.InvalidCurrentPassword" xml:space="preserve">
+    <value>كلمة المرور الحالية غير صحيحة</value>
+  </data>
+  <data name="CompanyAdmin.CannotModifySettings" xml:space="preserve">
+    <value>ليس لديك صلاحية لتعديل إعدادات الجلسة</value>
+  </data>
+
 </root>
+
+
 

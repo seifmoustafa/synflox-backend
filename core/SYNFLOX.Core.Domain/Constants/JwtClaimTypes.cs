@@ -2,6 +2,7 @@ namespace Domain.Constants
 {
     public static class JwtClaimTypes
     {
+        // Admin (SYNFLOX) claims
         public const string AdminTypeName = "adminTypeName";
         public const string FirstName = "firstName";
         public const string MiddleName = "middleName";
@@ -19,5 +20,10 @@ namespace Domain.Constants
         public const string IsPhoneVerified = "isPhoneVerified";
         public const string IsVerified = "isVerified";
         public const string IsActive = "isActive";
+
+        // CompanyAdmin (Client Portal) claims
+        public const string CompanyAdminId = "companyAdminId";
+        public const string CompanyId = "companyId";
+        public const string DisplayName = "displayName";
     }
 }
